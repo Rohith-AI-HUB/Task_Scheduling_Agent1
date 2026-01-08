@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { Home, Users, Plus, Trash2, Send } from 'lucide-react';
+import { Users, Plus, Trash2, Send } from 'lucide-react';
 import NotificationBell from '../components/NotificationBell';
+import HomeButton from '../components/HomeButton';
 
 export default function GroupsPage() {
   const [groups, setGroups] = useState([]);
@@ -131,19 +132,15 @@ export default function GroupsPage() {
       {/* Header */}
       <div className="flex justify-between items-center mb-6">
         <div className="flex items-center gap-4">
-          <button
-            onClick={() => navigate('/dashboard')}
-            className="flex items-center gap-2 bg-gray-200 hover:bg-gray-300 px-4 py-2 rounded transition"
-          >
-            <Home size={20} />
-            Home
-          </button>
           <h1 className="text-3xl font-bold text-gray-800 flex items-center gap-2">
             <Users size={32} />
             Group Coordinator
           </h1>
         </div>
-        <NotificationBell />
+        <div className="flex items-center gap-4">
+          <NotificationBell />
+          <HomeButton />
+        </div>
       </div>
 
       {/* Success/Error Messages */}
@@ -188,17 +185,17 @@ export default function GroupsPage() {
 
             <div className="mb-4">
               <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Member IDs (comma-separated)
+                Member USNs or IDs (comma-separated)
               </label>
               <input
                 type="text"
                 onChange={handleMemberIdChange}
                 className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="e.g., 507f1f77bcf86cd799439011, 507f1f77bcf86cd799439012"
+                placeholder="e.g., 1ms25scs032, 1ms25scs032-t, 1ms25scs033"
                 required
               />
               <p className="text-xs text-gray-500 mt-1">
-                Enter MongoDB ObjectIds of users separated by commas
+                Enter USNs (e.g., 1ms25scs032 or 1ms25scs032-t) or MongoDB ObjectIds separated by commas
               </p>
             </div>
 
@@ -251,6 +248,9 @@ export default function GroupsPage() {
                         <div>
                           <p className="font-medium text-sm">{member.full_name}</p>
                           <p className="text-xs text-gray-500">{member.email}</p>
+                          {member.usn && (
+                            <p className="text-xs text-blue-600 font-mono">USN: {member.usn}</p>
+                          )}
                         </div>
                       </div>
                     ))}

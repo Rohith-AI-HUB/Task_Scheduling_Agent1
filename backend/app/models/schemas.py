@@ -19,6 +19,7 @@ class UserCreate(BaseModel):
     password: str
     full_name: str
     role: Literal["student", "teacher"]
+    usn: Optional[str] = None  # University Serial Number (e.g., 1ms25scs032 or 1ms25scs032-t)
 
 class UserResponse(BaseModel):
     id: str
@@ -26,6 +27,7 @@ class UserResponse(BaseModel):
     full_name: str
     role: str
     firebase_uid: str
+    usn: Optional[str] = None
     created_at: datetime
 
 class TaskCreate(BaseModel):

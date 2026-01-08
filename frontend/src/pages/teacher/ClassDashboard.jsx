@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Users, TrendingUp, TrendingDown, AlertTriangle, Award, CheckCircle, XCircle, Activity } from 'lucide-react';
 import axios from 'axios';
+import HomeButton from '../../components/HomeButton';
 
 function ClassDashboard() {
   const [analytics, setAnalytics] = useState(null);
@@ -75,11 +76,16 @@ function ClassDashboard() {
     <div className="max-w-7xl mx-auto p-6">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-4xl font-bold mb-2 flex items-center gap-3">
-          <Users className="text-blue-600" size={40} />
-          Class Performance Dashboard
-        </h1>
-        <p className="text-gray-600">Comprehensive overview of your class performance</p>
+        <div className="flex justify-between items-start">
+          <div>
+            <h1 className="text-4xl font-bold mb-2 flex items-center gap-3">
+              <Users className="text-blue-600" size={40} />
+              Class Performance Dashboard
+            </h1>
+            <p className="text-gray-600">Comprehensive overview of your class performance</p>
+          </div>
+          <HomeButton />
+        </div>
       </div>
 
       {/* Class Metrics Cards */}

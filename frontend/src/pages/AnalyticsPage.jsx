@@ -2,8 +2,9 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { Home, TrendingUp, Clock, CheckCircle, AlertCircle } from 'lucide-react';
+import { TrendingUp, Clock, CheckCircle, AlertCircle } from 'lucide-react';
 import NotificationBell from '../components/NotificationBell';
+import HomeButton from '../components/HomeButton';
 
 export default function AnalyticsPage() {
   const [stats, setStats] = useState(null);
@@ -87,16 +88,12 @@ export default function AnalyticsPage() {
       {/* Header */}
       <div className="flex justify-between items-center mb-6">
         <div className="flex items-center gap-4">
-          <button
-            onClick={() => navigate('/dashboard')}
-            className="flex items-center gap-2 bg-gray-200 hover:bg-gray-300 px-4 py-2 rounded transition"
-          >
-            <Home size={20} />
-            Home
-          </button>
           <h1 className="text-3xl font-bold text-gray-800">Analytics Dashboard</h1>
         </div>
-        <NotificationBell />
+        <div className="flex items-center gap-4">
+          <NotificationBell />
+          <HomeButton />
+        </div>
       </div>
 
       {/* Summary Cards */}

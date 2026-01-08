@@ -3,7 +3,8 @@ import { taskService } from '../services/task.service';
 import { authService } from '../services/auth.service';
 import TaskCard from '../components/TaskCard';
 import NotificationBell from '../components/NotificationBell';
-import { Plus, Home } from 'lucide-react';
+import HomeButton from '../components/HomeButton';
+import { Plus } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 export default function TasksPage() {
@@ -85,17 +86,11 @@ export default function TasksPage() {
     <div className="min-h-screen bg-gray-100 p-6">
       <div className="flex justify-between items-center mb-6">
         <div className="flex items-center gap-4">
-          <button
-            onClick={() => navigate('/dashboard')}
-            className="p-2 hover:bg-gray-200 rounded-full transition-colors"
-            title="Back to Dashboard"
-          >
-            <Home size={24} className="text-gray-700" />
-          </button>
           <h1 className="text-3xl font-bold">My Tasks</h1>
         </div>
         <div className="flex items-center gap-4">
           <NotificationBell />
+          <HomeButton />
           <button
             onClick={() => setShowForm(!showForm)}
             className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors"

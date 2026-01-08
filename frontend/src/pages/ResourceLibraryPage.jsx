@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Upload, FileText, Link as LinkIcon, Search, Star, Trash2, Eye, Sparkles } from 'lucide-react';
 import axios from 'axios';
+import HomeButton from '../components/HomeButton';
 
 function ResourceLibraryPage() {
   const [resources, setResources] = useState([]);
@@ -185,13 +186,14 @@ function ResourceLibraryPage() {
   return (
     <div className="max-w-7xl mx-auto p-6">
       {/* Header */}
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex justify-between items-start mb-6">
         <div>
           <h1 className="text-4xl font-bold mb-2">Resource Library</h1>
           <p className="text-gray-600">Your personal knowledge base with AI-powered organization</p>
         </div>
 
         <div className="flex gap-2">
+          <HomeButton />
           <button
             onClick={() => setShowNoteModal(true)}
             className="bg-blue-500 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-blue-600"
@@ -244,9 +246,14 @@ function ResourceLibraryPage() {
         {[
           { id: 'all', label: 'All', icon: '📁' },
           { id: 'note', label: 'Notes', icon: '📝' },
-          { id: 'file', label: 'Files', icon: '📄' },
+          { id: 'pdf', label: 'PDFs', icon: '📕' },
+          { id: 'document', label: 'Documents', icon: '📄' },
+          { id: 'text', label: 'Text Files', icon: '📃' },
+          { id: 'code', label: 'Code', icon: '💻' },
+          { id: 'image', label: 'Images', icon: '🖼️' },
+          { id: 'video', label: 'Videos', icon: '🎥' },
           { id: 'link', label: 'Links', icon: '🔗' },
-          { id: 'code', label: 'Code', icon: '💻' }
+          { id: 'file', label: 'Other Files', icon: '📦' }
         ].map(filterOption => (
           <button
             key={filterOption.id}

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Play, Pause, Square, Clock, Zap, Coffee, AlertCircle, TrendingUp } from 'lucide-react';
 import axios from 'axios';
+import HomeButton from '../components/HomeButton';
 
 function FocusModePage() {
   const [activeSession, setActiveSession] = useState(null);
@@ -181,8 +182,13 @@ function FocusModePage() {
     <div className="max-w-7xl mx-auto p-6">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-4xl font-bold mb-2">Focus Mode & Pomodoro</h1>
-        <p className="text-gray-600">Stay focused and track your productive time</p>
+        <div className="flex justify-between items-start">
+          <div>
+            <h1 className="text-4xl font-bold mb-2">Focus Mode & Pomodoro</h1>
+            <p className="text-gray-600">Stay focused and track your productive time</p>
+          </div>
+          <HomeButton />
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

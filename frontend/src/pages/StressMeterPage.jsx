@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Brain, TrendingUp, AlertCircle, CheckCircle, Clock, Target } from 'lucide-react';
 import axios from 'axios';
 import { Line } from 'recharts';
+import HomeButton from '../components/HomeButton';
 
 function StressMeterPage() {
   const [stressData, setStressData] = useState(null);
@@ -79,8 +80,13 @@ function StressMeterPage() {
     <div className="max-w-7xl mx-auto p-6">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-4xl font-bold mb-2">Stress Meter</h1>
-        <p className="text-gray-600">AI-powered workload stress analysis and recommendations</p>
+        <div className="flex justify-between items-start">
+          <div>
+            <h1 className="text-4xl font-bold mb-2">Stress Meter</h1>
+            <p className="text-gray-600">AI-powered workload stress analysis and recommendations</p>
+          </div>
+          <HomeButton />
+        </div>
       </div>
 
       {/* Main Stress Display */}

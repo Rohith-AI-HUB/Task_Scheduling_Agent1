@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Clock, AlertCircle, CheckCircle, XCircle, Calendar, FileText, Home } from 'lucide-react';
+import { Clock, AlertCircle, CheckCircle, XCircle, Calendar, FileText } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import NotificationBell from '../components/NotificationBell';
+import HomeButton from '../components/HomeButton';
 
 export default function ExtensionsPage() {
   const navigate = useNavigate();
@@ -244,13 +245,6 @@ export default function ExtensionsPage() {
       <div className="max-w-7xl mx-auto">
         <div className="flex justify-between items-center mb-6">
           <div className="flex items-center gap-4">
-            <button
-              onClick={() => navigate('/dashboard')}
-              className="p-2 hover:bg-gray-200 rounded-full transition-colors"
-              title="Back to Dashboard"
-            >
-              <Home size={24} className="text-gray-700" />
-            </button>
             <div>
               <h1 className="text-3xl font-bold text-gray-800">Extension Requests</h1>
               <p className="text-gray-600 mt-1">Request deadline extensions with AI-powered analysis</p>
@@ -258,6 +252,7 @@ export default function ExtensionsPage() {
           </div>
           <div className="flex items-center gap-4">
             <NotificationBell />
+            <HomeButton />
             <button
               onClick={() => {
                 setShowForm(!showForm);

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Users, Plus, Trash2, Save, Send, FileText, CheckSquare } from 'lucide-react';
 import axios from 'axios';
+import HomeButton from '../../components/HomeButton';
 
 function BulkTaskCreator() {
   const [students, setStudents] = useState([]);
@@ -163,11 +164,16 @@ function BulkTaskCreator() {
     <div className="max-w-7xl mx-auto p-6">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-4xl font-bold mb-2 flex items-center gap-3">
-          <Send className="text-green-600" size={40} />
-          Bulk Task Creator
-        </h1>
-        <p className="text-gray-600">Create and assign tasks to multiple students at once</p>
+        <div className="flex justify-between items-start">
+          <div>
+            <h1 className="text-4xl font-bold mb-2 flex items-center gap-3">
+              <Send className="text-green-600" size={40} />
+              Bulk Task Creator
+            </h1>
+            <p className="text-gray-600">Create and assign tasks to multiple students at once</p>
+          </div>
+          <HomeButton />
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

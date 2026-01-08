@@ -9,14 +9,21 @@ import axios from 'axios';
 const API_URL = 'http://localhost:8000';
 
 export const authService = {
-  async register(email, password, fullName, role) {
+  async register(email, password, fullName, role, usn) {
     // Register with backend
-    const response = await axios.post(`${API_URL}/auth/register`, {
+    const payload = {
       email,
       password,
       full_name: fullName,
       role
-    });
+    };
+
+    // Only include usn if provided
+    if (usn) {
+      payload.usn = usn;
+    }
+
+    const response = await axios.post(`${API_URL}/auth/register`, payload);
 
     // Sign in with Firebase
     await signInWithEmailAndPassword(auth, email, password);

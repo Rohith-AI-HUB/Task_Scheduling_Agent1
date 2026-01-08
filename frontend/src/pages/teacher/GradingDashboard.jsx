@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Brain, TrendingUp, Award, AlertCircle, CheckCircle, Clock, Target, Lightbulb, Heart } from 'lucide-react';
 import axios from 'axios';
+import HomeButton from '../../components/HomeButton';
 
 function GradingDashboard() {
   const [pendingGrades, setPendingGrades] = useState([]);
@@ -124,11 +125,16 @@ function GradingDashboard() {
     <div className="max-w-7xl mx-auto p-6">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-4xl font-bold mb-2 flex items-center gap-3">
-          <Brain className="text-purple-600" size={40} />
-          AI Grading Assistant
-        </h1>
-        <p className="text-gray-600">Intelligent grading powered by AI analysis</p>
+        <div className="flex justify-between items-start">
+          <div>
+            <h1 className="text-4xl font-bold mb-2 flex items-center gap-3">
+              <Brain className="text-purple-600" size={40} />
+              AI Grading Assistant
+            </h1>
+            <p className="text-gray-600">Intelligent grading powered by AI analysis</p>
+          </div>
+          <HomeButton />
+        </div>
       </div>
 
       {/* Stats Cards */}

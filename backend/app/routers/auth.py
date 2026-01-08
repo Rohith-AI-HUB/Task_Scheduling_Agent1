@@ -36,11 +36,20 @@ async def register(user: UserCreate):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+    # Normalize USN (convert to lowercase and remove any trailing -t or -s)
+    usn_normalized = None
+    if user.usn:
+        usn_normalized = user.usn.lower().rstrip('-t').rstrip('-s')
+        # Check if USN already exists
+        if users_collection.find_one({"usn": usn_normalized}):
+            raise HTTPException(status_code=400, detail="USN already registered")
+
     # Save to MongoDB
     user_doc = {
         "email": user.email,
         "full_name": user.full_name,
         "role": user.role,
+        "usn": usn_normalized,
         "firebase_uid": firebase_uid,
         "created_at": datetime.utcnow()
     }

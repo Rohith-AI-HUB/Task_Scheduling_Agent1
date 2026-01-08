@@ -7,6 +7,7 @@ import {
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { studyPlannerService } from '../services/studyPlanner.service';
+import HomeButton from '../components/HomeButton';
 
 function StudyPlannerPage() {
   const navigate = useNavigate();
@@ -217,13 +218,16 @@ function StudyPlannerPage() {
             <Calendar className="text-emerald-500" />
             Smart Study Planner
           </h1>
-          <button
-            onClick={() => setShowPreferencesModal(true)}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-            title="Settings"
-          >
-            <Settings size={24} />
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowPreferencesModal(true)}
+              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              title="Settings"
+            >
+              <Settings size={24} />
+            </button>
+            <HomeButton />
+          </div>
         </div>
         <p className="text-gray-600">AI-powered daily schedule optimized for your productivity</p>
       </div>

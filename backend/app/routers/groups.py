@@ -15,25 +15,50 @@ class GroupCreate(BaseModel):
 class TaskAssignment(BaseModel):
     task_id: str
 
+def resolve_user_identifier(identifier: str) -> str:
+    """
+    Resolve user identifier (USN or ObjectID) to user ObjectID string.
+    Accepts: USN (e.g., 1ms25scs032, 1ms25scs032-t) or MongoDB ObjectID
+    Returns: User's ObjectID as string
+    """
+    # Normalize USN input (lowercase, remove trailing -t or -s)
+    normalized_id = identifier.lower().rstrip('-t').rstrip('-s')
+
+    # Try to find by USN first
+    user = users_collection.find_one({"usn": normalized_id})
+    if user:
+        return str(user["_id"])
+
+    # Try to find by ObjectID
+    if ObjectId.is_valid(identifier):
+        user = users_collection.find_one({"_id": ObjectId(identifier)})
+        if user:
+            return str(user["_id"])
+
+    raise HTTPException(status_code=404, detail=f"User not found with identifier: {identifier}")
+
 @router.post("/")
 async def create_group(group_data: GroupCreate, user_id: str = Depends(get_current_user_id)):
-    """Create a new group with members"""
-    # Verify all member IDs exist
-    for member_id in group_data.member_ids:
-        user = users_collection.find_one({"_id": ObjectId(member_id)})
-        if not user:
-            raise HTTPException(status_code=404, detail=f"User {member_id} not found")
+    """Create a new group with members (accepts USN or ObjectID)"""
+    # Resolve all member identifiers (USN or ObjectID) to ObjectIDs
+    resolved_member_ids = []
+    for member_identifier in group_data.member_ids:
+        try:
+            resolved_id = resolve_user_identifier(member_identifier)
+            resolved_member_ids.append(resolved_id)
+        except HTTPException as e:
+            raise HTTPException(status_code=404, detail=f"Member '{member_identifier}': {e.detail}")
 
     group_doc = {
         "name": group_data.name,
         "coordinator_id": user_id,
-        "members": group_data.member_ids,
+        "members": resolved_member_ids,
         "created_at": datetime.utcnow()
     }
     result = groups_collection.insert_one(group_doc)
 
     # Create notifications for all members
-    for member_id in group_data.member_ids:
+    for member_id in resolved_member_ids:
         notifications_collection.insert_one({
             "user_id": member_id,
             "type": "group_added",
@@ -60,7 +85,8 @@ async def get_groups(user_id: str = Depends(get_current_user_id)):
                 members.append({
                     "id": str(user["_id"]),
                     "full_name": user.get("full_name", "Unknown"),
-                    "email": user.get("email", "")
+                    "email": user.get("email", ""),
+                    "usn": user.get("usn", "")
                 })
         g["member_details"] = members
     return groups
@@ -86,7 +112,8 @@ async def get_group(group_id: str, user_id: str = Depends(get_current_user_id)):
             members.append({
                 "id": str(user["_id"]),
                 "full_name": user.get("full_name", "Unknown"),
-                "email": user.get("email", "")
+                "email": user.get("email", ""),
+                "usn": user.get("usn", "")
             })
     group["member_details"] = members
 

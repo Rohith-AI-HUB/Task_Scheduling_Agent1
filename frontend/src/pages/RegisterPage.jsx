@@ -4,7 +4,7 @@ import { authService } from '../services/auth.service';
 
 export default function RegisterPage() {
   const [formData, setFormData] = useState({
-    email: '', password: '', fullName: '', role: 'student'
+    email: '', password: '', fullName: '', role: 'student', usn: ''
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -20,7 +20,8 @@ export default function RegisterPage() {
         formData.email,
         formData.password,
         formData.fullName,
-        formData.role
+        formData.role,
+        formData.usn || undefined
       );
 
       // Get user data and do role-based routing
@@ -108,6 +109,22 @@ export default function RegisterPage() {
               <option value="student">Student</option>
               <option value="teacher">Teacher</option>
             </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              USN (Optional)
+            </label>
+            <input
+              type="text"
+              placeholder="e.g., 1ms25scs032 or 1ms25scs032-t"
+              value={formData.usn}
+              onChange={(e) => setFormData({...formData, usn: e.target.value})}
+              className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+            />
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+              University Serial Number for group coordination
+            </p>
           </div>
 
           <button
