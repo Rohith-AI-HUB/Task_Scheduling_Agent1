@@ -9,7 +9,7 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const { user } = useAuthStore();
+  const { login: setAuthState } = useAuthStore();
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -17,13 +17,15 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      await authService.login(email, password);
+      // Login and get user data
+      const userData = await authService.login(email, password);
+      const token = localStorage.getItem('token');
 
-      // Get user data from store (it's updated by authService.login)
-      const currentUser = JSON.parse(localStorage.getItem('user'));
+      // Update Zustand store
+      setAuthState(userData, token);
 
       // Role-based routing
-      if (currentUser?.role === 'teacher') {
+      if (userData?.role === 'teacher') {
         navigate('/teacher/class'); // Navigate to teacher dashboard
       } else {
         navigate('/dashboard'); // Navigate to student dashboard

@@ -26,20 +26,37 @@ export const authService = {
     const response = await axios.post(`${API_URL}/auth/register`, payload);
 
     // Sign in with Firebase
-    await signInWithEmailAndPassword(auth, email, password);
+    const userCredential = await signInWithEmailAndPassword(auth, email, password);
+    const token = await userCredential.user.getIdToken();
+    localStorage.setItem('token', token);
+
+    // Store user data in localStorage
+    localStorage.setItem('user', JSON.stringify(response.data));
+
     return response.data;
   },
 
   async login(email, password) {
+    // Sign in with Firebase
     const userCredential = await signInWithEmailAndPassword(auth, email, password);
     const token = await userCredential.user.getIdToken();
     localStorage.setItem('token', token);
-    return userCredential.user;
+
+    // Fetch user data from backend
+    const response = await axios.get(`${API_URL}/auth/me`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+
+    // Store user data in localStorage
+    localStorage.setItem('user', JSON.stringify(response.data));
+
+    return response.data;
   },
 
   async logout() {
     await signOut(auth);
     localStorage.removeItem('token');
+    localStorage.removeItem('user');
   },
 
   async getCurrentUser() {

@@ -37,9 +37,26 @@ export default function DashboardPage() {
 
   const handleLogout = async () => {
     if (confirm('Are you sure you want to logout?')) {
-      await authService.logout();
-      logout();
-      navigate('/login');
+      try {
+        // Call Firebase logout
+        await authService.logout();
+
+        // Clear Zustand store
+        logout();
+
+        // Navigate to login
+        navigate('/login', { replace: true });
+
+        // Force reload to clear any cached state
+        window.location.reload();
+      } catch (error) {
+        console.error('Logout error:', error);
+        // Force logout even if there's an error
+        logout();
+        localStorage.clear();
+        navigate('/login', { replace: true });
+        window.location.reload();
+      }
     }
   };
 

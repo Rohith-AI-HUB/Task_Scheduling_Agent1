@@ -1,12 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { Users, TrendingUp, TrendingDown, AlertTriangle, Award, CheckCircle, XCircle, Activity } from 'lucide-react';
+import { Users, TrendingUp, TrendingDown, AlertTriangle, Award, CheckCircle, XCircle, Activity, LogOut } from 'lucide-react';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 import HomeButton from '../../components/HomeButton';
+import { useAuthStore } from '../../store/useStore';
+import { authService } from '../../services/auth.service';
 
 function ClassDashboard() {
   const [analytics, setAnalytics] = useState(null);
   const [loading, setLoading] = useState(true);
   const [selectedView, setSelectedView] = useState('overview'); // 'overview', 'at-risk', 'top-performers', 'all-students'
+  const navigate = useNavigate();
+  const { logout, user } = useAuthStore();
 
   useEffect(() => {
     fetchAnalytics();
@@ -47,6 +52,31 @@ function ClassDashboard() {
     return 'text-red-600';
   };
 
+  const handleLogout = async () => {
+    if (confirm('Are you sure you want to logout?')) {
+      try {
+        // Call Firebase logout
+        await authService.logout();
+
+        // Clear Zustand store
+        logout();
+
+        // Navigate to login
+        navigate('/login', { replace: true });
+
+        // Force reload to clear any cached state
+        window.location.reload();
+      } catch (error) {
+        console.error('Logout error:', error);
+        // Force logout even if there's an error
+        logout();
+        localStorage.clear();
+        navigate('/login', { replace: true });
+        window.location.reload();
+      }
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -58,13 +88,130 @@ function ClassDashboard() {
     );
   }
 
-  if (!analytics) {
+  if (!analytics || analytics.total_tasks === 0) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <Users className="mx-auto mb-4 text-gray-400" size={64} />
-          <h3 className="text-xl font-semibold mb-2">No Data Available</h3>
-          <p className="text-gray-600">Create some tasks and assign them to students to see analytics.</p>
+      <div className="min-h-screen bg-gray-50 p-6">
+        <div className="max-w-4xl mx-auto">
+          {/* Header */}
+          <div className="flex justify-between items-start mb-8">
+            <div>
+              <h1 className="text-4xl font-bold mb-2 flex items-center gap-3">
+                <Users className="text-blue-600" size={40} />
+                Class Performance Dashboard
+              </h1>
+              <p className="text-gray-600">Welcome back, {user?.full_name || 'Teacher'}! 👋</p>
+            </div>
+            <div className="flex items-center gap-4">
+              <HomeButton />
+              <button
+                onClick={handleLogout}
+                className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors shadow-md hover:shadow-lg"
+                title="Logout"
+              >
+                <LogOut size={20} />
+                <span className="font-medium">Logout</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Welcome Card */}
+          <div className="bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl p-8 text-white shadow-2xl mb-8">
+            <h2 className="text-3xl font-bold mb-4">👋 Welcome, Teacher!</h2>
+            <p className="text-lg mb-6 opacity-90">
+              Your class dashboard is ready. Get started by creating tasks and assigning them to students.
+            </p>
+            <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4">
+              <p className="text-sm font-semibold mb-2">Quick Tip:</p>
+              <p className="text-sm opacity-90">
+                Use the Bulk Task Creator to assign tasks to multiple students at once!
+              </p>
+            </div>
+          </div>
+
+          {/* Getting Started Steps */}
+          <div className="bg-white rounded-xl shadow-lg p-8 mb-8">
+            <h3 className="text-2xl font-bold mb-6 flex items-center gap-2">
+              <CheckCircle className="text-green-600" size={32} />
+              Getting Started
+            </h3>
+
+            <div className="space-y-6">
+              {/* Step 1 */}
+              <div className="flex gap-4">
+                <div className="flex-shrink-0 w-10 h-10 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center font-bold text-lg">
+                  1
+                </div>
+                <div>
+                  <h4 className="text-lg font-semibold mb-2">Create Tasks</h4>
+                  <p className="text-gray-600 mb-3">
+                    Go to the Tasks page or use the Bulk Task Creator to create assignments for your students.
+                  </p>
+                  <button
+                    onClick={() => window.location.href = '/teacher/bulk-tasks'}
+                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors"
+                  >
+                    Go to Bulk Task Creator →
+                  </button>
+                </div>
+              </div>
+
+              {/* Step 2 */}
+              <div className="flex gap-4">
+                <div className="flex-shrink-0 w-10 h-10 bg-purple-100 text-purple-600 rounded-full flex items-center justify-center font-bold text-lg">
+                  2
+                </div>
+                <div>
+                  <h4 className="text-lg font-semibold mb-2">Assign to Students</h4>
+                  <p className="text-gray-600">
+                    Make sure students are registered and assign tasks to them. You can assign tasks individually or to groups.
+                  </p>
+                </div>
+              </div>
+
+              {/* Step 3 */}
+              <div className="flex gap-4">
+                <div className="flex-shrink-0 w-10 h-10 bg-green-100 text-green-600 rounded-full flex items-center justify-center font-bold text-lg">
+                  3
+                </div>
+                <div>
+                  <h4 className="text-lg font-semibold mb-2">Monitor Progress</h4>
+                  <p className="text-gray-600">
+                    Come back to this dashboard to see class analytics, at-risk students, and top performers.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Teacher Tools Quick Access */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div
+              onClick={() => window.location.href = '/teacher/bulk-tasks'}
+              className="bg-gradient-to-br from-green-500 to-emerald-600 p-6 rounded-xl shadow-lg cursor-pointer hover:scale-105 transition-transform"
+            >
+              <CheckCircle className="text-white mb-4" size={48} />
+              <h3 className="text-white text-xl font-bold mb-2">Bulk Task Creator</h3>
+              <p className="text-white text-sm opacity-90">Create and assign tasks to multiple students</p>
+            </div>
+
+            <div
+              onClick={() => window.location.href = '/teacher/grading'}
+              className="bg-gradient-to-br from-purple-500 to-blue-600 p-6 rounded-xl shadow-lg cursor-pointer hover:scale-105 transition-transform"
+            >
+              <Award className="text-white mb-4" size={48} />
+              <h3 className="text-white text-xl font-bold mb-2">AI Grading</h3>
+              <p className="text-white text-sm opacity-90">Grade student submissions with AI assistance</p>
+            </div>
+
+            <div
+              onClick={() => window.location.href = '/groups'}
+              className="bg-gradient-to-br from-orange-500 to-red-600 p-6 rounded-xl shadow-lg cursor-pointer hover:scale-105 transition-transform"
+            >
+              <Users className="text-white mb-4" size={48} />
+              <h3 className="text-white text-xl font-bold mb-2">Manage Groups</h3>
+              <p className="text-white text-sm opacity-90">Create student groups for collaboration</p>
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -82,9 +229,19 @@ function ClassDashboard() {
               <Users className="text-blue-600" size={40} />
               Class Performance Dashboard
             </h1>
-            <p className="text-gray-600">Comprehensive overview of your class performance</p>
+            <p className="text-gray-600">Welcome back, {user?.full_name || 'Teacher'}! 👋</p>
           </div>
-          <HomeButton />
+          <div className="flex items-center gap-4">
+            <HomeButton />
+            <button
+              onClick={handleLogout}
+              className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors shadow-md hover:shadow-lg"
+              title="Logout"
+            >
+              <LogOut size={20} />
+              <span className="font-medium">Logout</span>
+            </button>
+          </div>
         </div>
       </div>
 

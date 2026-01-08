@@ -1,9 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { Users, Plus, Trash2, Save, Send, FileText, CheckSquare } from 'lucide-react';
+import { Users, Plus, Trash2, Save, Send, FileText, CheckSquare, LogOut } from 'lucide-react';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 import HomeButton from '../../components/HomeButton';
+import { useAuthStore } from '../../store/useStore';
+import { authService } from '../../services/auth.service';
 
 function BulkTaskCreator() {
+  const navigate = useNavigate();
+  const { logout, user } = useAuthStore();
   const [students, setStudents] = useState([]);
   const [templates, setTemplates] = useState([]);
   const [selectedStudents, setSelectedStudents] = useState([]);
@@ -160,6 +165,31 @@ function BulkTaskCreator() {
     }
   };
 
+  const handleLogout = async () => {
+    if (confirm('Are you sure you want to logout?')) {
+      try {
+        // Call Firebase logout
+        await authService.logout();
+
+        // Clear Zustand store
+        logout();
+
+        // Navigate to login
+        navigate('/login', { replace: true });
+
+        // Force reload to clear any cached state
+        window.location.reload();
+      } catch (error) {
+        console.error('Logout error:', error);
+        // Force logout even if there's an error
+        logout();
+        localStorage.clear();
+        navigate('/login', { replace: true });
+        window.location.reload();
+      }
+    }
+  };
+
   return (
     <div className="max-w-7xl mx-auto p-6">
       {/* Header */}
@@ -170,9 +200,19 @@ function BulkTaskCreator() {
               <Send className="text-green-600" size={40} />
               Bulk Task Creator
             </h1>
-            <p className="text-gray-600">Create and assign tasks to multiple students at once</p>
+            <p className="text-gray-600">Welcome back, {user?.full_name || 'Teacher'}! 👋</p>
           </div>
-          <HomeButton />
+          <div className="flex items-center gap-4">
+            <HomeButton />
+            <button
+              onClick={handleLogout}
+              className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors shadow-md hover:shadow-lg"
+              title="Logout"
+            >
+              <LogOut size={20} />
+              <span className="font-medium">Logout</span>
+            </button>
+          </div>
         </div>
       </div>
 

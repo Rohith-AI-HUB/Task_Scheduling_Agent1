@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { authService } from '../services/auth.service';
+import { useAuthStore } from '../store/useStore';
 
 export default function RegisterPage() {
   const [formData, setFormData] = useState({
@@ -9,6 +10,7 @@ export default function RegisterPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const { login: setAuthState } = useAuthStore();
 
   const handleRegister = async (e) => {
     e.preventDefault();
@@ -16,18 +18,21 @@ export default function RegisterPage() {
     setLoading(true);
 
     try {
-      await authService.register(
+      // Register and get user data
+      const userData = await authService.register(
         formData.email,
         formData.password,
         formData.fullName,
         formData.role,
         formData.usn || undefined
       );
+      const token = localStorage.getItem('token');
 
-      // Get user data and do role-based routing
-      const currentUser = JSON.parse(localStorage.getItem('user'));
+      // Update Zustand store
+      setAuthState(userData, token);
 
-      if (currentUser?.role === 'teacher') {
+      // Role-based routing
+      if (userData?.role === 'teacher') {
         navigate('/teacher/class');
       } else {
         navigate('/dashboard');
