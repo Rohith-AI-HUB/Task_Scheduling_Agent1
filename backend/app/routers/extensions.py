@@ -3,6 +3,7 @@ from app.db_config import extension_requests_collection, tasks_collection, notif
 from app.services.ai_extension_service import analyze_extension_request
 from app.routers.tasks import get_current_user_id
 from app.models.schemas import ExtensionRequestCreate
+from app.websocket.broadcaster import broadcaster
 from bson import ObjectId
 from datetime import datetime
 
@@ -61,14 +62,24 @@ async def create_extension_request(
         result = extension_requests_collection.insert_one(ext_doc)
 
         # Create notification for teacher (task creator)
-        notifications_collection.insert_one({
-            "user_id": task['created_by'],
+        teacher_id = task['created_by']
+        notification_data = {
+            "user_id": teacher_id,
             "type": "extension_request",
             "message": f"Extension request for '{task['title']}' - AI recommends: {ai_analysis.get('recommendation')}",
             "reference_id": str(result.inserted_id),
             "read": False,
             "created_at": datetime.utcnow()
-        })
+        }
+        notif_result = notifications_collection.insert_one(notification_data)
+
+        # Broadcast notification to teacher
+        notification_data["id"] = str(notif_result.inserted_id)
+        await broadcaster.to_user(
+            teacher_id,
+            "notification",
+            notification_data
+        )
 
         # Prepare response
         ext_doc["id"] = str(result.inserted_id)
@@ -218,14 +229,24 @@ async def review_extension(
             )
 
         # Create notification for student
-        notifications_collection.insert_one({
-            "user_id": ext_req['user_id'],
+        student_id = ext_req['user_id']
+        notification_data = {
+            "user_id": student_id,
             "type": "extension_review",
             "message": f"Your extension request has been {status}. {comment}",
             "reference_id": ext_id,
             "read": False,
             "created_at": datetime.utcnow()
-        })
+        }
+        notif_result = notifications_collection.insert_one(notification_data)
+
+        # Broadcast notification to student
+        notification_data["id"] = str(notif_result.inserted_id)
+        await broadcaster.to_user(
+            student_id,
+            "notification",
+            notification_data
+        )
 
         return {"message": f"Request {status} successfully", "status": status}
 

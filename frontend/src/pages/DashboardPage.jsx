@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom';
-import { CheckSquare, Calendar, BarChart3, Users, Brain, Zap, BookOpen, GraduationCap, Award, Activity, Send, Sparkles, Link as LinkIcon, LogOut } from 'lucide-react';
+import { CheckSquare, Calendar, BarChart3, Users, Brain, Zap, BookOpen, GraduationCap, Award, Activity, Send, Sparkles, Link as LinkIcon, LogOut, MessageCircle } from 'lucide-react';
 import NotificationBell from '../components/NotificationBell';
+import ActivityFeed from '../components/ActivityFeed';
 import { useAuthStore } from '../store/useStore';
 import { authService } from '../services/auth.service';
 
@@ -13,6 +14,7 @@ export default function DashboardPage() {
     { title: 'Extensions', icon: Calendar, path: '/extensions', color: 'bg-purple-500' },
     { title: 'Analytics', icon: BarChart3, path: '/analytics', color: 'bg-green-500' },
     { title: 'Groups', icon: Users, path: '/groups', color: 'bg-orange-500' },
+    { title: 'Chat', icon: MessageCircle, path: '/chat', color: 'bg-cyan-500' },
   ];
 
   const weekOneFeatures = [
@@ -82,159 +84,167 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Week 1 NEW Features Banner */}
-      <div className="mb-8 bg-gradient-to-r from-purple-500 to-blue-500 rounded-xl shadow-lg p-6 text-white">
-        <h2 className="text-2xl font-bold mb-2">Week 1 Features - AI-Powered Student Tools!</h2>
-        <p className="opacity-90">New features to help you manage stress, focus better, and organize your learning</p>
-      </div>
+      <div className="flex flex-col lg:flex-row gap-6">
+        <div className="flex-1 min-w-0">
+          {/* Week 1 NEW Features Banner */}
+          <div className="mb-8 bg-gradient-to-r from-purple-500 to-blue-500 rounded-xl shadow-lg p-6 text-white">
+            <h2 className="text-2xl font-bold mb-2">Week 1 Features - AI-Powered Student Tools!</h2>
+            <p className="opacity-90">New features to help you manage stress, focus better, and organize your learning</p>
+          </div>
 
-      {/* Week 4 NEW Calendar Integration Banner */}
-      <div className="mb-8 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 rounded-xl shadow-lg p-6 text-white">
-        <h2 className="text-2xl font-bold mb-2 flex items-center gap-2">
-          <Calendar size={32} />
-          Week 4 - Google Calendar Integration!
-        </h2>
-        <p className="opacity-90">Bidirectional sync with Google Calendar for tasks and AI-generated study schedules</p>
-      </div>
+          {/* Week 4 NEW Calendar Integration Banner */}
+          <div className="mb-8 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 rounded-xl shadow-lg p-6 text-white">
+            <h2 className="text-2xl font-bold mb-2 flex items-center gap-2">
+              <Calendar size={32} />
+              Week 4 - Google Calendar Integration!
+            </h2>
+            <p className="opacity-90">Bidirectional sync with Google Calendar for tasks and AI-generated study schedules</p>
+          </div>
 
-      {/* Week 4 Calendar Integration */}
-      <div className="mb-8">
-        <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
-          <LinkIcon className="text-blue-600" />
-          Calendar Sync (Week 4)
-        </h3>
-        <div className="grid grid-cols-1 md:grid-cols-1 gap-6">
-          {weekFourFeatures.map((item) => (
-            <div
-              key={item.path}
-              onClick={() => navigate(item.path)}
-              className={`${item.color} p-6 rounded-lg shadow-lg cursor-pointer hover:scale-[1.02] transition-transform relative overflow-hidden`}
-            >
-              <div className="absolute top-2 right-2 bg-blue-400 text-blue-900 text-xs font-bold px-2 py-1 rounded animate-pulse">
-                {item.badge}
-              </div>
-              <item.icon className="text-white mb-4" size={48} />
-              <h2 className="text-white text-xl font-bold">{item.title}</h2>
-              <p className="text-white text-sm mt-2 opacity-90">
-                {item.description}
-              </p>
+          {/* Week 4 Calendar Integration */}
+          <div className="mb-8">
+            <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
+              <LinkIcon className="text-blue-600" />
+              Calendar Sync (Week 4)
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-1 gap-6">
+              {weekFourFeatures.map((item) => (
+                <div
+                  key={item.path}
+                  onClick={() => navigate(item.path)}
+                  className={`${item.color} p-6 rounded-lg shadow-lg cursor-pointer hover:scale-[1.02] transition-transform relative overflow-hidden`}
+                >
+                  <div className="absolute top-2 right-2 bg-blue-400 text-blue-900 text-xs font-bold px-2 py-1 rounded animate-pulse">
+                    {item.badge}
+                  </div>
+                  <item.icon className="text-white mb-4" size={48} />
+                  <h2 className="text-white text-xl font-bold">{item.title}</h2>
+                  <p className="text-white text-sm mt-2 opacity-90">
+                    {item.description}
+                  </p>
+                </div>
+              ))}
             </div>
-          ))}
+          </div>
+
+          {/* Week 3 NEW Smart Study Planner Banner */}
+          <div className="mb-8 bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 rounded-xl shadow-lg p-6 text-white">
+            <h2 className="text-2xl font-bold mb-2 flex items-center gap-2">
+              <Sparkles size={32} />
+              Week 3 - Smart Study Planner!
+            </h2>
+            <p className="opacity-90">AI-powered daily scheduling with deadline-first, complexity-balanced, stress-aware planning</p>
+          </div>
+
+          {/* Week 3 Smart Study Planner */}
+          <div className="mb-8">
+            <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
+              <Calendar className="text-emerald-600" />
+              Smart Scheduling (Week 3)
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-1 gap-6">
+              {weekThreeFeatures.map((item) => (
+                <div
+                  key={item.path}
+                  onClick={() => navigate(item.path)}
+                  className={`${item.color} p-6 rounded-lg shadow-lg cursor-pointer hover:scale-[1.02] transition-transform relative overflow-hidden`}
+                >
+                  <div className="absolute top-2 right-2 bg-emerald-400 text-emerald-900 text-xs font-bold px-2 py-1 rounded animate-pulse">
+                    {item.badge}
+                  </div>
+                  <item.icon className="text-white mb-4" size={48} />
+                  <h2 className="text-white text-xl font-bold">{item.title}</h2>
+                  <p className="text-white text-sm mt-2 opacity-90">
+                    {item.description}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Week 2 NEW Teacher Features Banner */}
+          <div className="mb-8 bg-gradient-to-r from-amber-500 via-orange-500 to-red-500 rounded-xl shadow-lg p-6 text-white">
+            <h2 className="text-2xl font-bold mb-2 flex items-center gap-2">
+              <GraduationCap size={32} />
+              Week 2 - Teacher Efficiency Tools!
+            </h2>
+            <p className="opacity-90">AI-powered tools for grading, class analytics, and bulk task management</p>
+          </div>
+
+          {/* Week 2 Teacher Features Grid */}
+          <div className="mb-8">
+            <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
+              <Award className="text-purple-600" />
+              Teacher Tools (Week 2)
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {weekTwoTeacherFeatures.map((item) => (
+                <div
+                  key={item.path}
+                  onClick={() => navigate(item.path)}
+                  className={`${item.color} p-6 rounded-lg shadow-lg cursor-pointer hover:scale-105 transition-transform relative overflow-hidden`}
+                >
+                  <div className="absolute top-2 right-2 bg-amber-400 text-amber-900 text-xs font-bold px-2 py-1 rounded animate-pulse">
+                    {item.badge}
+                  </div>
+                  <item.icon className="text-white mb-4" size={48} />
+                  <h2 className="text-white text-xl font-bold">{item.title}</h2>
+                  <p className="text-white text-sm mt-2 opacity-90">
+                    {item.description}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Week 1 Features Grid */}
+          <div className="mb-8">
+            <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
+              <Zap className="text-purple-500" />
+              Student AI Features (Week 1)
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {weekOneFeatures.map((item) => (
+                <div
+                  key={item.path}
+                  onClick={() => navigate(item.path)}
+                  className={`${item.color} p-6 rounded-lg shadow-lg cursor-pointer hover:scale-105 transition-transform relative overflow-hidden`}
+                >
+                  <div className="absolute top-2 right-2 bg-yellow-400 text-yellow-900 text-xs font-bold px-2 py-1 rounded">
+                    {item.badge}
+                  </div>
+                  <item.icon className="text-white mb-4" size={48} />
+                  <h2 className="text-white text-xl font-bold">{item.title}</h2>
+                  <p className="text-white text-sm mt-2 opacity-90">
+                    {item.title === 'Stress Meter' && 'AI analyzes your workload stress in real-time'}
+                    {item.title === 'Focus Mode' && 'Pomodoro timer with productivity tracking'}
+                    {item.title === 'Resource Library' && 'AI-powered note organization & flashcards'}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Core Features */}
+          <div>
+            <h3 className="text-xl font-bold mb-4">Core Features</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {menuItems.map((item) => (
+                <div
+                  key={item.path}
+                  onClick={() => navigate(item.path)}
+                  className={`${item.color} p-6 rounded-lg shadow-lg cursor-pointer hover:opacity-90 transition-opacity`}
+                >
+                  <item.icon className="text-white mb-4" size={48} />
+                  <h2 className="text-white text-xl font-bold">{item.title}</h2>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
-      </div>
 
-      {/* Week 3 NEW Smart Study Planner Banner */}
-      <div className="mb-8 bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 rounded-xl shadow-lg p-6 text-white">
-        <h2 className="text-2xl font-bold mb-2 flex items-center gap-2">
-          <Sparkles size={32} />
-          Week 3 - Smart Study Planner!
-        </h2>
-        <p className="opacity-90">AI-powered daily scheduling with deadline-first, complexity-balanced, stress-aware planning</p>
-      </div>
-
-      {/* Week 3 Smart Study Planner */}
-      <div className="mb-8">
-        <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
-          <Calendar className="text-emerald-600" />
-          Smart Scheduling (Week 3)
-        </h3>
-        <div className="grid grid-cols-1 md:grid-cols-1 gap-6">
-          {weekThreeFeatures.map((item) => (
-            <div
-              key={item.path}
-              onClick={() => navigate(item.path)}
-              className={`${item.color} p-6 rounded-lg shadow-lg cursor-pointer hover:scale-[1.02] transition-transform relative overflow-hidden`}
-            >
-              <div className="absolute top-2 right-2 bg-emerald-400 text-emerald-900 text-xs font-bold px-2 py-1 rounded animate-pulse">
-                {item.badge}
-              </div>
-              <item.icon className="text-white mb-4" size={48} />
-              <h2 className="text-white text-xl font-bold">{item.title}</h2>
-              <p className="text-white text-sm mt-2 opacity-90">
-                {item.description}
-              </p>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Week 2 NEW Teacher Features Banner */}
-      <div className="mb-8 bg-gradient-to-r from-amber-500 via-orange-500 to-red-500 rounded-xl shadow-lg p-6 text-white">
-        <h2 className="text-2xl font-bold mb-2 flex items-center gap-2">
-          <GraduationCap size={32} />
-          Week 2 - Teacher Efficiency Tools!
-        </h2>
-        <p className="opacity-90">AI-powered tools for grading, class analytics, and bulk task management</p>
-      </div>
-
-      {/* Week 2 Teacher Features Grid */}
-      <div className="mb-8">
-        <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
-          <Award className="text-purple-600" />
-          Teacher Tools (Week 2)
-        </h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {weekTwoTeacherFeatures.map((item) => (
-            <div
-              key={item.path}
-              onClick={() => navigate(item.path)}
-              className={`${item.color} p-6 rounded-lg shadow-lg cursor-pointer hover:scale-105 transition-transform relative overflow-hidden`}
-            >
-              <div className="absolute top-2 right-2 bg-amber-400 text-amber-900 text-xs font-bold px-2 py-1 rounded animate-pulse">
-                {item.badge}
-              </div>
-              <item.icon className="text-white mb-4" size={48} />
-              <h2 className="text-white text-xl font-bold">{item.title}</h2>
-              <p className="text-white text-sm mt-2 opacity-90">
-                {item.description}
-              </p>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Week 1 Features Grid */}
-      <div className="mb-8">
-        <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
-          <Zap className="text-purple-500" />
-          Student AI Features (Week 1)
-        </h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {weekOneFeatures.map((item) => (
-            <div
-              key={item.path}
-              onClick={() => navigate(item.path)}
-              className={`${item.color} p-6 rounded-lg shadow-lg cursor-pointer hover:scale-105 transition-transform relative overflow-hidden`}
-            >
-              <div className="absolute top-2 right-2 bg-yellow-400 text-yellow-900 text-xs font-bold px-2 py-1 rounded">
-                {item.badge}
-              </div>
-              <item.icon className="text-white mb-4" size={48} />
-              <h2 className="text-white text-xl font-bold">{item.title}</h2>
-              <p className="text-white text-sm mt-2 opacity-90">
-                {item.title === 'Stress Meter' && 'AI analyzes your workload stress in real-time'}
-                {item.title === 'Focus Mode' && 'Pomodoro timer with productivity tracking'}
-                {item.title === 'Resource Library' && 'AI-powered note organization & flashcards'}
-              </p>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Core Features */}
-      <div>
-        <h3 className="text-xl font-bold mb-4">Core Features</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {menuItems.map((item) => (
-            <div
-              key={item.path}
-              onClick={() => navigate(item.path)}
-              className={`${item.color} p-6 rounded-lg shadow-lg cursor-pointer hover:opacity-90 transition-opacity`}
-            >
-              <item.icon className="text-white mb-4" size={48} />
-              <h2 className="text-white text-xl font-bold">{item.title}</h2>
-            </div>
-          ))}
+        <div className="lg:w-80 flex-shrink-0">
+          <ActivityFeed />
         </div>
       </div>
     </div>

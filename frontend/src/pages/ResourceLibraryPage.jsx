@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Upload, FileText, Link as LinkIcon, Search, Star, Trash2, Eye, Sparkles } from 'lucide-react';
+import { Upload, FileText, Link as LinkIcon, Search, Star, Trash2, Eye, Sparkles, GraduationCap, X } from 'lucide-react';
 import axios from 'axios';
 import HomeButton from '../components/HomeButton';
+import FlashcardViewer from '../components/FlashcardViewer';
 
 function ResourceLibraryPage() {
   const [resources, setResources] = useState([]);
@@ -11,6 +12,10 @@ function ResourceLibraryPage() {
   const [showLinkModal, setShowLinkModal] = useState(false);
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [loading, setLoading] = useState(true);
+
+  // Flashcard state
+  const [activeFlashcards, setActiveFlashcards] = useState(null);
+  const [viewingTitle, setViewingTitle] = useState('');
 
   // Note form
   const [noteTitle, setNoteTitle] = useState('');
@@ -183,6 +188,13 @@ function ResourceLibraryPage() {
     }
   };
 
+  const handleStudy = (resource) => {
+    if (resource.flashcards && resource.flashcards.length > 0) {
+      setActiveFlashcards(resource.flashcards);
+      setViewingTitle(resource.title);
+    }
+  };
+
   return (
     <div className="max-w-7xl mx-auto p-6">
       {/* Header */}
@@ -290,6 +302,7 @@ function ResourceLibraryPage() {
               onToggleFavorite={toggleFavorite}
               onDelete={deleteResource}
               onGenerateFlashcards={generateFlashcards}
+              onStudy={handleStudy}
             />
           ))}
         </div>
@@ -464,11 +477,20 @@ function ResourceLibraryPage() {
           </div>
         </div>
       )}
+
+      {/* Flashcard Viewer Modal */}
+      {activeFlashcards && (
+        <FlashcardViewer 
+          flashcards={activeFlashcards} 
+          title={viewingTitle} 
+          onClose={() => setActiveFlashcards(null)} 
+        />
+      )}
     </div>
   );
 }
 
-function ResourceCard({ resource, onToggleFavorite, onDelete, onGenerateFlashcards }) {
+function ResourceCard({ resource, onToggleFavorite, onDelete, onGenerateFlashcards, onStudy }) {
   const [showDetails, setShowDetails] = useState(false);
 
   const getIcon = () => {
@@ -526,14 +548,24 @@ function ResourceCard({ resource, onToggleFavorite, onDelete, onGenerateFlashcar
           {showDetails ? 'Hide' : 'View'}
         </button>
 
-        {resource.type === 'note' && !resource.flashcards?.length && (
+        {resource.flashcards && resource.flashcards.length > 0 ? (
           <button
-            onClick={() => onGenerateFlashcards(resource._id)}
-            className="bg-purple-100 hover:bg-purple-200 text-purple-700 text-sm px-3 py-2 rounded flex items-center gap-1"
+            onClick={() => onStudy(resource)}
+            className="bg-indigo-600 hover:bg-indigo-700 text-white text-sm px-3 py-2 rounded flex items-center gap-1 shadow-sm transition-colors"
           >
-            <Sparkles size={14} />
-            Flashcards
+            <GraduationCap size={14} />
+            Study
           </button>
+        ) : (
+          (resource.type === 'note' || resource.type === 'text' || resource.type === 'pdf') && (
+            <button
+              onClick={() => onGenerateFlashcards(resource._id)}
+              className="bg-purple-100 hover:bg-purple-200 text-purple-700 text-sm px-3 py-2 rounded flex items-center gap-1"
+            >
+              <Sparkles size={14} />
+              Flashcards
+            </button>
+          )
         )}
 
         <button
@@ -561,9 +593,13 @@ function ResourceCard({ resource, onToggleFavorite, onDelete, onGenerateFlashcar
           {resource.flashcards && resource.flashcards.length > 0 && (
             <div className="mb-3">
               <h4 className="font-semibold text-sm mb-2">Flashcards ({resource.flashcards.length}):</h4>
-              <div className="bg-purple-50 p-2 rounded text-xs">
-                Flashcards generated! Use them for studying.
-              </div>
+              <button 
+                onClick={() => onStudy(resource)}
+                className="w-full bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-300 p-2 rounded text-xs border border-purple-100 dark:border-purple-800 hover:bg-purple-100 transition-colors flex items-center justify-center gap-2"
+              >
+                <GraduationCap size={14} />
+                Start Study Session
+              </button>
             </div>
           )}
 

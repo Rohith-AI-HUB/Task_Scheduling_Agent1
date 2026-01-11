@@ -9,8 +9,13 @@ export const useWebSocket = () => {
   const [lastMessage, setLastMessage] = useState(null);
 
   useEffect(() => {
-    const token = localStorage.getItem('authToken');
-    if (!token) return;
+    const token = localStorage.getItem('token');
+    if (!token) {
+      console.warn("WebSocket: No auth token found");
+      return;
+    }
+    
+    console.log("WebSocket: Connecting with token", token.substring(0, 10) + "...");
 
     // Initialize socket connection
     socketRef.current = io(SOCKET_URL, {

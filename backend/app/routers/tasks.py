@@ -94,12 +94,37 @@ async def get_task(task_id: str, user_id: str = Depends(get_current_user_id)):
 
 @router.put("/{task_id}")
 async def update_task(task_id: str, updates: dict, background_tasks: BackgroundTasks, user_id: str = Depends(get_current_user_id)):
+    # Validate ObjectId format
+    if not ObjectId.is_valid(task_id):
+        raise HTTPException(status_code=400, detail="Invalid task ID format")
+
+    # Fetch task first to check authorization
+    task = tasks_collection.find_one({"_id": ObjectId(task_id)})
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found")
+
+    # Authorization: only creator or assignee can update the task
+    created_by = str(task.get("created_by", ""))
+    assigned_to = str(task.get("assigned_to", ""))
+
+    if user_id not in [created_by, assigned_to]:
+        raise HTTPException(
+            status_code=403,
+            detail="You don't have permission to update this task. Only the task creator or assignee can modify it."
+        )
+
+    # Add updated_at timestamp
+    updates["updated_at"] = datetime.utcnow()
+
+    # Perform update
     result = tasks_collection.update_one(
         {"_id": ObjectId(task_id)},
         {"$set": updates}
     )
-    if result.matched_count == 0:
-        raise HTTPException(status_code=404, detail="Task not found")
+
+    if result.modified_count == 0:
+        # Task exists but no changes were made (might be same values)
+        pass
 
     # Sync updated task to Google Calendar if enabled
     if is_sync_enabled(user_id):
@@ -121,11 +146,24 @@ async def update_task(task_id: str, updates: dict, background_tasks: BackgroundT
 
 @router.delete("/{task_id}")
 async def delete_task(task_id: str, background_tasks: BackgroundTasks, user_id: str = Depends(get_current_user_id)):
-    # Get task before deletion to know assignee
+    # Validate ObjectId format
+    if not ObjectId.is_valid(task_id):
+        raise HTTPException(status_code=400, detail="Invalid task ID format")
+
+    # Get task before deletion to verify authorization
     task = tasks_collection.find_one({"_id": ObjectId(task_id)})
     if not task:
         raise HTTPException(status_code=404, detail="Task not found")
-        
+
+    # Authorization: only creator can delete the task
+    created_by = str(task.get("created_by", ""))
+
+    if user_id != created_by:
+        raise HTTPException(
+            status_code=403,
+            detail="You don't have permission to delete this task. Only the task creator can delete it."
+        )
+
     assignee_id = task.get("assigned_to", user_id)
 
     # Get event mapping before deleting task

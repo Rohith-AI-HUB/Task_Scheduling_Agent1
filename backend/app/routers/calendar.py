@@ -419,28 +419,89 @@ async def resolve_sync_conflict(
             if mapping["local_entity_type"] == "task":
                 result = sync_task_to_calendar(mapping["local_entity_id"], user_id)
             else:
-                # For study blocks, we need the date
-                # This is simplified - in production, store date in mapping
-                return {"message": "Study block conflict resolution not yet implemented"}
+                # For study blocks, extract date from stored data
+                # Try to find the study plan that contains this block
+                study_plan = study_plans_collection.find_one({
+                    "user_id": user_id,
+                    "study_blocks.id": mapping["local_entity_id"]
+                })
+
+                if not study_plan:
+                    raise HTTPException(status_code=404, detail="Study plan not found for this block")
+
+                # Find the specific block
+                block = next((b for b in study_plan.get("study_blocks", []) if b.get("id") == mapping["local_entity_id"]), None)
+
+                if not block:
+                    raise HTTPException(status_code=404, detail="Study block not found")
+
+                result = sync_study_block_to_calendar(block, study_plan["date"], user_id)
 
             if result["success"]:
                 calendar_event_mappings_collection.update_one(
                     {"_id": ObjectId(mapping_id)},
                     {"$set": {
                         "sync_status": "synced",
-                        "last_synced_at": datetime.utcnow()
+                        "last_synced_at": datetime.utcnow(),
+                        "last_modified_local": datetime.utcnow()
                     }}
                 )
                 return {"message": "Conflict resolved using local version", "success": True}
 
         elif resolution.resolution == "use_google":
-            # This would require importing from Google Calendar
-            # Simplified for now
+            # Import event from Google Calendar and update local
+            from app.services.google_calendar_service import get_calendar_client
+
+            calendar = get_calendar_client(user_id)
+            if not calendar:
+                raise HTTPException(status_code=500, detail="Failed to get calendar client")
+
+            sync_doc = calendar_sync_collection.find_one({"user_id": user_id})
+            calendar_id = sync_doc.get("google_calendar_id", "primary")
+
+            # Fetch event from Google Calendar
+            event = calendar.events().get(
+                calendarId=calendar_id,
+                eventId=mapping["google_event_id"]
+            ).execute()
+
+            # Update local entity based on type
+            if mapping["local_entity_type"] == "task":
+                # Extract data from Google event
+                task_update = {
+                    "title": event.get("summary", ""),
+                    "deadline": datetime.fromisoformat(event["start"]["dateTime"].replace('Z', '+00:00')),
+                    "updated_at": datetime.utcnow()
+                }
+
+                # Update task
+                tasks_collection.update_one(
+                    {"_id": ObjectId(mapping["local_entity_id"])},
+                    {"$set": task_update}
+                )
+            else:
+                # For study blocks, update in study plan
+                # Extract time from Google event
+                start_dt = datetime.fromisoformat(event["start"]["dateTime"].replace('Z', '+00:00'))
+                end_dt = datetime.fromisoformat(event["end"]["dateTime"].replace('Z', '+00:00'))
+
+                # Update study block
+                study_plans_collection.update_one(
+                    {"user_id": user_id, "study_blocks.id": mapping["local_entity_id"]},
+                    {"$set": {
+                        "study_blocks.$.start_time": start_dt.strftime("%H:%M"),
+                        "study_blocks.$.end_time": end_dt.strftime("%H:%M"),
+                        "study_blocks.$.task_title": event.get("summary", "").replace("🍅 ", "").replace("🧠 ", "").replace("⚡ ", "")
+                    }}
+                )
+
+            # Mark as synced
             calendar_event_mappings_collection.update_one(
                 {"_id": ObjectId(mapping_id)},
                 {"$set": {
                     "sync_status": "synced",
-                    "last_synced_at": datetime.utcnow()
+                    "last_synced_at": datetime.utcnow(),
+                    "last_modified_google": datetime.utcnow()
                 }}
             )
             return {"message": "Conflict resolved using Google version", "success": True}

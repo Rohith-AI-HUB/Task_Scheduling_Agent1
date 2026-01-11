@@ -24,6 +24,15 @@ async def get_current_user(authorization: str = Header(...)) -> dict:
 
     return user
 
+
+async def get_current_user_id(authorization: str = Header(...)) -> str:
+    """
+    Dependency to get the current authenticated user's ID.
+    Returns just the user ID string.
+    """
+    user = await get_current_user(authorization)
+    return str(user["_id"])
+
 @router.post("/register", response_model=UserResponse)
 async def register(user: UserCreate):
     # Check if user exists

@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { initializeStores } from './store/useStore';
 import ProtectedRoute from './components/ProtectedRoute';
+import LiveNotification from './components/LiveNotification';
 
 // Pages
 import LoginPage from './pages/LoginPage';
@@ -29,6 +30,9 @@ import StudyPlannerPage from './pages/StudyPlannerPage';
 // Week 4 Calendar Integration
 import CalendarSettingsPage from './pages/CalendarSettingsPage';
 
+// Chat & Messaging
+import ChatPage from './pages/ChatPage';
+
 function AppContent() {
   // Initialize stores on app mount
   useEffect(() => {
@@ -36,37 +40,43 @@ function AppContent() {
   }, []);
 
   return (
-    <Routes>
-      {/* Public Routes */}
-      <Route path="/login" element={<LoginPage />} />
-      <Route path="/register" element={<RegisterPage />} />
+    <>
+      <LiveNotification />
+      <Routes>
+        {/* Public Routes */}
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
 
-      {/* Protected Routes - Require Authentication */}
-      <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
-      <Route path="/tasks" element={<ProtectedRoute><TasksPage /></ProtectedRoute>} />
-      <Route path="/extensions" element={<ProtectedRoute><ExtensionsPage /></ProtectedRoute>} />
-      <Route path="/analytics" element={<ProtectedRoute><AnalyticsPage /></ProtectedRoute>} />
-      <Route path="/groups" element={<ProtectedRoute><GroupsPage /></ProtectedRoute>} />
+        {/* Protected Routes - Require Authentication */}
+        <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
+        <Route path="/tasks" element={<ProtectedRoute><TasksPage /></ProtectedRoute>} />
+        <Route path="/extensions" element={<ProtectedRoute><ExtensionsPage /></ProtectedRoute>} />
+        <Route path="/analytics" element={<ProtectedRoute><AnalyticsPage /></ProtectedRoute>} />
+        <Route path="/groups" element={<ProtectedRoute><GroupsPage /></ProtectedRoute>} />
 
-      {/* Week 1 Feature Routes - Protected */}
-      <Route path="/stress-meter" element={<ProtectedRoute><StressMeterPage /></ProtectedRoute>} />
-      <Route path="/focus-mode" element={<ProtectedRoute><FocusModePage /></ProtectedRoute>} />
-      <Route path="/resources" element={<ProtectedRoute><ResourceLibraryPage /></ProtectedRoute>} />
+        {/* Week 1 Feature Routes - Protected */}
+        <Route path="/stress-meter" element={<ProtectedRoute><StressMeterPage /></ProtectedRoute>} />
+        <Route path="/focus-mode" element={<ProtectedRoute><FocusModePage /></ProtectedRoute>} />
+        <Route path="/resources" element={<ProtectedRoute><ResourceLibraryPage /></ProtectedRoute>} />
 
-      {/* Week 2 Teacher Feature Routes - Protected */}
-      <Route path="/teacher/grading" element={<ProtectedRoute><GradingDashboard /></ProtectedRoute>} />
-      <Route path="/teacher/class" element={<ProtectedRoute><ClassDashboard /></ProtectedRoute>} />
-      <Route path="/teacher/bulk-tasks" element={<ProtectedRoute><BulkTaskCreator /></ProtectedRoute>} />
+        {/* Week 2 Teacher Feature Routes - Protected */}
+        <Route path="/teacher/grading" element={<ProtectedRoute><GradingDashboard /></ProtectedRoute>} />
+        <Route path="/teacher/class" element={<ProtectedRoute><ClassDashboard /></ProtectedRoute>} />
+        <Route path="/teacher/bulk-tasks" element={<ProtectedRoute><BulkTaskCreator /></ProtectedRoute>} />
 
-      {/* Week 3 Smart Study Planner - Protected */}
-      <Route path="/study-planner" element={<ProtectedRoute><StudyPlannerPage /></ProtectedRoute>} />
+        {/* Week 3 Smart Study Planner - Protected */}
+        <Route path="/study-planner" element={<ProtectedRoute><StudyPlannerPage /></ProtectedRoute>} />
 
-      {/* Week 4 Calendar Integration - Protected */}
-      <Route path="/calendar-settings" element={<ProtectedRoute><CalendarSettingsPage /></ProtectedRoute>} />
+        {/* Week 4 Calendar Integration - Protected */}
+        <Route path="/calendar-settings" element={<ProtectedRoute><CalendarSettingsPage /></ProtectedRoute>} />
 
-      {/* Default Route */}
-      <Route path="/" element={<Navigate to="/login" />} />
-    </Routes>
+        {/* Chat & Messaging - Protected */}
+        <Route path="/chat" element={<ProtectedRoute><ChatPage /></ProtectedRoute>} />
+
+        {/* Default Route */}
+        <Route path="/" element={<Navigate to="/login" />} />
+      </Routes>
+    </>
   );
 }
 

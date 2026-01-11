@@ -30,6 +30,10 @@ user_preferences_collection = db["user_preferences"]
 calendar_sync_collection = db["calendar_sync"]
 calendar_event_mappings_collection = db["calendar_event_mappings"]
 
+# Aliases for test compatibility
+calendar_tokens_collection = calendar_sync_collection
+calendar_mappings_collection = calendar_event_mappings_collection
+
 # Create indexes
 users_collection.create_index("email", unique=True)
 users_collection.create_index("firebase_uid", unique=True)
