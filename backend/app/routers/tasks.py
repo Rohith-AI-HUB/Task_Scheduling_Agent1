@@ -4,6 +4,7 @@ from app.db_config import tasks_collection, users_collection, calendar_event_map
 from app.services.firebase_service import verify_firebase_token
 from app.services.ai_task_service import analyze_task_complexity, generate_subtasks
 from app.services.google_calendar_service import sync_task_to_calendar, is_sync_enabled, delete_calendar_event
+from app.websocket.broadcaster import broadcaster
 from datetime import datetime, timedelta
 from bson import ObjectId
 
@@ -52,6 +53,14 @@ async def create_task(task: TaskCreate, background_tasks: BackgroundTasks, user_
         if is_sync_enabled(user_id):
             background_tasks.add_task(sync_task_to_calendar, str(result.inserted_id), user_id)
 
+        # Broadcast update
+        await broadcaster.task_update(
+            task_id=task_doc["id"],
+            action="created",
+            task_data=task_doc,
+            user_ids=[task.assigned_to]
+        )
+
         return task_doc
     except Exception as e:
         print(f"Error creating task: {str(e)}")
@@ -96,10 +105,29 @@ async def update_task(task_id: str, updates: dict, background_tasks: BackgroundT
     if is_sync_enabled(user_id):
         background_tasks.add_task(sync_task_to_calendar, task_id, user_id)
 
+    # Fetch updated task for broadcast
+    updated_task = tasks_collection.find_one({"_id": ObjectId(task_id)})
+    if updated_task:
+        updated_task["id"] = str(updated_task.pop("_id"))
+        # Broadcast update
+        await broadcaster.task_update(
+            task_id=task_id,
+            action="updated",
+            task_data=updated_task,
+            user_ids=[updated_task['assigned_to']]
+        )
+
     return {"message": "Task updated"}
 
 @router.delete("/{task_id}")
 async def delete_task(task_id: str, background_tasks: BackgroundTasks, user_id: str = Depends(get_current_user_id)):
+    # Get task before deletion to know assignee
+    task = tasks_collection.find_one({"_id": ObjectId(task_id)})
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found")
+        
+    assignee_id = task.get("assigned_to", user_id)
+
     # Get event mapping before deleting task
     mapping = calendar_event_mappings_collection.find_one({
         "user_id": user_id,
@@ -114,5 +142,13 @@ async def delete_task(task_id: str, background_tasks: BackgroundTasks, user_id: 
     # Delete from Google Calendar if synced
     if mapping and is_sync_enabled(user_id):
         background_tasks.add_task(delete_calendar_event, mapping["google_event_id"], user_id)
+        
+    # Broadcast deletion
+    await broadcaster.task_update(
+        task_id=task_id,
+        action="deleted",
+        task_data={"id": task_id},
+        user_ids=[assignee_id]
+    )
 
     return {"message": "Task deleted"}

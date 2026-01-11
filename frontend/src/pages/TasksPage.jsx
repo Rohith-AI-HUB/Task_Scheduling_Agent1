@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { taskService } from '../services/task.service';
 import { authService } from '../services/auth.service';
+import { useWebSocket } from '../hooks/useWebSocket';
 import TaskCard from '../components/TaskCard';
 import NotificationBell from '../components/NotificationBell';
 import HomeButton from '../components/HomeButton';
@@ -17,11 +18,39 @@ export default function TasksPage() {
     title: '', description: '', deadline: '', priority: 'medium', assigned_to: ''
   });
   const navigate = useNavigate();
+  const { subscribe } = useWebSocket();
 
   useEffect(() => {
     loadCurrentUser();
     loadTasks();
-  }, []);
+
+    // Subscribe to real-time task updates
+    const unsubscribe = subscribe('task_update', (data) => {
+      console.log('Real-time update received:', data);
+      
+      setTasks(prevTasks => {
+        const { action, task, task_id } = data;
+        
+        if (action === 'created') {
+          // Check if already exists to prevent duplicates
+          if (prevTasks.find(t => t.id === task_id)) return prevTasks;
+          return [task, ...prevTasks];
+        }
+        
+        if (action === 'updated') {
+          return prevTasks.map(t => t.id === task_id ? task : t);
+        }
+        
+        if (action === 'deleted') {
+          return prevTasks.filter(t => t.id !== task_id);
+        }
+        
+        return prevTasks;
+      });
+    });
+
+    return () => unsubscribe();
+  }, [subscribe]);
 
   const loadCurrentUser = async () => {
     try {

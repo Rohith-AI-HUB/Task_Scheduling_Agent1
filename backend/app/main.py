@@ -36,6 +36,9 @@ app.include_router(study_planner.router)
 # Week 4 Calendar Integration
 app.include_router(calendar.router)
 
+from app.websocket import sio
+import socketio
+
 @app.get("/")
 def root():
     return {"status": "Task Scheduling Agent API Running"}
@@ -43,3 +46,7 @@ def root():
 @app.get("/health")
 def health_check():
     return {"status": "healthy", "timestamp": "2026-01-04"}
+
+# Wrap FastAPI application with Socket.IO
+# This handles /socket.io/ requests and forwards others to FastAPI
+app = socketio.ASGIApp(sio, app)
