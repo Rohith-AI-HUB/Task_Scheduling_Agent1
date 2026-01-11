@@ -2,6 +2,9 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { authService } from '../services/auth.service';
 import { useAuthStore } from '../store/useStore';
+import AuthLayout from '../components/auth/AuthLayout';
+import AuthFormCard from '../components/auth/AuthFormCard';
+import FloatingLabelInput from '../components/ui/Input/FloatingLabelInput';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -38,69 +41,66 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
-      <div className="bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-2xl w-96">
-        <div className="text-center mb-6">
-          <h1 className="text-3xl font-bold text-gray-800 dark:text-white mb-2">Welcome Back</h1>
-          <p className="text-gray-600 dark:text-gray-300">Sign in to your account</p>
-        </div>
-
+    <AuthLayout>
+      <AuthFormCard
+        title="Welcome Back"
+        subtitle="Sign in to your account"
+        footerText="Don't have an account?"
+        footerLinkText="Create Account"
+        onFooterLinkClick={() => navigate('/register')}
+      >
         {error && (
-          <div className="bg-red-100 dark:bg-red-900/30 border border-red-400 dark:border-red-700 text-red-700 dark:text-red-300 p-3 rounded mb-4">
+          <div className="mb-4 p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 dark:bg-red-900/30 dark:border-red-700 dark:text-red-300" role="alert">
             {error}
           </div>
         )}
 
-        <form onSubmit={handleLogin} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Email
-            </label>
-            <input
-              type="email"
-              placeholder="your.email@example.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-            />
-          </div>
+        <form onSubmit={handleLogin} className="space-y-6">
+          <FloatingLabelInput
+            type="email"
+            label="Email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+          />
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Password
+          <FloatingLabelInput
+            type="password"
+            label="Password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+          />
+
+          <div className="flex items-center justify-between text-sm">
+            <label className="flex items-center cursor-pointer group">
+              <input
+                type="checkbox"
+                className="w-4 h-4 rounded border-gray-300 text-[#7C3AED] focus:ring-[#7C3AED] focus:ring-offset-0"
+              />
+              <span className="ml-2 text-gray-600 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-white">
+                Remember me
+              </span>
             </label>
-            <input
-              type="password"
-              placeholder="Enter your password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-            />
+
+            <a
+              href="#"
+              className="text-[#6B7280] hover:text-[#7C3AED] dark:text-gray-400 dark:hover:text-purple-400 transition-colors"
+              onClick={(e) => e.preventDefault()}
+            >
+              Forgot password?
+            </a>
           </div>
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold p-3 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl"
+            className="w-full py-3 px-4 bg-gradient-to-r from-[#7C3AED] to-[#9333EA] hover:from-[#6D28D9] hover:to-[#7E22CE] text-white font-semibold rounded-lg transition-all duration-300 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? 'Signing in...' : 'Sign In'}
           </button>
         </form>
-
-        <div className="mt-6 text-center">
-          <p className="text-gray-600 dark:text-gray-300 mb-3">
-            Don't have an account?
-          </p>
-          <button
-            onClick={() => navigate('/register')}
-            className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold p-3 rounded-lg transition-colors shadow-lg hover:shadow-xl"
-          >
-            Create Account
-          </button>
-        </div>
-      </div>
-    </div>
+      </AuthFormCard>
+    </AuthLayout>
   );
 }

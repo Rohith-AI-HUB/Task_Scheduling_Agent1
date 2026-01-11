@@ -1,3 +1,116 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Custom Scrollbar Styles */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 8px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(124, 58, 237, 0.3);
+  border-radius: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(124, 58, 237, 0.5);
+}
+
+/* Line Clamp Utility */
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Floating Label Input Styles */
+.floating-input-container {
+  position: relative;
+  margin-top: 1.5rem;
+}
+
+.floating-input {
+  width: 100%;
+  padding: 1rem 0.75rem 0.5rem;
+  border: 1px solid #E5E7EB;
+  border-radius: 0.5rem;
+  font-size: 1rem;
+  transition: all 200ms ease-in-out;
+  background: white;
+}
+
+.floating-input:focus {
+  outline: none;
+  border-color: #7C3AED;
+  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.1);
+}
+
+.floating-input.error {
+  border-color: #EF4444;
+}
+
+.floating-label {
+  position: absolute;
+  left: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 1rem;
+  color: #6B7280;
+  pointer-events: none;
+  transition: all 200ms ease-in-out;
+  background: white;
+  padding: 0 0.25rem;
+}
+
+/* Float label when focused or has value */
+.floating-input:focus + .floating-label,
+.floating-input:not(:placeholder-shown) + .floating-label {
+  top: 0;
+  font-size: 0.75rem;
+  color: #7C3AED;
+  transform: translateY(-50%);
+}
+
+.floating-input.error + .floating-label {
+  color: #EF4444;
+}
+
+/* Dark mode variants */
+.dark .floating-input {
+  background: #374151;
+  border-color: #4B5563;
+  color: white;
+}
+
+.dark .floating-label {
+  background: #374151;
+  color: #9CA3AF;
+}
+
+.dark .floating-input:focus + .floating-label,
+.dark .floating-input:not(:placeholder-shown) + .floating-label {
+  color: #A78BFA;
+}
+
+/* Select dropdown styling */
+.floating-input.select {
+  padding-top: 1.25rem;
+  padding-bottom: 0.25rem;
+}
+
+.floating-input.select + .floating-label {
+  top: 0;
+  font-size: 0.75rem;
+  color: #7C3AED;
+  transform: translateY(-50%);
+}
+
+.dark .floating-input.select + .floating-label {
+  color: #A78BFA;
+}

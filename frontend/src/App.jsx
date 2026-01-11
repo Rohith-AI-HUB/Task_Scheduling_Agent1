@@ -3,6 +3,8 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { initializeStores } from './store/useStore';
 import ProtectedRoute from './components/ProtectedRoute';
+import RoleProtectedRoute from './components/RoleProtectedRoute';
+import UnauthorizedPage from './components/UnauthorizedPage';
 import LiveNotification from './components/LiveNotification';
 
 // Pages
@@ -54,24 +56,27 @@ function AppContent() {
         <Route path="/analytics" element={<ProtectedRoute><AnalyticsPage /></ProtectedRoute>} />
         <Route path="/groups" element={<ProtectedRoute><GroupsPage /></ProtectedRoute>} />
 
-        {/* Week 1 Feature Routes - Protected */}
-        <Route path="/stress-meter" element={<ProtectedRoute><StressMeterPage /></ProtectedRoute>} />
-        <Route path="/focus-mode" element={<ProtectedRoute><FocusModePage /></ProtectedRoute>} />
-        <Route path="/resources" element={<ProtectedRoute><ResourceLibraryPage /></ProtectedRoute>} />
+        {/* Week 1 Feature Routes - Student Only */}
+        <Route path="/stress-meter" element={<RoleProtectedRoute allowedRoles={['student']}><StressMeterPage /></RoleProtectedRoute>} />
+        <Route path="/focus-mode" element={<RoleProtectedRoute allowedRoles={['student']}><FocusModePage /></RoleProtectedRoute>} />
+        <Route path="/resources" element={<RoleProtectedRoute allowedRoles={['student']}><ResourceLibraryPage /></RoleProtectedRoute>} />
 
-        {/* Week 2 Teacher Feature Routes - Protected */}
-        <Route path="/teacher/grading" element={<ProtectedRoute><GradingDashboard /></ProtectedRoute>} />
-        <Route path="/teacher/class" element={<ProtectedRoute><ClassDashboard /></ProtectedRoute>} />
-        <Route path="/teacher/bulk-tasks" element={<ProtectedRoute><BulkTaskCreator /></ProtectedRoute>} />
+        {/* Week 2 Teacher Feature Routes - Teacher Only */}
+        <Route path="/teacher/grading" element={<RoleProtectedRoute allowedRoles={['teacher']}><GradingDashboard /></RoleProtectedRoute>} />
+        <Route path="/teacher/class" element={<RoleProtectedRoute allowedRoles={['teacher']}><ClassDashboard /></RoleProtectedRoute>} />
+        <Route path="/teacher/bulk-tasks" element={<RoleProtectedRoute allowedRoles={['teacher']}><BulkTaskCreator /></RoleProtectedRoute>} />
 
-        {/* Week 3 Smart Study Planner - Protected */}
-        <Route path="/study-planner" element={<ProtectedRoute><StudyPlannerPage /></ProtectedRoute>} />
+        {/* Week 3 Smart Study Planner - Student Only */}
+        <Route path="/study-planner" element={<RoleProtectedRoute allowedRoles={['student']}><StudyPlannerPage /></RoleProtectedRoute>} />
 
         {/* Week 4 Calendar Integration - Protected */}
         <Route path="/calendar-settings" element={<ProtectedRoute><CalendarSettingsPage /></ProtectedRoute>} />
 
         {/* Chat & Messaging - Protected */}
         <Route path="/chat" element={<ProtectedRoute><ChatPage /></ProtectedRoute>} />
+
+        {/* Unauthorized Page */}
+        <Route path="/unauthorized" element={<UnauthorizedPage />} />
 
         {/* Default Route */}
         <Route path="/" element={<Navigate to="/login" />} />

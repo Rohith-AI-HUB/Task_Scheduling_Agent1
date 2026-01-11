@@ -49,6 +49,23 @@ class TaskCreate(BaseModel):
             }
         }
 
+class TaskUpdate(BaseModel):
+    title: Optional[str] = None
+    description: Optional[str] = None
+    deadline: Optional[datetime] = None
+    priority: Optional[Literal["low", "medium", "high", "urgent"]] = None
+    status: Optional[Literal["todo", "in_progress", "completed"]] = None
+    attachments: Optional[List[str]] = None
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "title": "Updated task title",
+                "status": "in_progress",
+                "priority": "high"
+            }
+        }
+
 class ExtensionRequestCreate(BaseModel):
     task_id: str
     requested_deadline: str  # Accept as string, will be converted to datetime

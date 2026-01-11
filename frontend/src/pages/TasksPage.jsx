@@ -2,23 +2,28 @@ import { useState, useEffect } from 'react';
 import { taskService } from '../services/task.service';
 import { authService } from '../services/auth.service';
 import { useWebSocket } from '../hooks/useWebSocket';
-import TaskCard from '../components/TaskCard';
 import NotificationBell from '../components/NotificationBell';
 import HomeButton from '../components/HomeButton';
-import { Plus } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
+import { useAuth } from '../store/useStore';
+import useTaskStore from '../store/useTaskStore';
+import KanbanBoard from '../components/KanbanBoard';
+import StatisticsCards from '../components/StatisticsCards';
+import KanbanToolbar from '../components/KanbanToolbar';
+import TaskDetailsSidebar from '../components/TaskDetailsSidebar';
+import FloatingActionButton from '../components/FloatingActionButton';
+import CreateTaskModal from '../components/CreateTaskModal';
 
 export default function TasksPage() {
-  const [tasks, setTasks] = useState([]);
-  const [showForm, setShowForm] = useState(false);
+  const [showModal, setShowModal] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [formData, setFormData] = useState({
-    title: '', description: '', deadline: '', priority: 'medium', assigned_to: ''
-  });
-  const navigate = useNavigate();
   const { subscribe } = useWebSocket();
+  const { isTeacher } = useAuth();
+
+  // Use Zustand task store
+  const { setTasks, addTask, updateTask, deleteTask: removeTask } = useTaskStore();
 
   useEffect(() => {
     loadCurrentUser();
@@ -27,36 +32,29 @@ export default function TasksPage() {
     // Subscribe to real-time task updates
     const unsubscribe = subscribe('task_update', (data) => {
       console.log('Real-time update received:', data);
-      
-      setTasks(prevTasks => {
-        const { action, task, task_id } = data;
-        
-        if (action === 'created') {
-          // Check if already exists to prevent duplicates
-          if (prevTasks.find(t => t.id === task_id)) return prevTasks;
-          return [task, ...prevTasks];
-        }
-        
-        if (action === 'updated') {
-          return prevTasks.map(t => t.id === task_id ? task : t);
-        }
-        
-        if (action === 'deleted') {
-          return prevTasks.filter(t => t.id !== task_id);
-        }
-        
-        return prevTasks;
-      });
+
+      const { action, task, task_id } = data;
+
+      if (action === 'created') {
+        addTask(task);
+      }
+
+      if (action === 'updated') {
+        updateTask(task_id, task);
+      }
+
+      if (action === 'deleted') {
+        removeTask(task_id);
+      }
     });
 
     return () => unsubscribe();
-  }, [subscribe]);
+  }, [subscribe, addTask, updateTask, removeTask]);
 
   const loadCurrentUser = async () => {
     try {
       const user = await authService.getCurrentUser();
       setCurrentUser(user);
-      setFormData(prev => ({ ...prev, assigned_to: user.id }));
     } catch (error) {
       console.error('Error loading user:', error);
     }
@@ -71,20 +69,17 @@ export default function TasksPage() {
     }
   };
 
-  const handleCreate = async (e) => {
-    e.preventDefault();
+  const handleCreate = async (formData) => {
     setLoading(true);
     setError('');
     try {
       await taskService.createTask({
         ...formData,
+        assigned_to: currentUser?.id || '',
         deadline: new Date(formData.deadline).toISOString()
       });
       await loadTasks();
-      setShowForm(false);
-      setFormData({
-        title: '', description: '', deadline: '', priority: 'medium', assigned_to: currentUser?.id || ''
-      });
+      setShowModal(false);
     } catch (error) {
       console.error('Error creating task:', error);
       setError(error.response?.data?.detail || error.message || 'Failed to create task');
@@ -93,100 +88,63 @@ export default function TasksPage() {
     }
   };
 
-  const handleUpdate = async (taskId, updates) => {
-    try {
-      await taskService.updateTask(taskId, updates);
-      loadTasks();
-    } catch (error) {
-      console.error('Error updating task:', error);
-    }
-  };
-
-  const handleDelete = async (taskId) => {
-    try {
-      await taskService.deleteTask(taskId);
-      loadTasks();
-    } catch (error) {
-      console.error('Error deleting task:', error);
-    }
-  };
-
   return (
-    <div className="min-h-screen bg-gray-100 p-6">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-6">
+      {/* Header */}
       <div className="flex justify-between items-center mb-6">
         <div className="flex items-center gap-4">
-          <h1 className="text-3xl font-bold">My Tasks</h1>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+            {isTeacher ? 'My Admin Tasks' : 'My Tasks'}
+          </h1>
         </div>
         <div className="flex items-center gap-4">
           <NotificationBell />
           <HomeButton />
-          <button
-            onClick={() => setShowForm(!showForm)}
-            className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors"
-          >
-            <Plus size={20} /> New Task
-          </button>
         </div>
       </div>
 
-      {error && (
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-          {error}
-        </div>
-      )}
-
-      {showForm && (
-        <div className="bg-white p-6 rounded-lg shadow-md mb-6">
-          <form onSubmit={handleCreate}>
-            <input
-              type="text"
-              placeholder="Task Title"
-              value={formData.title}
-              onChange={(e) => setFormData({...formData, title: e.target.value})}
-              className="w-full p-2 border rounded mb-3"
-              required
-            />
-            <textarea
-              placeholder="Description"
-              value={formData.description}
-              onChange={(e) => setFormData({...formData, description: e.target.value})}
-              className="w-full p-2 border rounded mb-3"
-              rows="3"
-            />
-            <input
-              type="datetime-local"
-              value={formData.deadline}
-              onChange={(e) => setFormData({...formData, deadline: e.target.value})}
-              className="w-full p-2 border rounded mb-3"
-              required
-            />
-            <button
-              type="submit"
-              disabled={loading}
-              className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 disabled:bg-gray-400 disabled:cursor-not-allowed"
+      {/* Teacher Hint */}
+      {isTeacher && (
+        <div className="mb-4 bg-purple-50 dark:bg-purple-900/30 border border-purple-200 dark:border-purple-700 rounded-lg p-4">
+          <p className="text-purple-800 dark:text-purple-300">
+            <strong>Note:</strong> To assign tasks to students, use the{' '}
+            <Link
+              to="/teacher/bulk-tasks"
+              className="text-purple-600 dark:text-purple-400 hover:underline font-semibold"
             >
-              {loading ? 'Creating... (AI analyzing)' : 'Create Task (AI will analyze)'}
-            </button>
-          </form>
+              Bulk Task Creator
+            </Link>
+            {' '}feature.
+          </p>
         </div>
       )}
 
-      {tasks.length === 0 ? (
-        <div className="text-center py-12 text-gray-500">
-          <p className="text-lg">No tasks yet. Create your first task to get started!</p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {tasks.map(task => (
-            <TaskCard
-              key={task.id}
-              task={task}
-              onUpdate={handleUpdate}
-              onDelete={handleDelete}
-            />
-          ))}
-        </div>
-      )}
+      {/* Statistics Cards */}
+      <StatisticsCards />
+
+      {/* Toolbar with Search and Filters */}
+      <KanbanToolbar onNewTask={() => setShowModal(true)} />
+
+      {/* Kanban Board */}
+      <KanbanBoard />
+
+      {/* Task Details Sidebar */}
+      <TaskDetailsSidebar />
+
+      {/* Floating Action Button */}
+      <FloatingActionButton onClick={() => setShowModal(true)} />
+
+      {/* Create Task Modal */}
+      <CreateTaskModal
+        isOpen={showModal}
+        onClose={() => {
+          setShowModal(false);
+          setError('');
+        }}
+        onSubmit={handleCreate}
+        loading={loading}
+        error={error}
+      />
     </div>
   );
 }

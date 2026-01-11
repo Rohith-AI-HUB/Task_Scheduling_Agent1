@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { TrendingUp, Clock, CheckCircle, AlertCircle } from 'lucide-react';
 import NotificationBell from '../components/NotificationBell';
 import HomeButton from '../components/HomeButton';
+import { useAuth } from '../store/useStore';
 
 export default function AnalyticsPage() {
   const [stats, setStats] = useState(null);
@@ -12,6 +13,7 @@ export default function AnalyticsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const navigate = useNavigate();
+  const { isTeacher, isStudent } = useAuth();
 
   useEffect(() => {
     loadAnalytics();
@@ -88,7 +90,9 @@ export default function AnalyticsPage() {
       {/* Header */}
       <div className="flex justify-between items-center mb-6">
         <div className="flex items-center gap-4">
-          <h1 className="text-3xl font-bold text-gray-800">Analytics Dashboard</h1>
+          <h1 className="text-3xl font-bold text-gray-800">
+            {isTeacher ? 'My Analytics & Class Overview' : 'My Analytics Dashboard'}
+          </h1>
         </div>
         <div className="flex items-center gap-4">
           <NotificationBell />
@@ -298,6 +302,20 @@ export default function AnalyticsPage() {
           <p className="text-gray-500 text-center py-4">No upcoming deadlines</p>
         )}
       </div>
+
+      {/* Teacher-Specific Section */}
+      {isTeacher && (
+        <div className="mt-6 bg-white rounded-lg shadow-md p-6">
+          <h2 className="text-xl font-bold mb-4 text-purple-700">Class Overview</h2>
+          <p className="text-gray-600">
+            For detailed class performance analytics, student progress tracking, and at-risk student identification,
+            visit the{' '}
+            <Link to="/teacher/class" className="text-purple-600 hover:underline font-semibold">
+              Class Dashboard
+            </Link>.
+          </p>
+        </div>
+      )}
     </div>
   );
 }

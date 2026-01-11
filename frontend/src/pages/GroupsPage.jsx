@@ -4,6 +4,7 @@ import axios from 'axios';
 import { Users, Plus, Trash2, Send } from 'lucide-react';
 import NotificationBell from '../components/NotificationBell';
 import HomeButton from '../components/HomeButton';
+import { useAuth } from '../store/useStore';
 
 export default function GroupsPage() {
   const [groups, setGroups] = useState([]);
@@ -22,6 +23,7 @@ export default function GroupsPage() {
     task_id: ''
   });
   const navigate = useNavigate();
+  const { isTeacher, isStudent } = useAuth();
 
   useEffect(() => {
     loadGroups();
@@ -155,17 +157,28 @@ export default function GroupsPage() {
         </div>
       )}
 
-      {/* Create Group Button */}
-      <button
-        onClick={() => setShowCreateForm(!showCreateForm)}
-        className="mb-6 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded flex items-center gap-2 transition"
-      >
-        <Plus size={20} />
-        {showCreateForm ? 'Cancel' : 'Create New Group'}
-      </button>
+      {/* Student Info Message */}
+      {isStudent && (
+        <div className="mb-4 bg-blue-50 border border-blue-200 p-4 rounded-lg">
+          <p className="text-blue-800 text-sm">
+            You can view groups you're a member of. Only teachers can create and manage groups.
+          </p>
+        </div>
+      )}
 
-      {/* Create Group Form */}
-      {showCreateForm && (
+      {/* Create Group Button - Teacher Only */}
+      {isTeacher && (
+        <button
+          onClick={() => setShowCreateForm(!showCreateForm)}
+          className="mb-6 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded flex items-center gap-2 transition"
+        >
+          <Plus size={20} />
+          {showCreateForm ? 'Cancel' : 'Create New Group'}
+        </button>
+      )}
+
+      {/* Create Group Form - Teacher Only */}
+      {showCreateForm && isTeacher && (
         <div className="bg-white p-6 rounded-lg shadow-md mb-6">
           <h2 className="text-xl font-bold mb-4">Create New Group</h2>
           <form onSubmit={handleCreateGroup}>
@@ -226,13 +239,15 @@ export default function GroupsPage() {
                     Created: {new Date(group.created_at).toLocaleDateString()}
                   </p>
                 </div>
-                <button
-                  onClick={() => handleDeleteGroup(group.id)}
-                  className="text-red-500 hover:text-red-700 transition"
-                  title="Delete Group"
-                >
-                  <Trash2 size={20} />
-                </button>
+                {isTeacher && (
+                  <button
+                    onClick={() => handleDeleteGroup(group.id)}
+                    className="text-red-500 hover:text-red-700 transition"
+                    title="Delete Group"
+                  >
+                    <Trash2 size={20} />
+                  </button>
+                )}
               </div>
 
               {/* Members */}
@@ -260,17 +275,19 @@ export default function GroupsPage() {
                 )}
               </div>
 
-              {/* Assign Task Button */}
-              <button
-                onClick={() => setShowAssignForm(showAssignForm === group.id ? null : group.id)}
-                className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded flex items-center gap-2 transition"
-              >
-                <Send size={16} />
-                {showAssignForm === group.id ? 'Cancel' : 'Assign Task to Group'}
-              </button>
+              {/* Assign Task Button - Teacher Only */}
+              {isTeacher && (
+                <button
+                  onClick={() => setShowAssignForm(showAssignForm === group.id ? null : group.id)}
+                  className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded flex items-center gap-2 transition"
+                >
+                  <Send size={16} />
+                  {showAssignForm === group.id ? 'Cancel' : 'Assign Task to Group'}
+                </button>
+              )}
 
-              {/* Assign Task Form */}
-              {showAssignForm === group.id && (
+              {/* Assign Task Form - Teacher Only */}
+              {showAssignForm === group.id && isTeacher && (
                 <div className="mt-4 p-4 bg-gray-50 rounded">
                   <h4 className="font-semibold mb-2">Select Task to Assign</h4>
                   <select

@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException, Depends, Header, BackgroundTasks
-from app.models.schemas import TaskCreate
+from app.models.schemas import TaskCreate, TaskUpdate
 from app.db_config import tasks_collection, users_collection, calendar_event_mappings_collection
 from app.services.firebase_service import verify_firebase_token
 from app.services.ai_task_service import analyze_task_complexity, generate_subtasks
@@ -93,7 +93,7 @@ async def get_task(task_id: str, user_id: str = Depends(get_current_user_id)):
     return task
 
 @router.put("/{task_id}")
-async def update_task(task_id: str, updates: dict, background_tasks: BackgroundTasks, user_id: str = Depends(get_current_user_id)):
+async def update_task(task_id: str, updates: TaskUpdate, background_tasks: BackgroundTasks, user_id: str = Depends(get_current_user_id)):
     # Validate ObjectId format
     if not ObjectId.is_valid(task_id):
         raise HTTPException(status_code=400, detail="Invalid task ID format")
@@ -113,13 +113,16 @@ async def update_task(task_id: str, updates: dict, background_tasks: BackgroundT
             detail="You don't have permission to update this task. Only the task creator or assignee can modify it."
         )
 
+    # Convert TaskUpdate model to dict and filter out None values
+    update_dict = {k: v for k, v in updates.dict(exclude_unset=True).items() if v is not None}
+
     # Add updated_at timestamp
-    updates["updated_at"] = datetime.utcnow()
+    update_dict["updated_at"] = datetime.utcnow()
 
     # Perform update
     result = tasks_collection.update_one(
         {"_id": ObjectId(task_id)},
-        {"$set": updates}
+        {"$set": update_dict}
     )
 
     if result.modified_count == 0:
@@ -134,12 +137,13 @@ async def update_task(task_id: str, updates: dict, background_tasks: BackgroundT
     updated_task = tasks_collection.find_one({"_id": ObjectId(task_id)})
     if updated_task:
         updated_task["id"] = str(updated_task.pop("_id"))
-        # Broadcast update
+        # Broadcast update to both assignee AND creator
+        user_ids = list(set([updated_task['assigned_to'], updated_task['created_by']]))
         await broadcaster.task_update(
             task_id=task_id,
             action="updated",
             task_data=updated_task,
-            user_ids=[updated_task['assigned_to']]
+            user_ids=user_ids
         )
 
     return {"message": "Task updated"}
