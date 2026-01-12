@@ -1145,7 +1145,7 @@ This project is for educational purposes.
 
 **MIT License** - See LICENSE file for details.
 
-© 2026 Rohit - University Project
+© 2026 Rohith B - University Project
 
 ---
 
@@ -1271,8 +1271,8 @@ Total: 12 working days, ~80 hours
 
 <div align="center">
 
-Made with ❤️ by [Rohit](https://github.com/rohit)
+Made with ❤️ by [Rohith B](https://github.com/Rohith-AI-HUB)
 
-[Report Bug](https://github.com/rohit/task-scheduler/issues) • [Request Feature](https://github.com/rohit/task-scheduler/issues)
+[Report Bug](https://github.com/Rohith-AI-HUB/Task_Scheduling_Agent1/issues) • [Request Feature](https://github.com/Rohith-AI-HUB/Task_Scheduling_Agent1/issues)
 
 </div>
