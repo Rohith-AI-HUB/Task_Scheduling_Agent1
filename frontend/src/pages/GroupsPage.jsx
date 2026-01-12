@@ -36,7 +36,7 @@ export default function GroupsPage() {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
-      const res = await axios.get('http://localhost:8000/groups/', {
+      const res = await axios.get('http://localhost:8000/api/groups/', {
         headers: { Authorization: `Bearer ${token}` }
       });
       setGroups(res.data);
@@ -51,7 +51,7 @@ export default function GroupsPage() {
   const loadTasks = async () => {
     try {
       const token = localStorage.getItem('token');
-      const res = await axios.get('http://localhost:8000/tasks/', {
+      const res = await axios.get('http://localhost:8000/api/tasks/', {
         headers: { Authorization: `Bearer ${token}` }
       });
       setTasks(res.data);
@@ -64,7 +64,7 @@ export default function GroupsPage() {
     e.preventDefault();
     try {
       const token = localStorage.getItem('token');
-      await axios.post('http://localhost:8000/groups/', formData, {
+      await axios.post('http://localhost:8000/api/groups/', formData, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setSuccess('Group created successfully!');
@@ -83,7 +83,7 @@ export default function GroupsPage() {
 
     try {
       const token = localStorage.getItem('token');
-      await axios.delete(`http://localhost:8000/groups/${groupId}`, {
+      await axios.delete(`http://localhost:8000/api/groups/${groupId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setSuccess('Group deleted successfully!');
@@ -99,7 +99,7 @@ export default function GroupsPage() {
     try {
       const token = localStorage.getItem('token');
       const res = await axios.post(
-        `http://localhost:8000/groups/${groupId}/assign-task`,
+        `http://localhost:8000/api/groups/${groupId}/assign-task`,
         assignData,
         {
           headers: { Authorization: `Bearer ${token}` }

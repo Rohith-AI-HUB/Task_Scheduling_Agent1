@@ -631,7 +631,7 @@ function ResourceCard({ resource, onToggleFavorite, onDelete, onGenerateFlashcar
           </div>
         </div>
       )}
-    </div>
+    </GlassCard>
   );
 }
 

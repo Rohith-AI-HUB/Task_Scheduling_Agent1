@@ -1,0 +1,107 @@
+/* SchedulePage.css */
+
+:root {
+    --primary-color: #4F46E5;
+    --primary-light: #6366F1;
+    --bg-color: #F3F4F6;
+    --glass-bg: rgba(255, 255, 255, 0.7);
+    --glass-border: 1px solid rgba(255, 255, 255, 0.4);
+    --card-bg: rgba(255, 255, 255, 0.6);
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.schedule-container {
+    min-height: 100vh;
+    background-color: var(--bg-color);
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    padding: 32px;
+    background-image:
+        radial-gradient(at 0% 0%, rgba(79, 70, 229, 0.08) 0px, transparent 50%),
+        radial-gradient(at 100% 0%, rgba(236, 72, 153, 0.08) 0px, transparent 50%);
+}
+
+.schedule-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 32px;
+}
+
+.schedule-title h1 {
+    font-size: 36px;
+    font-weight: 800;
+    letter-spacing: -0.025em;
+    background: linear-gradient(135deg, #111827 0%, #4F46E5 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.schedule-glass-card {
+    background: var(--glass-bg);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: var(--glass-border);
+    box-shadow: 0 4px 24px -1px rgba(0, 0, 0, 0.05);
+    border-radius: 24px;
+    transition: var(--transition);
+}
+
+.schedule-glass-card:hover {
+    box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.08);
+}
+
+.status-badge {
+    padding: 6px 16px;
+    border-radius: 9999px;
+    font-size: 14px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.status-connected {
+    background-color: rgba(16, 185, 129, 0.1);
+    color: #059669;
+    border: 1px solid rgba(16, 185, 129, 0.2);
+}
+
+.status-disconnected {
+    background-color: rgba(107, 114, 128, 0.1);
+    color: #4B5563;
+    border: 1px solid rgba(107, 114, 128, 0.2);
+}
+
+.pref-item {
+    padding: 20px;
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    transition: var(--transition);
+}
+
+.pref-item:hover {
+    background: rgba(255, 255, 255, 0.6);
+}
+
+/* Dark Mode Overrides */
+.dark .schedule-container {
+    background-color: #111827;
+    background-image:
+        radial-gradient(at 0% 0%, rgba(79, 70, 229, 0.15) 0px, transparent 50%),
+        radial-gradient(at 100% 0%, rgba(236, 72, 153, 0.1) 0px, transparent 50%);
+}
+
+.dark .schedule-glass-card {
+    background: rgba(31, 41, 55, 0.7);
+    border-color: rgba(255, 255, 255, 0.05);
+}
+
+.dark .schedule-title h1 {
+    background: linear-gradient(135deg, #F9FAFB 0%, #818CF8 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+}

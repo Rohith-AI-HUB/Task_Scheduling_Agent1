@@ -50,15 +50,14 @@ export default function StatisticsCards() {
   ];
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
       {cards.map((card, index) => (
         <StatCard
           key={card.title}
           title={card.title}
           value={card.value}
           icon={card.icon}
-          gradient={card.gradient}
-          iconColor={card.iconColor}
+          color={card.iconColor}
           delay={index * 0.1}
         />
       ))}
@@ -69,31 +68,30 @@ export default function StatisticsCards() {
 /**
  * StatCard - Individual statistic card component
  */
-function StatCard({ title, value, icon: Icon, gradient, iconColor, delay }) {
+function StatCard({ title, value, icon: Icon, color, delay }) {
+  // Extract color class for background (e.g., text-purple-600 -> bg-purple-100)
+  const bgColor = color.replace('text-', 'bg-').replace('600', '100').replace('500', '100');
+
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, delay }}
-      className="glass-light dark:glass-dark p-6 rounded-xl shadow-md hover:shadow-lg transition-shadow"
+      className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-xl border border-white/40 dark:border-gray-700/50 p-5 rounded-2xl shadow-sm hover:shadow-md transition-all group"
     >
-      <div className="flex items-center justify-between">
-        {/* Content */}
-        <div>
-          <p className="text-gray-600 dark:text-gray-400 text-sm font-medium mb-1">
-            {title}
-          </p>
-          <p className="text-3xl font-bold text-gray-900 dark:text-white">
-            {value}
-          </p>
+      <div className="flex items-start justify-between mb-4">
+        <div className={`${bgColor} p-2.5 rounded-xl group-hover:scale-110 transition-transform duration-300`}>
+          <Icon size={22} className={color} />
         </div>
+      </div>
 
-        {/* Icon with gradient background */}
-        <div
-          className={`bg-gradient-to-br ${gradient} p-4 rounded-xl shadow-md`}
-        >
-          <Icon size={28} className="text-white" />
-        </div>
+      <div>
+        <h3 className="text-2xl font-extrabold text-gray-800 dark:text-white mb-1">
+          {value}
+        </h3>
+        <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+          {title}
+        </p>
       </div>
     </motion.div>
   );

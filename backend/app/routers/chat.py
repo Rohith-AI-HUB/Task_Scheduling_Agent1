@@ -4,7 +4,10 @@ Chat & Messaging Router
 Handles group chats, direct messages, and real-time messaging via WebSocket.
 """
 
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, UploadFile, File, Form
+import os
+import shutil
+import re
 from pydantic import BaseModel, Field
 from typing import List, Optional
 from datetime import datetime
@@ -14,12 +17,14 @@ from app.routers.auth import get_current_user_id, get_current_user
 from app.db_config import (
     chat_history_collection,
     groups_collection,
-    users_collection
+    users_collection,
+    tasks_collection
 )
 from app.utils.logger import get_logger
 from app.websocket.broadcaster import broadcaster
+from app.services.ollama_service import generate_ai_response
 
-router = APIRouter(prefix="/api/chat", tags=["Chat & Messaging"])
+router = APIRouter(prefix="/chat", tags=["Chat & Messaging"])
 logger = get_logger(__name__)
 
 
@@ -668,4 +673,312 @@ async def search_messages(
         raise
     except Exception as e:
         logger.error(f"Error searching messages: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Search failed: {str(e)}")
+
+
+# ==================== AI ASSISTANT ENDPOINTS ====================
+
+class AIMessageRequest(BaseModel):
+    message: str = Field(..., min_length=1, max_length=2000, description="Message to send to AI assistant")
+
+
+@router.post("/ai")
+async def chat_with_ai(
+    request: AIMessageRequest,
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Chat with AI assistant that has knowledge of user's tasks and schedule.
+    
+    Returns:
+        AI response with context-aware message
+    """
+    try:
+        user_id = str(current_user["_id"])
+        user_name = current_user.get("full_name", "User")
+        user_role = current_user.get("role", "student")
+        
+        # Fetch user's tasks for context
+        tasks = list(tasks_collection.find({"assigned_to": user_id}).limit(20))
+        
+        # Build task context
+        task_context = ""
+        pending_tasks = []
+        overdue_tasks = []
+        
+        for task in tasks:
+            status = task.get("status", "todo")
+            title = task.get("title", "Untitled")
+            deadline = task.get("deadline")
+            priority = task.get("priority", "medium")
+            
+            if status != "done":
+                if deadline and deadline < datetime.utcnow():
+                    overdue_tasks.append(f"- {title} (Priority: {priority}, OVERDUE)")
+                else:
+                    deadline_str = deadline.strftime("%b %d") if deadline else "No deadline"
+                    pending_tasks.append(f"- {title} (Priority: {priority}, Due: {deadline_str})")
+        
+        if pending_tasks or overdue_tasks:
+            task_context = f"""
+User's Current Tasks:
+Overdue ({len(overdue_tasks)}):
+{chr(10).join(overdue_tasks) if overdue_tasks else "None"}
+
+Pending ({len(pending_tasks)}):
+{chr(10).join(pending_tasks[:10]) if pending_tasks else "None"}
+"""
+        
+        # Build the AI prompt
+        # Build the AI prompt
+        system_context = f"""You are the internal specific Task Assistant for {user_name}, a {user_role}.
+SYSTEM INSTRUCTION: You have FULL PERMISSION to access the user's task data provided below. It is injected directly from the database for this session.
+DO NOT refuse to answer questions about these tasks. DO NOT say you cannot access personal data.
+Use the provided context to answer questions about the user's schedule, deadlines, and priorities.
+
+TASK DATA:
+{task_context}
+
+Be helpful, friendly, and direct. If the user asks "What are my tasks?", list them from the data above.
+"""
+        
+        prompt = f"{system_context}\n\nUser: {request.message}\n\nAssistant:"
+        
+        # Generate AI response
+        ai_response = generate_ai_response(prompt)
+        
+        # Store the conversation in chat history
+        user_msg = {
+            "sender_id": user_id,
+            "sender_name": user_name,
+            "chat_type": "ai",
+            "chat_id": "assistant",
+            "content": request.message,
+            "reactions": [],
+            "read_by": [user_id],
+            "timestamp": datetime.utcnow()
+        }
+        chat_history_collection.insert_one(user_msg)
+        
+        ai_msg_doc = {
+            "sender_id": "ai_assistant",
+            "sender_name": "AI Assistant",
+            "chat_type": "ai",
+            "chat_id": "assistant",
+            "content": ai_response.strip(),
+            "reactions": [],
+            "read_by": [user_id],
+            "timestamp": datetime.utcnow()
+        }
+        result = chat_history_collection.insert_one(ai_msg_doc)
+        ai_msg_doc["id"] = str(result.inserted_id)
+        
+        logger.info(f"AI chat: user {user_id} sent message")
+        
+        return {
+            "message": format_message(ai_msg_doc),
+            "success": True
+        }
+        
+    except Exception as e:
+        logger.error(f"Error in AI chat: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"AI chat failed: {str(e)}")
+
+
+@router.get("/ai/history")
+async def get_ai_chat_history(
+    limit: int = 50,
+    user_id: str = Depends(get_current_user_id)
+):
+    """
+    Get AI chat history for current user.
+    """
+    try:
+        messages = list(
+            chat_history_collection.find({
+                "chat_type": "ai",
+                "chat_id": "assistant",
+                "$or": [
+                    {"sender_id": user_id},
+                    {"sender_id": "ai_assistant", "read_by": user_id}
+                ]
+            })
+            .sort("timestamp", -1)
+            .limit(limit)
+        )
+        
+        formatted = [format_message(msg) for msg in messages]
+        formatted.reverse()  # Chronological order
+        
+        return {
+            "messages": formatted,
+            "count": len(formatted)
+        }
+    except Exception as e:
+        logger.error(f"Error getting AI history: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Failed to get AI history: {str(e)}")
+
+
+@router.post("/upload")
+async def upload_chat_file(
+    file: UploadFile = File(...),
+    current_user: dict = Depends(get_current_user)
+):
+    """Upload a file to be sent in chat"""
+    try:
+        # Validate file size (10MB limit)
+        MAX_SIZE = 10 * 1024 * 1024
+        file.file.seek(0, 2)
+        size = file.file.tell()
+        file.file.seek(0)
+        
+        if size > MAX_SIZE:
+            raise HTTPException(400, "File too large (max 10MB)")
+
+        # Create uploads directory structure
+        # uploads/chat/{year}/{month}/filename
+        now = datetime.now()
+        relative_path = os.path.join("chat", str(now.year), str(now.month))
+        upload_dir = os.path.join("uploads", relative_path)
+        os.makedirs(upload_dir, exist_ok=True)
+        
+        # Sanitize filename
+        safe_filename = re.sub(r'[^\w\s\-\.]', '', file.filename).strip().replace(' ', '_')
+        if not safe_filename:
+            safe_filename = f"file_{int(now.timestamp())}"
+            
+        # Avoid collisions
+        base, ext = os.path.splitext(safe_filename)
+        counter = 1
+        final_filename = safe_filename
+        while os.path.exists(os.path.join(upload_dir, final_filename)):
+            final_filename = f"{base}_{counter}{ext}"
+            counter += 1
+            
+        file_path = os.path.join(upload_dir, final_filename)
+        
+        # Save file
+        with open(file_path, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+            
+        # Generate URL (assuming backend is serving uploads map)
+        # Windows path fix for URL
+        url_path = os.path.join(relative_path, final_filename).replace("\\", "/")
+        file_url = f"/uploads/{url_path}"
+        
+        return {
+            "url": file_url,
+            "filename": final_filename,
+            "size": size,
+            "type": file.content_type
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Upload failed: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Upload failed: {str(e)}")
+
+
+# ==================== USER DISCOVERY ENDPOINTS ====================
+
+@router.get("/users")
+async def get_chat_users(
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Get list of users available for chat.
+    - Students can see teachers and other students
+    - Teachers can see students
+    Only returns registered users.
+    """
+    try:
+        user_id = str(current_user["_id"])
+        user_role = current_user.get("role", "student")
+        
+        # Build query based on role
+        if user_role == "teacher":
+            # Teachers see all students
+            query = {"role": "student", "_id": {"$ne": current_user["_id"]}}
+        else:
+            # Students see teachers and other students
+            query = {"_id": {"$ne": current_user["_id"]}}
+        
+        users = list(users_collection.find(query).limit(100))
+        
+        result = []
+        for u in users:
+            result.append({
+                "id": str(u["_id"]),
+                "name": u.get("full_name", "Unknown"),
+                "email": u.get("email", ""),
+                "role": u.get("role", "student"),
+                "usn": u.get("usn", "")
+            })
+        
+        # Sort: teachers first, then alphabetically
+        result.sort(key=lambda x: (0 if x["role"] == "teacher" else 1, x["name"].lower()))
+        
+        logger.debug(f"User {user_id} fetched {len(result)} chat users")
+        
+        return {
+            "users": result,
+            "count": len(result)
+        }
+        
+    except Exception as e:
+        logger.error(f"Error getting chat users: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Failed to get users: {str(e)}")
+
+
+@router.get("/users/search")
+async def search_chat_users(
+    query: str,
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Search for users by name, email, or USN.
+    """
+    try:
+        if not query or len(query.strip()) < 2:
+            raise HTTPException(status_code=400, detail="Query must be at least 2 characters")
+        
+        user_role = current_user.get("role", "student")
+        
+        # Build search query
+        search_query = {
+            "_id": {"$ne": current_user["_id"]},
+            "$or": [
+                {"full_name": {"$regex": query, "$options": "i"}},
+                {"email": {"$regex": query, "$options": "i"}},
+                {"usn": {"$regex": query, "$options": "i"}}
+            ]
+        }
+        
+        # Teachers only see students
+        if user_role == "teacher":
+            search_query["role"] = "student"
+        
+        users = list(users_collection.find(search_query).limit(20))
+        
+        result = []
+        for u in users:
+            result.append({
+                "id": str(u["_id"]),
+                "name": u.get("full_name", "Unknown"),
+                "email": u.get("email", ""),
+                "role": u.get("role", "student"),
+                "usn": u.get("usn", "")
+            })
+        
+        return {
+            "users": result,
+            "count": len(result),
+            "query": query
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error searching users: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"Search failed: {str(e)}")

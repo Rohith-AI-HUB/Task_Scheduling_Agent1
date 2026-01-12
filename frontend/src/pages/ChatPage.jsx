@@ -1,13 +1,20 @@
 import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
-import { Send } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import {
+  Send, Search, MoreVertical, Paperclip, Mic,
+  ArrowLeft, MessageSquarePlus, X, Check, CheckCheck, Bot, Users, User, Home
+} from 'lucide-react';
 import { useWebSocket } from '../hooks/useWebSocket';
 import { useAuth } from '../store/useStore';
+import './ChatPage.css';
 
 const ChatPage = () => {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const { subscribe, sendMessage } = useWebSocket();
 
+  // State
   const [chats, setChats] = useState([]);
   const [activeChat, setActiveChat] = useState(null);
   const [messages, setMessages] = useState([]);
@@ -15,13 +22,124 @@ const ChatPage = () => {
   const [isTyping, setIsTyping] = useState(false);
   const [typingUsers, setTypingUsers] = useState(new Set());
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  // New chat modal state
+  const [showNewChat, setShowNewChat] = useState(false);
+  const [availableUsers, setAvailableUsers] = useState([]);
+  const [userSearchQuery, setUserSearchQuery] = useState('');
+  const [loadingUsers, setLoadingUsers] = useState(false);
 
   const messagesEndRef = useRef(null);
   const typingTimeoutRef = useRef(null);
+  const fileInputRef = useRef(null);
 
-  // Scroll to bottom of messages
+  // File upload handler
+  const handleFileUpload = async (event) => {
+    const file = event.target.files[0];
+    if (!file || !activeChat) return;
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const token = localStorage.getItem('token');
+      // Upload file
+      const uploadResponse = await axios.post(
+        'http://localhost:8000/api/chat/upload',
+        formData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'multipart/form-data'
+          }
+        }
+      );
+
+      const { url, filename } = uploadResponse.data;
+      const fileMessage = `📎 [${filename}](${url})`;
+
+      // Helper to send the message
+      const sendMessageToBackend = async (content) => {
+        if (activeChat.type === 'ai') {
+          const response = await axios.post(
+            'http://localhost:8000/api/chat/ai',
+            { message: content },
+            { headers: { Authorization: `Bearer ${token}` } }
+          );
+
+          const userMsg = {
+            id: Date.now().toString(),
+            sender_id: user?.uid || user?._id,
+            sender_name: user?.full_name || 'You',
+            content: content,
+            timestamp: new Date().toISOString(),
+            chat_type: 'ai'
+          };
+
+          setMessages(prev => [...prev, userMsg, response.data.message]);
+        } else {
+          await axios.post(
+            'http://localhost:8000/api/chat/send',
+            {
+              content: content,
+              chat_type: activeChat.type,
+              chat_id: activeChat.id
+            },
+            { headers: { Authorization: `Bearer ${token}` } }
+          );
+        }
+        setTimeout(scrollToBottom, 100);
+      };
+
+      await sendMessageToBackend(fileMessage);
+
+    } catch (error) {
+      console.error('Error uploading file:', error);
+      alert('Failed to upload file');
+    }
+
+    // Reset input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  // Scroll to bottom
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  // Get initials from name
+  const getInitials = (name) => {
+    if (!name) return '?';
+    return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+  };
+
+  // Format timestamp
+  const formatTime = (timestamp) => {
+    try {
+      const date = new Date(timestamp);
+      return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    } catch {
+      return '';
+    }
+  };
+
+  // Format date for separators
+  const formatDate = (timestamp) => {
+    try {
+      const date = new Date(timestamp);
+      const today = new Date();
+      const yesterday = new Date(today);
+      yesterday.setDate(yesterday.getDate() - 1);
+
+      if (date.toDateString() === today.toDateString()) return 'Today';
+      if (date.toDateString() === yesterday.toDateString()) return 'Yesterday';
+      return date.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
+    } catch {
+      return '';
+    }
   };
 
   // Fetch user's chats
@@ -31,7 +149,18 @@ const ChatPage = () => {
       const response = await axios.get('http://localhost:8000/api/chat/chats', {
         headers: { Authorization: `Bearer ${token}` }
       });
-      setChats(response.data.chats);
+
+      // Add AI Assistant as first chat option
+      const aiChat = {
+        id: 'ai-assistant',
+        type: 'ai',
+        name: 'AI Assistant',
+        description: 'Your personal task helper',
+        last_message: null,
+        unread_count: 0
+      };
+
+      setChats([aiChat, ...response.data.chats]);
     } catch (error) {
       console.error('Error fetching chats:', error);
     } finally {
@@ -43,14 +172,56 @@ const ChatPage = () => {
   const fetchMessages = async (chatType, chatId) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get(
-        `http://localhost:8000/api/chat/messages/${chatType}/${chatId}`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      let url;
+
+      if (chatType === 'ai') {
+        url = 'http://localhost:8000/api/chat/ai/history';
+      } else {
+        url = `http://localhost:8000/api/chat/messages/${chatType}/${chatId}`;
+      }
+
+      const response = await axios.get(url, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
       setMessages(response.data.messages);
       setTimeout(scrollToBottom, 100);
     } catch (error) {
       console.error('Error fetching messages:', error);
+    }
+  };
+
+  // Fetch available users for new chat
+  const fetchAvailableUsers = async () => {
+    setLoadingUsers(true);
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get('http://localhost:8000/api/chat/users', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setAvailableUsers(response.data.users);
+    } catch (error) {
+      console.error('Error fetching users:', error);
+    } finally {
+      setLoadingUsers(false);
+    }
+  };
+
+  // Search users
+  const searchUsers = async (query) => {
+    if (query.length < 2) {
+      fetchAvailableUsers();
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get(`http://localhost:8000/api/chat/users/search?query=${query}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setAvailableUsers(response.data.users);
+    } catch (error) {
+      console.error('Error searching users:', error);
     }
   };
 
@@ -61,25 +232,48 @@ const ChatPage = () => {
 
     try {
       const token = localStorage.getItem('token');
-      await axios.post(
-        'http://localhost:8000/api/chat/send',
-        {
+
+      if (activeChat.type === 'ai') {
+        // Send to AI
+        const response = await axios.post(
+          'http://localhost:8000/api/chat/ai',
+          { message: newMessage },
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+
+        // Add user message immediately
+        const userMsg = {
+          id: Date.now().toString(),
+          sender_id: user?.uid || user?._id,
+          sender_name: user?.full_name || 'You',
           content: newMessage,
+          timestamp: new Date().toISOString(),
+          chat_type: 'ai'
+        };
+
+        setMessages(prev => [...prev, userMsg, response.data.message]);
+        setTimeout(scrollToBottom, 100);
+      } else {
+        // Send regular message
+        await axios.post(
+          'http://localhost:8000/api/chat/send',
+          {
+            content: newMessage,
+            chat_type: activeChat.type,
+            chat_id: activeChat.id
+          },
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+
+        // Stop typing indicator
+        sendMessage('typing_stop', {
           chat_type: activeChat.type,
           chat_id: activeChat.id
-        },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+        });
+        setIsTyping(false);
+      }
 
       setNewMessage('');
-
-      // Stop typing indicator
-      sendMessage('typing_stop', {
-        chat_type: activeChat.type,
-        chat_id: activeChat.id
-      });
-      setIsTyping(false);
-
     } catch (error) {
       console.error('Error sending message:', error);
       alert('Failed to send message');
@@ -88,7 +282,7 @@ const ChatPage = () => {
 
   // Handle typing indicator
   const handleTyping = () => {
-    if (!activeChat) return;
+    if (!activeChat || activeChat.type === 'ai') return;
 
     if (!isTyping) {
       setIsTyping(true);
@@ -98,7 +292,6 @@ const ChatPage = () => {
       });
     }
 
-    // Reset timeout
     if (typingTimeoutRef.current) {
       clearTimeout(typingTimeoutRef.current);
     }
@@ -112,25 +305,45 @@ const ChatPage = () => {
     }, 2000);
   };
 
-  // Subscribe to WebSocket events
+  // Start new chat with user
+  const startChatWithUser = (selectedUser) => {
+    const newChat = {
+      id: selectedUser.id,
+      type: 'direct',
+      name: selectedUser.name,
+      role: selectedUser.role,
+      unread_count: 0
+    };
+
+    setActiveChat(newChat);
+    setShowNewChat(false);
+
+    // Add to chats if not exists
+    setChats(prev => {
+      const exists = prev.some(c => c.id === selectedUser.id && c.type === 'direct');
+      if (!exists) {
+        return [...prev.slice(0, 1), newChat, ...prev.slice(1)];
+      }
+      return prev;
+    });
+  };
+
+  // WebSocket subscriptions
   useEffect(() => {
     const unsubscribeNewMessage = subscribe('new_message', (data) => {
-      // Add message if it's for the active chat
       if (activeChat &&
-          data.chat_type === activeChat.type &&
-          data.chat_id === activeChat.id) {
+        data.chat_type === activeChat.type &&
+        data.chat_id === activeChat.id) {
         setMessages(prev => [...prev, data.message]);
         setTimeout(scrollToBottom, 100);
       }
-
-      // Update chat list
       fetchChats();
     });
 
     const unsubscribeTyping = subscribe('user_typing', (data) => {
       if (activeChat &&
-          data.chat_type === activeChat.type &&
-          data.chat_id === activeChat.id) {
+        data.chat_type === activeChat.type &&
+        data.chat_id === activeChat.id) {
         setTypingUsers(prev => {
           const updated = new Set(prev);
           if (data.typing) {
@@ -145,8 +358,8 @@ const ChatPage = () => {
 
     const unsubscribeMessageEdited = subscribe('message_edited', (data) => {
       if (activeChat &&
-          data.chat_type === activeChat.type &&
-          data.chat_id === activeChat.id) {
+        data.chat_type === activeChat.type &&
+        data.chat_id === activeChat.id) {
         setMessages(prev =>
           prev.map(msg => msg.id === data.message.id ? data.message : msg)
         );
@@ -155,8 +368,8 @@ const ChatPage = () => {
 
     const unsubscribeMessageDeleted = subscribe('message_deleted', (data) => {
       if (activeChat &&
-          data.chat_type === activeChat.type &&
-          data.chat_id === activeChat.id) {
+        data.chat_type === activeChat.type &&
+        data.chat_id === activeChat.id) {
         setMessages(prev => prev.filter(msg => msg.id !== data.message_id));
       }
     });
@@ -182,57 +395,91 @@ const ChatPage = () => {
     }
   }, [activeChat]);
 
+  // Filter chats by search
+  const filteredChats = chats.filter(chat =>
+    chat.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="text-xl">Loading chats...</div>
+      <div className="chat-container">
+        <div className="empty-state">
+          <div className="typing-dots">
+            <span></span><span></span><span></span>
+          </div>
+          <p>Loading chats...</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="flex h-screen bg-gray-50">
-      {/* Chat List Sidebar */}
-      <div className="w-80 bg-white border-r border-purple-100 flex flex-col">
-        <div className="p-4 border-b border-purple-100 bg-gradient-to-r from-purple-50 to-blue-50">
-          <h1 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">Messages</h1>
+    <div className="chat-container">
+      {/* Sidebar */}
+      <div className="chat-sidebar">
+        {/* Sidebar Header */}
+        <div className="sidebar-header">
+          <div className="sidebar-header-avatar">
+            {getInitials(user?.full_name)}
+          </div>
+          <div className="sidebar-header-actions">
+            <button onClick={() => navigate('/dashboard')} title="Home">
+              <Home size={22} />
+            </button>
+            <button onClick={() => { setShowNewChat(true); fetchAvailableUsers(); }}>
+              <MessageSquarePlus size={22} />
+            </button>
+            <button><MoreVertical size={22} /></button>
+          </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto">
-          {chats.length === 0 ? (
-            <div className="p-4 text-center text-gray-500">
+        {/* Search */}
+        <div className="sidebar-search">
+          <div className="search-input-wrapper">
+            <Search size={18} />
+            <input
+              type="text"
+              className="search-input"
+              placeholder="Search or start new chat"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+        </div>
+
+        {/* Chat List */}
+        <div className="chat-list">
+          {filteredChats.length === 0 ? (
+            <div style={{ padding: '20px', textAlign: 'center', color: '#667781' }}>
               No conversations yet
             </div>
           ) : (
-            chats.map(chat => (
+            filteredChats.map(chat => (
               <div
-                key={chat.id}
+                key={`${chat.type}-${chat.id}`}
                 onClick={() => setActiveChat(chat)}
-                className={`p-4 border-b border-gray-100 cursor-pointer hover:bg-purple-50 transition ${
-                  activeChat?.id === chat.id ? 'bg-purple-50 border-l-4 border-l-purple-600' : ''
-                }`}
+                className={`chat-item ${activeChat?.id === chat.id && activeChat?.type === chat.type ? 'active' : ''}`}
               >
-                <div className="flex items-center justify-between">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <h3 className="font-semibold text-gray-900 truncate">
-                        {chat.name}
-                      </h3>
-                      {chat.unread_count > 0 && (
-                        <span className="bg-purple-600 text-white text-xs rounded-full px-2 py-1 animate-pulse">
-                          {chat.unread_count}
-                        </span>
-                      )}
-                    </div>
-                    {chat.last_message && (
-                      <p className="text-sm text-gray-600 truncate mt-1">
-                        {chat.last_message.content}
-                      </p>
+                <div className={`chat-item-avatar ${chat.type === 'ai' ? 'ai-avatar' : ''}`}>
+                  {chat.type === 'ai' ? <Bot size={24} /> : getInitials(chat.name)}
+                </div>
+                <div className="chat-item-content">
+                  <div className="chat-item-header">
+                    <span className="chat-item-name">{chat.name}</span>
+                    <span className="chat-item-time">
+                      {chat.last_message ? formatTime(chat.last_message.timestamp) : ''}
+                    </span>
+                  </div>
+                  <div className="chat-item-preview">
+                    <span className="chat-item-message">
+                      {chat.type === 'ai'
+                        ? 'Your personal task assistant'
+                        : (chat.last_message?.content || (chat.type === 'group' ? `${chat.members_count || 0} members` : 'Start a conversation'))}
+                    </span>
+                    {chat.unread_count > 0 && (
+                      <span className="unread-badge">{chat.unread_count}</span>
                     )}
                   </div>
-                  <span className="text-xs text-gray-400">
-                    {chat.type === 'group' ? '👥' : '💬'}
-                  </span>
                 </div>
               </div>
             ))
@@ -241,113 +488,219 @@ const ChatPage = () => {
       </div>
 
       {/* Chat Area */}
-      <div className="flex-1 flex flex-col">
-        {activeChat ? (
-          <>
-            {/* Chat Header */}
-            <div className="bg-gradient-to-r from-purple-50 to-blue-50 border-b border-purple-100 p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="text-xl font-semibold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">{activeChat.name}</h2>
-                  {activeChat.type === 'group' && (
-                    <p className="text-sm text-purple-600">
-                      {activeChat.members_count} members
-                    </p>
-                  )}
-                </div>
+      {activeChat ? (
+        <div className="chat-area">
+          {/* Chat Header */}
+          <div className="chat-header">
+            <button className="back-button" onClick={() => setActiveChat(null)} style={{ display: 'none' }}>
+              <ArrowLeft size={24} color="white" />
+            </button>
+            <div className={`chat-header-avatar ${activeChat.type === 'ai' ? 'ai-avatar' : ''}`}>
+              {activeChat.type === 'ai' ? <Bot size={22} /> : getInitials(activeChat.name)}
+            </div>
+            <div className="chat-header-info">
+              <div className="chat-header-name">{activeChat.name}</div>
+              <div className="chat-header-status">
+                {activeChat.type === 'ai'
+                  ? 'AI Assistant • Online'
+                  : activeChat.type === 'group'
+                    ? `${activeChat.members_count || 0} members`
+                    : 'Online'}
               </div>
             </div>
+            <div className="chat-header-actions">
+              <button><MoreVertical size={22} /></button>
+            </div>
+          </div>
 
-            {/* Messages */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-4">
-              {messages.map(msg => {
-                const isOwnMessage = msg.sender_id === user?.uid || msg.sender_id === user?._id;
+          {/* Messages */}
+          <div className="messages-container">
+            {messages.map((msg, index) => {
+              const isOwnMessage = msg.sender_id === user?.uid || msg.sender_id === user?._id;
+              const isAI = msg.sender_id === 'ai_assistant';
 
-                return (
-                  <div
-                    key={msg.id}
-                    className={`flex ${isOwnMessage ? 'justify-end' : 'justify-start'}`}
-                  >
-                    <div className={`max-w-xs lg:max-w-md ${isOwnMessage ? 'order-1' : 'order-2'}`}>
+              // Date separator logic
+              const showDateSeparator = index === 0 ||
+                formatDate(messages[index - 1]?.timestamp) !== formatDate(msg.timestamp);
+
+              return (
+                <div key={msg.id}>
+                  {showDateSeparator && (
+                    <div className="date-separator">
+                      <span>{formatDate(msg.timestamp)}</span>
+                    </div>
+                  )}
+                  <div className={`message-wrapper ${isOwnMessage ? 'sent' : 'received'}`}>
+                    <div className={`message-bubble ${isOwnMessage ? 'sent' : 'received'} ${isAI ? 'ai' : ''}`}>
                       {!isOwnMessage && activeChat.type === 'group' && (
-                        <p className="text-xs text-gray-500 mb-1">{msg.sender_name}</p>
+                        <div className="message-sender">{msg.sender_name}</div>
                       )}
-                      <div
-                        className={`rounded-2xl p-3 shadow-md ${
-                          isOwnMessage
-                            ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white'
-                            : 'bg-white text-gray-900 border border-purple-100'
-                        }`}
-                      >
-                        <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
-                        <div className="flex items-center justify-between mt-1 gap-2">
-                          <p className={`text-xs ${isOwnMessage ? 'text-white/80' : 'text-gray-400'}`}>
-                            {new Date(msg.timestamp).toLocaleTimeString([], {
-                              hour: '2-digit',
-                              minute: '2-digit'
-                            })}
-                          </p>
-                          {msg.edited && (
-                            <span className={`text-xs ${isOwnMessage ? 'text-white/80' : 'text-gray-400'}`}>
-                              (edited)
-                            </span>
-                          )}
-                        </div>
+                      <span className="message-content">{msg.content}</span>
+                      <div className="message-meta">
+                        <span className="message-time">{formatTime(msg.timestamp)}</span>
+                        {isOwnMessage && !isAI && (
+                          <span className={`message-status ${msg.read_by?.length > 1 ? 'read' : 'delivered'}`}>
+                            <CheckCheck size={16} />
+                          </span>
+                        )}
                       </div>
                     </div>
                   </div>
-                );
-              })}
-
-              {typingUsers.size > 0 && (
-                <div className="flex items-center gap-2">
-                  <div className="flex gap-1">
-                    <div className="w-2 h-2 bg-purple-600 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-                    <div className="w-2 h-2 bg-purple-600 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-                    <div className="w-2 h-2 bg-purple-600 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
-                  </div>
-                  <span className="text-sm text-purple-600 italic">
-                    {Array.from(typingUsers).join(', ')} {typingUsers.size === 1 ? 'is' : 'are'} typing...
-                  </span>
                 </div>
-              )}
+              );
+            })}
 
-              <div ref={messagesEndRef} />
+            {/* Typing Indicator */}
+            {typingUsers.size > 0 && (
+              <div className="typing-indicator">
+                <div className="typing-dots">
+                  <span></span><span></span><span></span>
+                </div>
+                <span className="typing-text">
+                  {Array.from(typingUsers).join(', ')} {typingUsers.size === 1 ? 'is' : 'are'} typing...
+                </span>
+              </div>
+            )}
+
+            <div ref={messagesEndRef} />
+          </div>
+
+          {/* Input Area */}
+          <div className="input-area">
+            <div className="input-actions">
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleFileUpload}
+                style={{ display: 'none' }}
+              />
+              <button onClick={() => fileInputRef.current?.click()}>
+                <Paperclip size={24} />
+              </button>
+            </div>
+            <div className="input-wrapper">
+              <input
+                type="text"
+                className="message-input"
+                value={newMessage}
+                onChange={(e) => {
+                  setNewMessage(e.target.value);
+                  handleTyping();
+                }}
+                onKeyPress={(e) => e.key === 'Enter' && handleSendMessage(e)}
+                placeholder="Type a message"
+              />
+            </div>
+            {newMessage.trim() ? (
+              <button className="send-button" onClick={handleSendMessage}>
+                <Send size={20} />
+              </button>
+            ) : (
+              <button className="send-button">
+                <Mic size={20} />
+              </button>
+            )}
+          </div>
+        </div>
+      ) : (
+        /* Empty State */
+        <div className="empty-state">
+          <svg className="empty-state-icon" viewBox="0 0 303 172" fill="none">
+            <path d="M229.565 160.229C262.212 149.736 286.931 118.685 286.931 82.137C286.931 36.752 251.026 0 206.495 0C178.105 0 153.152 15.533 138.895 39.222C132.206 35.364 124.468 33.137 116.172 33.137C86.544 33.137 62.545 57.137 62.545 86.765C62.545 89.12 62.709 91.436 63.028 93.706C27.727 95.456 0 123.637 0 157.991C0 159.334 0.034 160.669 0.102 161.997H220.162C223.49 161.997 226.682 161.327 229.565 160.229Z" fill="#DAF7DC" />
+            <path d="M137.535 62.529L134.201 95.463L137.535 111.137H165.803L169.137 95.463L165.803 62.529H137.535Z" fill="#075E54" />
+            <ellipse cx="151.669" cy="136.137" rx="14.134" ry="14.134" fill="#075E54" />
+          </svg>
+          <h2>TaskFlow Chat</h2>
+          <p>
+            Send and receive messages with your teachers, classmates, and AI assistant.
+            <br />Select a conversation or start a new chat.
+          </p>
+        </div>
+      )}
+
+      {/* New Chat Modal */}
+      {showNewChat && (
+        <div className="new-chat-modal" onClick={() => setShowNewChat(false)}>
+          <div className="new-chat-content" onClick={e => e.stopPropagation()}>
+            <div className="new-chat-header">
+              <button onClick={() => setShowNewChat(false)}>
+                <ArrowLeft size={24} />
+              </button>
+              <h3>New Chat</h3>
             </div>
 
-            {/* Message Input */}
-            <div className="bg-white border-t border-purple-100 p-4">
-              <form onSubmit={handleSendMessage} className="flex gap-2">
+            <div className="new-chat-search">
+              <div className="search-input-wrapper">
+                <Search size={18} />
                 <input
                   type="text"
-                  value={newMessage}
+                  className="search-input"
+                  placeholder="Search by name, email, or USN"
+                  value={userSearchQuery}
                   onChange={(e) => {
-                    setNewMessage(e.target.value);
-                    handleTyping();
+                    setUserSearchQuery(e.target.value);
+                    searchUsers(e.target.value);
                   }}
-                  placeholder="Type a message..."
-                  className="flex-1 px-4 py-2 border border-purple-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600 focus:border-purple-600"
                 />
-                <button
-                  type="submit"
-                  disabled={!newMessage.trim()}
-                  className="px-6 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-full hover:from-purple-700 hover:to-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-all shadow-md hover:shadow-lg flex items-center gap-2"
-                >
-                  <Send size={18} />
-                  <span>Send</span>
-                </button>
-              </form>
+              </div>
             </div>
-          </>
-        ) : (
-          <div className="flex-1 flex items-center justify-center text-gray-500">
-            <div className="text-center">
-              <p className="text-2xl mb-2">💬</p>
-              <p>Select a conversation to start messaging</p>
+
+            <div className="new-chat-list">
+              {/* AI Assistant Option */}
+              <div
+                className="user-item ai-chat-item"
+                onClick={() => {
+                  setActiveChat({ id: 'ai-assistant', type: 'ai', name: 'AI Assistant' });
+                  setShowNewChat(false);
+                }}
+              >
+                <div className="user-item-avatar">
+                  <Bot size={24} />
+                </div>
+                <div className="user-item-info">
+                  <div className="user-item-name">AI Assistant</div>
+                  <div className="user-item-role">
+                    <Bot size={14} /> Personal task helper with context about your tasks
+                  </div>
+                </div>
+              </div>
+
+              {loadingUsers ? (
+                <div style={{ padding: '20px', textAlign: 'center', color: '#667781' }}>
+                  <div className="typing-dots" style={{ justifyContent: 'center', marginBottom: '8px' }}>
+                    <span></span><span></span><span></span>
+                  </div>
+                  Loading users...
+                </div>
+              ) : availableUsers.length === 0 ? (
+                <div style={{ padding: '20px', textAlign: 'center', color: '#667781' }}>
+                  No users found
+                </div>
+              ) : (
+                availableUsers.map(u => (
+                  <div
+                    key={u.id}
+                    className="user-item"
+                    onClick={() => startChatWithUser(u)}
+                  >
+                    <div className={`user-item-avatar ${u.role === 'teacher' ? 'teacher' : ''}`}>
+                      {getInitials(u.name)}
+                    </div>
+                    <div className="user-item-info">
+                      <div className="user-item-name">{u.name}</div>
+                      <div className="user-item-role">
+                        {u.role === 'teacher' ? <Users size={14} /> : <User size={14} />}
+                        {u.role === 'teacher' ? 'Teacher' : 'Student'}
+                        {u.usn && ` • ${u.usn.toUpperCase()}`}
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 };

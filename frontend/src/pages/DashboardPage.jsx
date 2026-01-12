@@ -1,266 +1,271 @@
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { CheckSquare, Calendar, BarChart3, Users, Brain, Zap, BookOpen, GraduationCap, Award, Activity, Send, Sparkles, Link as LinkIcon, LogOut, MessageCircle } from 'lucide-react';
+import {
+  CheckSquare, Calendar, BarChart3, Users, Brain, Zap, BookOpen,
+  GraduationCap, Award, Activity, Send, Sparkles, Link as LinkIcon,
+  LogOut, MessageCircle, LayoutDashboard, Clock, Settings, Search
+} from 'lucide-react';
 import NotificationBell from '../components/NotificationBell';
 import ActivityFeed from '../components/ActivityFeed';
 import { useAuthStore, useAuth } from '../store/useStore';
 import { authService } from '../services/auth.service';
+import { analyticsService } from '../services/analytics.service';
+import './DashboardPage.css';
 
 export default function DashboardPage() {
   const navigate = useNavigate();
   const { logout, user } = useAuthStore();
   const { isTeacher, isStudent } = useAuth();
+  const [stats, setStats] = useState({
+    pending: 0,
+    focusScore: 0,
+    dueToday: 0
+  });
 
-  const menuItems = [
-    { title: 'My Tasks', icon: CheckSquare, path: '/tasks', color: 'bg-blue-500' },
-    { title: 'Extensions', icon: Calendar, path: '/extensions', color: 'bg-purple-500' },
-    { title: 'Analytics', icon: BarChart3, path: '/analytics', color: 'bg-green-500' },
-    { title: 'Groups', icon: Users, path: '/groups', color: 'bg-orange-500' },
-    { title: 'Chat', icon: MessageCircle, path: '/chat', color: 'bg-cyan-500' },
-  ];
+  const today = new Date().toLocaleDateString('en-US', {
+    weekday: 'long',
+    month: 'long',
+    day: 'numeric'
+  });
 
-  const weekOneFeatures = [
-    { title: 'Stress Meter', icon: Brain, path: '/stress-meter', color: 'bg-pink-500', badge: 'NEW' },
-    { title: 'Focus Mode', icon: Zap, path: '/focus-mode', color: 'bg-indigo-500', badge: 'NEW' },
-    { title: 'Resource Library', icon: BookOpen, path: '/resources', color: 'bg-teal-500', badge: 'NEW' },
-  ];
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        const [dashboardData, workloadData, productivityData] = await Promise.all([
+          analyticsService.getDashboardStats(),
+          analyticsService.getWorkload(),
+          analyticsService.getProductivityMetrics()
+        ]);
 
-  const weekTwoTeacherFeatures = [
-    { title: 'AI Grading Assistant', icon: Award, path: '/teacher/grading', color: 'bg-gradient-to-br from-purple-500 to-blue-500', badge: 'WEEK 2', description: 'Intelligent AI-powered grading with detailed analysis' },
-    { title: 'Class Dashboard', icon: Activity, path: '/teacher/class', color: 'bg-gradient-to-br from-blue-500 to-cyan-500', badge: 'WEEK 2', description: 'Track class performance and identify at-risk students' },
-    { title: 'Bulk Task Creator', icon: Send, path: '/teacher/bulk-tasks', color: 'bg-gradient-to-br from-green-500 to-emerald-500', badge: 'WEEK 2', description: 'Create and assign tasks to multiple students at once' },
-  ];
+        // Calculate Due Today
+        // Workload returns array of 7 days starting from today
+        const todayWorkload = workloadData.workload_by_day[0] || { task_count: 0 };
 
-  const weekThreeFeatures = [
-    { title: 'Smart Study Planner', icon: Sparkles, path: '/study-planner', color: 'bg-gradient-to-br from-emerald-500 to-teal-500', badge: 'WEEK 3', description: 'AI-powered daily schedule with stress-aware planning' },
-  ];
+        setStats({
+          pending: dashboardData.todo,
+          focusScore: Math.round(productivityData.productivity_score),
+          dueToday: todayWorkload.task_count
+        });
+      } catch (error) {
+        console.error('Error fetching dashboard stats:', error);
+      }
+    };
 
-  const weekFourFeatures = [
-    { title: 'Calendar Sync', icon: LinkIcon, path: '/calendar-settings', color: 'bg-gradient-to-br from-blue-600 to-indigo-600', badge: 'WEEK 4', description: 'Sync tasks and study schedules with Google Calendar' },
-  ];
+    fetchDashboardData();
+  }, []);
 
   const handleLogout = async () => {
     if (confirm('Are you sure you want to logout?')) {
       try {
-        // Call Firebase logout
         await authService.logout();
-
-        // Clear Zustand store
         logout();
-
-        // Navigate to login
         navigate('/login', { replace: true });
-
-        // Force reload to clear any cached state
         window.location.reload();
       } catch (error) {
-        console.error('Logout error:', error);
-        // Force logout even if there's an error
         logout();
-        localStorage.clear();
         navigate('/login', { replace: true });
-        window.location.reload();
       }
     }
   };
 
+  // Sidebar Navigation Items
+  const navItems = [
+    { title: 'Dashboard', icon: LayoutDashboard, path: '/dashboard', active: true },
+    { title: 'My Tasks', icon: CheckSquare, path: '/tasks' },
+    { title: 'Schedule', icon: Calendar, path: '/calendar-settings' },
+    { title: 'Study Plan', icon: Sparkles, path: '/study-planner', studentOnly: true },
+    { title: 'Resources', icon: BookOpen, path: '/resources', studentOnly: true },
+    { title: 'Analytics', icon: BarChart3, path: '/analytics' },
+    { title: 'Chat', icon: MessageCircle, path: '/chat' },
+    { title: 'Communities', icon: Users, path: '/groups' },
+  ];
+
+  // Feature Cards Organized by Category
+  const productivityTools = [
+    {
+      title: 'Focus Mode',
+      icon: Zap,
+      path: '/focus-mode',
+      color: 'bg-indigo-100 text-indigo-600',
+      desc: 'Pomodoro timer & focus tracking'
+    },
+    {
+      title: 'Stress Meter',
+      icon: Brain,
+      path: '/stress-meter',
+      color: 'bg-pink-100 text-pink-600',
+      desc: 'Monitor and manage workload stress'
+    },
+    {
+      title: 'Extensions',
+      icon: Clock,
+      path: '/extensions',
+      color: 'bg-orange-100 text-orange-600',
+      desc: 'Manage deadline extension requests'
+    }
+  ];
+
+  const teacherTools = [
+    {
+      title: 'Grading Assistant',
+      icon: Award,
+      path: '/teacher/grading',
+      color: 'bg-purple-100 text-purple-600',
+      desc: 'AI-powered grading analysis'
+    },
+    {
+      title: 'Class Analytics',
+      icon: Activity,
+      path: '/teacher/class',
+      color: 'bg-blue-100 text-blue-600',
+      desc: 'Student performance tracking'
+    },
+    {
+      title: 'Bulk Tasks',
+      icon: Send,
+      path: '/teacher/bulk-tasks',
+      color: 'bg-emerald-100 text-emerald-600',
+      desc: 'Assign tasks to multiple students'
+    }
+  ];
+
   return (
-    <div className="min-h-screen bg-gray-100 p-6">
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h1 className="text-3xl font-bold">Dashboard</h1>
-          <p className="text-gray-600 mt-2">
-            Welcome back, {user?.full_name || user?.email}! 👋
-            {isTeacher && <span className="text-purple-600 font-semibold ml-2">(Teacher)</span>}
-            {isStudent && <span className="text-blue-600 font-semibold ml-2">(Student)</span>}
-          </p>
-        </div>
-        <div className="flex items-center gap-4">
-          <NotificationBell />
-          <button
-            onClick={handleLogout}
-            className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors shadow-md hover:shadow-lg"
-            title="Logout"
-          >
-            <LogOut size={20} />
-            <span className="font-medium">Logout</span>
-          </button>
-        </div>
-      </div>
+    <div className="dashboard-container">
+      <div className="dashboard-grid">
 
-      <div className="flex flex-col lg:flex-row gap-6">
-        <div className="flex-1 min-w-0">
-          {/* Week 1 NEW Features Banner - Student Only */}
-          {isStudent && (
-            <div className="mb-8 bg-gradient-to-r from-purple-500 to-blue-500 rounded-xl shadow-lg p-6 text-white">
-              <h2 className="text-2xl font-bold mb-2">Week 1 Features - AI-Powered Student Tools!</h2>
-              <p className="opacity-90">New features to help you manage stress, focus better, and organize your learning</p>
+        {/* Left Sidebar Navigation */}
+        <aside className="dashboard-nav">
+          <div className="flex items-center gap-3 px-4 mb-8">
+            <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-bold">
+              TS
             </div>
-          )}
-
-          {/* Week 4 NEW Calendar Integration Banner */}
-          <div className="mb-8 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 rounded-xl shadow-lg p-6 text-white">
-            <h2 className="text-2xl font-bold mb-2 flex items-center gap-2">
-              <Calendar size={32} />
-              Week 4 - Google Calendar Integration!
-            </h2>
-            <p className="opacity-90">Bidirectional sync with Google Calendar for tasks and AI-generated study schedules</p>
+            <span className="font-bold text-xl text-gray-800">TaskFlow</span>
           </div>
 
-          {/* Week 4 Calendar Integration */}
-          <div className="mb-8">
-            <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
-              <LinkIcon className="text-blue-600" />
-              Calendar Sync (Week 4)
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-1 gap-6">
-              {weekFourFeatures.map((item) => (
+          <div className="nav-section">
+            <div className="nav-section-title">Main Menu</div>
+            {navItems.map((item) => (
+              (!item.studentOnly || isStudent) && (
                 <div
-                  key={item.path}
-                  onClick={() => navigate(item.path)}
-                  className={`${item.color} p-6 rounded-lg shadow-lg cursor-pointer hover:scale-[1.02] transition-transform relative overflow-hidden`}
+                  key={item.title}
+                  className={`nav-item ${item.active ? 'bg-indigo-50 text-indigo-600' : ''}`}
+                  onClick={() => !item.active && navigate(item.path)}
                 >
-                  <div className="absolute top-2 right-2 bg-blue-400 text-blue-900 text-xs font-bold px-2 py-1 rounded animate-pulse">
-                    {item.badge}
+                  <item.icon size={20} />
+                  <span>{item.title}</span>
+                </div>
+              )
+            ))}
+          </div>
+
+          <div className="mt-auto pt-8 border-t border-gray-100">
+            <button onClick={handleLogout} className="logout-btn w-full">
+              <LogOut size={18} />
+              <span>Sign Out</span>
+            </button>
+          </div>
+        </aside>
+
+        {/* Main Content */}
+        <main className="dashboard-main">
+          {/* Header */}
+          <header className="dashboard-header">
+            <div className="welcome-text">
+              <h1>Good {new Date().getHours() < 12 ? 'Morning' : new Date().getHours() < 18 ? 'Afternoon' : 'Evening'}, {user?.full_name?.split(' ')[0] || 'Student'}!</h1>
+              <p>{today} • Let's make today productive.</p>
+            </div>
+            <div className="header-actions">
+              <NotificationBell />
+            </div>
+          </header>
+
+          {/* Quick Stats Row */}
+          <div className="stats-grid">
+            <div className="stat-card">
+              <div className="stat-header">
+                <div className="stat-icon bg-blue-100 text-blue-600">
+                  <CheckSquare size={20} />
+                </div>
+                {/* <span className="text-green-500 text-xs font-bold">+12%</span> */}
+              </div>
+              <div className="stat-value">{stats.pending}</div>
+              <div className="stat-label">Tasks Pending</div>
+            </div>
+            <div className="stat-card">
+              <div className="stat-header">
+                <div className="stat-icon bg-purple-100 text-purple-600">
+                  <Activity size={20} />
+                </div>
+                <span className="text-gray-400 text-xs">This Week</span>
+              </div>
+              <div className="stat-value">{stats.focusScore}%</div>
+              <div className="stat-label">Focus Score</div>
+            </div>
+            <div className="stat-card">
+              <div className="stat-header">
+                <div className="stat-icon bg-orange-100 text-orange-600">
+                  <Clock size={20} />
+                </div>
+                <span className="text-red-500 text-xs font-bold">Urgent</span>
+              </div>
+              <div className="stat-value">{stats.dueToday}</div>
+              <div className="stat-label">Due Today</div>
+            </div>
+          </div>
+
+          {/* Productivity Tools Section */}
+          <div className="feature-section">
+            <div className="section-header">
+              <Zap className="text-indigo-600" size={20} />
+              <h2>Productivity & Wellness</h2>
+            </div>
+            <div className="feature-cards-grid">
+              {productivityTools.map((tool) => (
+                <div key={tool.title} className="premium-card" onClick={() => navigate(tool.path)}>
+                  <div className={`card-icon-wrapper ${tool.color}`}>
+                    <tool.icon size={24} />
                   </div>
-                  <item.icon className="text-white mb-4" size={48} />
-                  <h2 className="text-white text-xl font-bold">{item.title}</h2>
-                  <p className="text-white text-sm mt-2 opacity-90">
-                    {item.description}
-                  </p>
+                  <h3>{tool.title}</h3>
+                  <p>{tool.desc}</p>
                 </div>
               ))}
             </div>
           </div>
 
-          {/* Week 3 NEW Smart Study Planner Banner - Student Only */}
-          {isStudent && (
-            <>
-              <div className="mb-8 bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 rounded-xl shadow-lg p-6 text-white">
-                <h2 className="text-2xl font-bold mb-2 flex items-center gap-2">
-                  <Sparkles size={32} />
-                  Week 3 - Smart Study Planner!
-                </h2>
-                <p className="opacity-90">AI-powered daily scheduling with deadline-first, complexity-balanced, stress-aware planning</p>
-              </div>
-
-              {/* Week 3 Smart Study Planner */}
-              <div className="mb-8">
-                <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
-                  <Calendar className="text-emerald-600" />
-                  Smart Scheduling (Week 3)
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-1 gap-6">
-                  {weekThreeFeatures.map((item) => (
-                    <div
-                      key={item.path}
-                      onClick={() => navigate(item.path)}
-                      className={`${item.color} p-6 rounded-lg shadow-lg cursor-pointer hover:scale-[1.02] transition-transform relative overflow-hidden`}
-                    >
-                      <div className="absolute top-2 right-2 bg-emerald-400 text-emerald-900 text-xs font-bold px-2 py-1 rounded animate-pulse">
-                        {item.badge}
-                      </div>
-                      <item.icon className="text-white mb-4" size={48} />
-                      <h2 className="text-white text-xl font-bold">{item.title}</h2>
-                      <p className="text-white text-sm mt-2 opacity-90">
-                        {item.description}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </>
-          )}
-
-          {/* Week 2 NEW Teacher Features Banner - Teacher Only */}
+          {/* Teacher Tools Section (Conditionally Rendered) */}
           {isTeacher && (
-            <>
-              <div className="mb-8 bg-gradient-to-r from-amber-500 via-orange-500 to-red-500 rounded-xl shadow-lg p-6 text-white">
-                <h2 className="text-2xl font-bold mb-2 flex items-center gap-2">
-                  <GraduationCap size={32} />
-                  Week 2 - Teacher Efficiency Tools!
-                </h2>
-                <p className="opacity-90">AI-powered tools for grading, class analytics, and bulk task management</p>
+            <div className="feature-section">
+              <div className="section-header">
+                <GraduationCap className="text-emerald-600" size={20} />
+                <h2>Classroom Management</h2>
               </div>
-
-              {/* Week 2 Teacher Features Grid */}
-              <div className="mb-8">
-                <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
-                  <Award className="text-purple-600" />
-                  Teacher Tools (Week 2)
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  {weekTwoTeacherFeatures.map((item) => (
-                    <div
-                      key={item.path}
-                      onClick={() => navigate(item.path)}
-                      className={`${item.color} p-6 rounded-lg shadow-lg cursor-pointer hover:scale-105 transition-transform relative overflow-hidden`}
-                    >
-                      <div className="absolute top-2 right-2 bg-amber-400 text-amber-900 text-xs font-bold px-2 py-1 rounded animate-pulse">
-                        {item.badge}
-                      </div>
-                      <item.icon className="text-white mb-4" size={48} />
-                      <h2 className="text-white text-xl font-bold">{item.title}</h2>
-                      <p className="text-white text-sm mt-2 opacity-90">
-                        {item.description}
-                      </p>
+              <div className="feature-cards-grid">
+                {teacherTools.map((tool) => (
+                  <div key={tool.title} className="premium-card" onClick={() => navigate(tool.path)}>
+                    <div className={`card-icon-wrapper ${tool.color}`}>
+                      <tool.icon size={24} />
                     </div>
-                  ))}
-                </div>
-              </div>
-            </>
-          )}
-
-          {/* Week 1 Features Grid - Student Only */}
-          {isStudent && (
-            <div className="mb-8">
-              <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
-                <Zap className="text-purple-500" />
-                Student AI Features (Week 1)
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {weekOneFeatures.map((item) => (
-                  <div
-                    key={item.path}
-                    onClick={() => navigate(item.path)}
-                    className={`${item.color} p-6 rounded-lg shadow-lg cursor-pointer hover:scale-105 transition-transform relative overflow-hidden`}
-                  >
-                    <div className="absolute top-2 right-2 bg-yellow-400 text-yellow-900 text-xs font-bold px-2 py-1 rounded">
-                      {item.badge}
-                    </div>
-                    <item.icon className="text-white mb-4" size={48} />
-                    <h2 className="text-white text-xl font-bold">{item.title}</h2>
-                    <p className="text-white text-sm mt-2 opacity-90">
-                      {item.title === 'Stress Meter' && 'AI analyzes your workload stress in real-time'}
-                      {item.title === 'Focus Mode' && 'Pomodoro timer with productivity tracking'}
-                      {item.title === 'Resource Library' && 'AI-powered note organization & flashcards'}
-                    </p>
+                    <h3>{tool.title}</h3>
+                    <p>{tool.desc}</p>
                   </div>
                 ))}
               </div>
             </div>
           )}
 
-          {/* Core Features */}
-          <div>
-            <h3 className="text-xl font-bold mb-4">Core Features</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {menuItems.map((item) => (
-                <div
-                  key={item.path}
-                  onClick={() => navigate(item.path)}
-                  className={`${item.color} p-6 rounded-lg shadow-lg cursor-pointer hover:opacity-90 transition-opacity`}
-                >
-                  <item.icon className="text-white mb-4" size={48} />
-                  <h2 className="text-white text-xl font-bold">{item.title}</h2>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
+        </main>
 
-        <div className="lg:w-80 flex-shrink-0">
-          <ActivityFeed />
-        </div>
+        {/* Right Sidebar - Activity Feed */}
+        <aside className="dashboard-right-sidebar">
+          <div className="activity-widget">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="font-bold text-gray-800">Recent Activity</h3>
+              <div className="text-xs text-indigo-600 font-medium cursor-pointer">View All</div>
+            </div>
+            <ActivityFeed />
+          </div>
+        </aside>
+
       </div>
     </div>
   );

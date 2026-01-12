@@ -61,7 +61,7 @@ export default function ActivityFeed() {
         deleted: 'Deleted task',
         completed: 'Completed task'
       }[activity.action] || 'Modified task';
-      
+
       return (
         <span>
           {actionText} <span className="font-medium text-gray-900 dark:text-gray-100">"{activity.title}"</span>
@@ -73,48 +73,35 @@ export default function ActivityFeed() {
 
   if (activities.length === 0) {
     return (
-      <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-100 dark:border-gray-700 h-full">
-        <h3 className="font-bold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
-          <Clock size={20} className="text-blue-500" />
-          Recent Activity
-        </h3>
-        <p className="text-gray-500 text-sm text-center py-8">No recent activity</p>
-      </div>
+      <p className="text-gray-500 text-sm text-center py-8">No recent activity</p>
     );
   }
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-100 dark:border-gray-700 h-full">
-      <h3 className="font-bold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
-        <Clock size={20} className="text-blue-500" />
-        Recent Activity
-      </h3>
-      
-      <div className="space-y-4">
-        <AnimatePresence initial={false}>
-          {activities.map((activity) => (
-            <motion.div
-              key={activity.id}
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              className="flex items-start gap-3 text-sm"
-            >
-              <div className="mt-0.5 bg-gray-50 dark:bg-gray-700 p-1.5 rounded-full">
-                {getIcon(activity.type, activity.action)}
-              </div>
-              <div className="flex-1">
-                <p className="text-gray-600 dark:text-gray-300">
-                  {getMessage(activity)}
-                </p>
-                <span className="text-xs text-gray-400">
-                  {activity.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                </span>
-              </div>
-            </motion.div>
-          ))}
-        </AnimatePresence>
-      </div>
+    <div className="space-y-4">
+      <AnimatePresence initial={false}>
+        {activities.map((activity) => (
+          <motion.div
+            key={activity.id}
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            className="flex items-start gap-3 text-sm"
+          >
+            <div className="mt-0.5 bg-gray-50 dark:bg-gray-700 p-1.5 rounded-full">
+              {getIcon(activity.type, activity.action)}
+            </div>
+            <div className="flex-1">
+              <p className="text-gray-600 dark:text-gray-300">
+                {getMessage(activity)}
+              </p>
+              <span className="text-xs text-gray-400">
+                {activity.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              </span>
+            </div>
+          </motion.div>
+        ))}
+      </AnimatePresence>
     </div>
   );
 }

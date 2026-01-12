@@ -22,8 +22,8 @@ export default function NotificationBell() {
   const loadNotifications = async () => {
     try {
       const [notifsRes, countRes] = await Promise.all([
-        axios.get('http://localhost:8000/notifications', getAuthHeader()),
-        axios.get('http://localhost:8000/notifications/count', getAuthHeader())
+        axios.get('http://localhost:8000/api/notifications', getAuthHeader()),
+        axios.get('http://localhost:8000/api/notifications/count', getAuthHeader())
       ]);
 
       setNotifications(notifsRes.data);
@@ -36,7 +36,7 @@ export default function NotificationBell() {
   const markAsRead = async (notifId) => {
     try {
       await axios.put(
-        `http://localhost:8000/notifications/${notifId}/read`,
+        `http://localhost:8000/api/notifications/${notifId}/read`,
         {},
         getAuthHeader()
       );
@@ -49,7 +49,7 @@ export default function NotificationBell() {
   const markAllAsRead = async () => {
     setLoading(true);
     try {
-      await axios.put('http://localhost:8000/notifications/read-all', {}, getAuthHeader());
+      await axios.put('http://localhost:8000/api/notifications/read-all', {}, getAuthHeader());
       loadNotifications();
     } catch (err) {
       console.error('Failed to mark all as read:', err);
@@ -60,7 +60,7 @@ export default function NotificationBell() {
 
   const deleteNotification = async (notifId) => {
     try {
-      await axios.delete(`http://localhost:8000/notifications/${notifId}`, getAuthHeader());
+      await axios.delete(`http://localhost:8000/api/notifications/${notifId}`, getAuthHeader());
       loadNotifications();
     } catch (err) {
       console.error('Failed to delete notification:', err);
@@ -138,9 +138,8 @@ export default function NotificationBell() {
                 notifications.map(notif => (
                   <div
                     key={notif.id}
-                    className={`p-4 border-b border-gray-100 hover:bg-gray-50 transition-colors ${
-                      !notif.read ? 'bg-blue-50' : ''
-                    }`}
+                    className={`p-4 border-b border-gray-100 hover:bg-gray-50 transition-colors ${!notif.read ? 'bg-blue-50' : ''
+                      }`}
                   >
                     <div className="flex items-start gap-3">
                       <span className="text-2xl">{getNotificationIcon(notif.type)}</span>

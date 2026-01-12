@@ -26,8 +26,9 @@ import { useUIStore } from '../store/useStore';
  * - Real-time task filtering
  */
 
-export default function KanbanBoard() {
+export default function KanbanBoard({ onAddTask }) {
   const { getTasksByStatus, moveTask, updateTask } = useTaskStore();
+  // ... existing code ...
   const { showToast } = useUIStore();
   const [activeTask, setActiveTask] = useState(null);
 
@@ -156,7 +157,7 @@ export default function KanbanBoard() {
       onDragCancel={handleDragCancel}
     >
       {/* Kanban Columns */}
-      <div className="flex flex-col lg:flex-row gap-6 overflow-x-auto pb-4">
+      <div className="flex flex-col lg:flex-row justify-between gap-6 overflow-x-auto pb-4 max-w-[1400px] mx-auto">
         {columns.map((column) => (
           <KanbanColumn
             key={column.id}
@@ -164,6 +165,7 @@ export default function KanbanBoard() {
             title={column.title}
             tasks={column.tasks}
             icon={column.icon}
+            onAddTask={() => onAddTask && onAddTask(column.id)}
           />
         ))}
       </div>

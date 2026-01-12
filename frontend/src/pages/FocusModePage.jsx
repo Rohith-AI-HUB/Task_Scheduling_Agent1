@@ -43,7 +43,7 @@ function FocusModePage() {
   const fetchTasks = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get('http://localhost:8000/tasks', {
+      const response = await axios.get('http://localhost:8000/api/tasks', {
         headers: { Authorization: `Bearer ${token}` }
       });
       const activeTasks = response.data.tasks.filter(t =>
@@ -76,7 +76,7 @@ function FocusModePage() {
           task_id: selectedTask,
           session_type: sessionType,
           planned_duration_minutes: sessionType === 'pomodoro' ? 25 :
-                                    sessionType === 'deep_work' ? 90 : customDuration
+            sessionType === 'deep_work' ? 90 : customDuration
         },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -194,197 +194,197 @@ function FocusModePage() {
           </div>
         </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Main Timer Area */}
-        <div className="lg:col-span-2">
-          {activeSession ? (
-            // Active Session View
-            <div className="bg-gradient-to-br from-purple-50 to-blue-50 rounded-2xl shadow-lg p-8">
-              <div className="text-center">
-                <div className="mb-6">
-                  <span className="bg-purple-500 text-white px-4 py-2 rounded-full text-sm font-semibold">
-                    {activeSession.session_type.replace('_', ' ').toUpperCase()}
-                  </span>
-                </div>
-
-                {activeSession.task_title && (
-                  <h2 className="text-xl font-semibold mb-4 text-gray-700">
-                    {activeSession.task_title}
-                  </h2>
-                )}
-
-                {/* Timer Display */}
-                <div className="mb-8">
-                  <div className="text-9xl font-bold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent mb-4">
-                    {timeLeft ? `${String(timeLeft.minutes).padStart(2, '0')}:${String(timeLeft.seconds).padStart(2, '0')}` : '00:00'}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Main Timer Area */}
+          <div className="lg:col-span-2">
+            {activeSession ? (
+              // Active Session View
+              <div className="bg-gradient-to-br from-purple-50 to-blue-50 rounded-2xl shadow-lg p-8">
+                <div className="text-center">
+                  <div className="mb-6">
+                    <span className="bg-purple-500 text-white px-4 py-2 rounded-full text-sm font-semibold">
+                      {activeSession.session_type.replace('_', ' ').toUpperCase()}
+                    </span>
                   </div>
 
-                  {timeLeft?.isOvertime && (
-                    <div className="text-red-500 font-semibold animate-pulse">
-                      Overtime! You can finish up when ready.
-                    </div>
+                  {activeSession.task_title && (
+                    <h2 className="text-xl font-semibold mb-4 text-gray-700">
+                      {activeSession.task_title}
+                    </h2>
                   )}
 
-                  <div className="text-gray-600 mt-2">
-                    {activeSession.planned_duration_minutes} minute session
-                  </div>
-                </div>
+                  {/* Timer Display */}
+                  <div className="mb-8">
+                    <div className="text-9xl font-bold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent mb-4">
+                      {timeLeft ? `${String(timeLeft.minutes).padStart(2, '0')}:${String(timeLeft.seconds).padStart(2, '0')}` : '00:00'}
+                    </div>
 
-                {/* Progress Bar */}
-                <div className="mb-8">
-                  <div className="h-4 bg-gray-200 rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 transition-all duration-1000"
-                      style={{
-                        width: `${Math.min(100, ((activeSession.planned_duration_minutes - (timeLeft?.minutes || 0)) / activeSession.planned_duration_minutes) * 100)}%`
-                      }}
-                    />
-                  </div>
-                </div>
+                    {timeLeft?.isOvertime && (
+                      <div className="text-red-500 font-semibold animate-pulse">
+                        Overtime! You can finish up when ready.
+                      </div>
+                    )}
 
-                {/* Session Info */}
-                <div className="flex justify-center gap-8 mb-8 text-sm">
-                  <div className="text-center">
-                    <div className="text-gray-500">Started</div>
-                    <div className="font-semibold">
-                      {new Date(activeSession.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    <div className="text-gray-600 mt-2">
+                      {activeSession.planned_duration_minutes} minute session
                     </div>
                   </div>
-                  <div className="text-center">
-                    <div className="text-gray-500">Interruptions</div>
-                    <div className="font-semibold">{activeSession.interruptions}</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-gray-500">End Time</div>
-                    <div className="font-semibold">
-                      {new Date(activeSession.expected_end_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+
+                  {/* Progress Bar */}
+                  <div className="mb-8">
+                    <div className="h-4 bg-gray-200 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 transition-all duration-1000"
+                        style={{
+                          width: `${Math.min(100, ((activeSession.planned_duration_minutes - (timeLeft?.minutes || 0)) / activeSession.planned_duration_minutes) * 100)}%`
+                        }}
+                      />
                     </div>
                   </div>
-                </div>
 
-                {/* Action Buttons */}
-                <div className="flex gap-3 justify-center">
-                  <GradientButton
-                    variant="green"
-                    onClick={() => setShowCompleteModal(true)}
-                    size="lg"
-                    className="flex items-center gap-2"
-                  >
-                    <Square size={18} />
-                    Complete Session
-                  </GradientButton>
+                  {/* Session Info */}
+                  <div className="flex justify-center gap-8 mb-8 text-sm">
+                    <div className="text-center">
+                      <div className="text-gray-500">Started</div>
+                      <div className="font-semibold">
+                        {new Date(activeSession.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-gray-500">Interruptions</div>
+                      <div className="font-semibold">{activeSession.interruptions}</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-gray-500">End Time</div>
+                      <div className="font-semibold">
+                        {new Date(activeSession.expected_end_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </div>
+                    </div>
+                  </div>
 
-                  <button
-                    onClick={cancelSession}
-                    className="bg-gray-200 text-gray-700 px-6 py-3 rounded-lg font-semibold hover:bg-gray-300 transition-all"
-                  >
-                    Cancel
-                  </button>
-                </div>
+                  {/* Action Buttons */}
+                  <div className="flex gap-3 justify-center">
+                    <GradientButton
+                      variant="green"
+                      onClick={() => setShowCompleteModal(true)}
+                      size="lg"
+                      className="flex items-center gap-2"
+                    >
+                      <Square size={18} />
+                      Complete Session
+                    </GradientButton>
 
-                {/* Interruption Buttons */}
-                <div className="mt-6 p-4 bg-white rounded-lg">
-                  <p className="text-sm text-gray-600 mb-3">Got interrupted?</p>
-                  <div className="flex gap-2 justify-center">
                     <button
-                      onClick={() => logInterruption('notification')}
-                      className="text-sm border-2 border-purple-600 text-purple-600 px-6 py-3 rounded-lg hover:bg-purple-50 transition-all"
+                      onClick={cancelSession}
+                      className="bg-gray-200 text-gray-700 px-6 py-3 rounded-lg font-semibold hover:bg-gray-300 transition-all"
                     >
-                      Notification
+                      Cancel
                     </button>
-                    <button
-                      onClick={() => logInterruption('distraction')}
-                      className="text-sm border-2 border-purple-600 text-purple-600 px-6 py-3 rounded-lg hover:bg-purple-50 transition-all"
-                    >
-                      Distraction
-                    </button>
-                    <button
-                      onClick={() => logInterruption('break')}
-                      className="text-sm border-2 border-purple-600 text-purple-600 px-6 py-3 rounded-lg hover:bg-purple-50 transition-all"
-                    >
-                      Quick Break
-                    </button>
+                  </div>
+
+                  {/* Interruption Buttons */}
+                  <div className="mt-6 p-4 bg-white rounded-lg">
+                    <p className="text-sm text-gray-600 mb-3">Got interrupted?</p>
+                    <div className="flex gap-2 justify-center">
+                      <button
+                        onClick={() => logInterruption('notification')}
+                        className="text-sm border-2 border-purple-600 text-purple-600 px-6 py-3 rounded-lg hover:bg-purple-50 transition-all"
+                      >
+                        Notification
+                      </button>
+                      <button
+                        onClick={() => logInterruption('distraction')}
+                        className="text-sm border-2 border-purple-600 text-purple-600 px-6 py-3 rounded-lg hover:bg-purple-50 transition-all"
+                      >
+                        Distraction
+                      </button>
+                      <button
+                        onClick={() => logInterruption('break')}
+                        className="text-sm border-2 border-purple-600 text-purple-600 px-6 py-3 rounded-lg hover:bg-purple-50 transition-all"
+                      >
+                        Quick Break
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          ) : (
-            // No Active Session
-            <div className="bg-white rounded-2xl shadow-lg p-12 text-center">
-              <Zap className="mx-auto mb-6 text-purple-600" size={64} />
-              <h2 className="text-3xl font-bold mb-4 bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">Ready to Focus?</h2>
-              <p className="text-gray-600 mb-8">
-                Start a focus session to boost your productivity and track your time
-              </p>
+            ) : (
+              // No Active Session
+              <div className="bg-white rounded-2xl shadow-lg p-12 text-center">
+                <Zap className="mx-auto mb-6 text-purple-600" size={64} />
+                <h2 className="text-3xl font-bold mb-4 bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">Ready to Focus?</h2>
+                <p className="text-gray-600 mb-8">
+                  Start a focus session to boost your productivity and track your time
+                </p>
 
-              <GradientButton
-                variant="indigo"
-                onClick={() => setShowStartModal(true)}
-                size="xl"
-                className="flex items-center gap-3 mx-auto"
-              >
-                <Play size={24} />
-                Start Focus Session
-              </GradientButton>
-            </div>
-          )}
-        </div>
-
-        {/* Stats Sidebar */}
-        <div className="space-y-4">
-          {stats && (
-            <>
-              <MetricCard
-                icon={Clock}
-                label="Total Focus Time (min)"
-                value={stats.total_focus_time?.toFixed(0) || 0}
-                gradient="purple-indigo"
-              />
-
-              <MetricCard
-                icon={TrendingUp}
-                label="Sessions Completed"
-                value={stats.total_sessions || 0}
-                gradient="green"
-              />
-
-              <MetricCard
-                icon={Zap}
-                label="Completion Rate"
-                value={`${stats.completion_rate?.toFixed(0) || 0}%`}
-                gradient="purple-blue"
-              />
-
-              <div className="bg-white rounded-xl shadow p-6">
-                <h3 className="font-semibold mb-3 text-sm text-gray-600">Session Types</h3>
-                <div className="space-y-2">
-                  {Object.entries(stats.sessions_by_type || {}).map(([type, count]) => (
-                    <div key={type} className="flex justify-between items-center text-sm">
-                      <span className="capitalize">{type.replace('_', ' ')}</span>
-                      <span className="font-semibold">{count}</span>
-                    </div>
-                  ))}
-                </div>
+                <GradientButton
+                  variant="indigo"
+                  onClick={() => setShowStartModal(true)}
+                  size="xl"
+                  className="flex items-center gap-3 mx-auto"
+                >
+                  <Play size={24} />
+                  Start Focus Session
+                </GradientButton>
               </div>
-            </>
-          )}
+            )}
+          </div>
 
-          {!activeSession && (
-            <div className="bg-gradient-to-br from-purple-50 to-indigo-50 rounded-xl p-6">
-              <h3 className="font-semibold mb-3 flex items-center gap-2 text-purple-600">
-                <Coffee size={18} />
-                Focus Tips
-              </h3>
-              <ul className="text-sm space-y-2 text-gray-700">
-                <li>• Turn off notifications</li>
-                <li>• Close unnecessary tabs</li>
-                <li>• Have water nearby</li>
-                <li>• Take breaks between sessions</li>
-              </ul>
-            </div>
-          )}
+          {/* Stats Sidebar */}
+          <div className="space-y-4">
+            {stats && (
+              <>
+                <MetricCard
+                  icon={Clock}
+                  label="Total Focus Time (min)"
+                  value={stats.total_focus_time?.toFixed(0) || 0}
+                  gradient="purple-indigo"
+                />
+
+                <MetricCard
+                  icon={TrendingUp}
+                  label="Sessions Completed"
+                  value={stats.total_sessions || 0}
+                  gradient="green"
+                />
+
+                <MetricCard
+                  icon={Zap}
+                  label="Completion Rate"
+                  value={`${stats.completion_rate?.toFixed(0) || 0}%`}
+                  gradient="purple-blue"
+                />
+
+                <div className="bg-white rounded-xl shadow p-6">
+                  <h3 className="font-semibold mb-3 text-sm text-gray-600">Session Types</h3>
+                  <div className="space-y-2">
+                    {Object.entries(stats.sessions_by_type || {}).map(([type, count]) => (
+                      <div key={type} className="flex justify-between items-center text-sm">
+                        <span className="capitalize">{type.replace('_', ' ')}</span>
+                        <span className="font-semibold">{count}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </>
+            )}
+
+            {!activeSession && (
+              <div className="bg-gradient-to-br from-purple-50 to-indigo-50 rounded-xl p-6">
+                <h3 className="font-semibold mb-3 flex items-center gap-2 text-purple-600">
+                  <Coffee size={18} />
+                  Focus Tips
+                </h3>
+                <ul className="text-sm space-y-2 text-gray-700">
+                  <li>• Turn off notifications</li>
+                  <li>• Close unnecessary tabs</li>
+                  <li>• Have water nearby</li>
+                  <li>• Take breaks between sessions</li>
+                </ul>
+              </div>
+            )}
+          </div>
         </div>
-      </div>
       </div>
 
       {/* Start Session Modal */}
@@ -405,11 +405,10 @@ function FocusModePage() {
                   <button
                     key={type.id}
                     onClick={() => setSessionType(type.id)}
-                    className={`w-full p-4 rounded-lg border-2 text-left transition-all ${
-                      sessionType === type.id
+                    className={`w-full p-4 rounded-lg border-2 text-left transition-all ${sessionType === type.id
                         ? 'border-purple-500 bg-purple-50'
                         : 'border-gray-200 hover:border-gray-300'
-                    }`}
+                      }`}
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
@@ -487,11 +486,10 @@ function FocusModePage() {
                   <button
                     key={rating}
                     onClick={() => setProductivityRating(rating)}
-                    className={`w-12 h-12 rounded-full border-2 font-bold transition-all ${
-                      productivityRating >= rating
+                    className={`w-12 h-12 rounded-full border-2 font-bold transition-all ${productivityRating >= rating
                         ? 'bg-gradient-to-br from-purple-600 to-indigo-600 text-white border-purple-600'
                         : 'border-gray-300 text-gray-400 hover:border-purple-400'
-                    }`}
+                      }`}
                   >
                     {rating}
                   </button>
@@ -530,7 +528,6 @@ function FocusModePage() {
           </div>
         </div>
       )}
-      </div>
     </div>
   );
 }

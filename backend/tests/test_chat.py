@@ -35,31 +35,10 @@ def clean_db():
     chat_history_collection.delete_many({"sender_name": {"$regex": "^Test"}})
 
 
-@pytest.fixture
-def test_user_token():
-    """Get authentication token for test user."""
-    # This assumes you have a test user already created
-    # Adjust based on your auth setup
-    response = client.post("/api/auth/login", json={
-        "email": "test@example.com",
-        "password": "testpassword"
-    })
-    return response.json().get("token")
+# test_user_token fixture removed to use conftest.py version
 
 
-@pytest.fixture
-def test_group(test_user_token):
-    """Create a test group."""
-    response = client.post(
-        "/api/groups/",
-        headers={"Authorization": f"Bearer {test_user_token}"},
-        json={
-            "name": "Test Group",
-            "description": "Test group for chat tests",
-            "members": []
-        }
-    )
-    return response.json()
+# test_group fixture removed to use conftest.py version
 
 
 # ==================== MESSAGE SENDING TESTS ====================

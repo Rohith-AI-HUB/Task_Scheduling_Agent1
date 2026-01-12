@@ -28,8 +28,8 @@ export default function AnalyticsPage() {
       const headers = { Authorization: `Bearer ${token}` };
 
       const [statsRes, workloadRes] = await Promise.all([
-        axios.get('http://localhost:8000/analytics/dashboard', { headers }),
-        axios.get('http://localhost:8000/analytics/workload', { headers })
+        axios.get('http://localhost:8000/api/analytics/dashboard', { headers }),
+        axios.get('http://localhost:8000/api/analytics/workload', { headers })
       ]);
 
       setStats(statsRes.data);

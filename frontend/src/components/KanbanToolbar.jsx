@@ -15,7 +15,7 @@ import { useAuth } from '../store/useStore';
  * - Role-based rendering
  */
 
-export default function KanbanToolbar({ onNewTask }) {
+export default function KanbanToolbar() {
   const { filters, setFilter, clearFilters } = useTaskStore();
   const { isTeacher } = useAuth();
 
@@ -27,14 +27,16 @@ export default function KanbanToolbar({ onNewTask }) {
   ];
 
   return (
-    <div className="bg-purple-600 dark:bg-purple-800 rounded-xl shadow-lg p-4 mb-6">
+    <div className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-xl border border-white/40 dark:border-gray-700/50 rounded-2xl shadow-sm p-4 mb-8">
       <div className="flex flex-wrap items-center gap-4">
         {/* Search Bar */}
-        <SearchInput
-          value={filters.search}
-          onChange={(value) => setFilter('search', value)}
-          placeholder="Search tasks..."
-        />
+        <div className="flex-1 min-w-[200px]">
+          <SearchInput
+            value={filters.search}
+            onChange={(value) => setFilter('search', value)}
+            placeholder="Search tasks..."
+          />
+        </div>
 
         {/* Priority Filter */}
         <FilterDropdown
@@ -42,30 +44,16 @@ export default function KanbanToolbar({ onNewTask }) {
           options={priorityOptions}
           value={filters.priority}
           onChange={(value) => setFilter('priority', value)}
-          placeholder="All"
+          placeholder="All Priorities"
         />
 
         {/* Clear Filters Button */}
         {(filters.search || filters.priority) && (
           <button
             onClick={clearFilters}
-            className="px-4 py-2.5 bg-white bg-opacity-20 hover:bg-opacity-30 text-white text-sm font-medium rounded-lg transition-all"
+            className="px-4 py-2.5 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 text-sm font-medium transition-colors"
           >
-            Clear Filters
-          </button>
-        )}
-
-        {/* Spacer */}
-        <div className="flex-1 min-w-[20px]" />
-
-        {/* New Task Button - Show for teachers */}
-        {isTeacher && (
-          <button
-            onClick={onNewTask}
-            className="bg-gradient-to-r from-purple-600 to-blue-500 hover:from-purple-700 hover:to-blue-600 text-white px-6 py-2.5 rounded-lg font-semibold shadow-md hover:shadow-lg transition-all flex items-center gap-2 whitespace-nowrap"
-          >
-            <Plus size={20} />
-            New Task
+            Clear
           </button>
         )}
       </div>

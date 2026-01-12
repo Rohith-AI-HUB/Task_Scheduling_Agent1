@@ -11,11 +11,13 @@ import KanbanBoard from '../components/KanbanBoard';
 import StatisticsCards from '../components/StatisticsCards';
 import KanbanToolbar from '../components/KanbanToolbar';
 import TaskDetailsSidebar from '../components/TaskDetailsSidebar';
-import FloatingActionButton from '../components/FloatingActionButton';
 import CreateTaskModal from '../components/CreateTaskModal';
+import { Plus } from 'lucide-react';
+import './TasksPage.css';
 
 export default function TasksPage() {
   const [showModal, setShowModal] = useState(false);
+  // ... existing state ...
   const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -89,15 +91,22 @@ export default function TasksPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-6">
+    <div className="tasks-container">
       {/* Header */}
-      <div className="flex justify-between items-center mb-6">
-        <div className="flex items-center gap-4">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-            {isTeacher ? 'My Admin Tasks' : 'My Tasks'}
-          </h1>
+      <div className="tasks-header">
+        <div className="tasks-title">
+          <h1>{isTeacher ? 'My Admin Tasks' : 'My Tasks'}</h1>
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
+          {isTeacher && (
+            <button
+              onClick={() => setShowModal(true)}
+              className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2 rounded-xl font-semibold transition-all shadow-sm hover:shadow-md"
+            >
+              <Plus size={18} />
+              <span>Create Task</span>
+            </button>
+          )}
           <NotificationBell />
           <HomeButton />
         </div>
@@ -123,16 +132,13 @@ export default function TasksPage() {
       <StatisticsCards />
 
       {/* Toolbar with Search and Filters */}
-      <KanbanToolbar onNewTask={() => setShowModal(true)} />
+      <KanbanToolbar />
 
       {/* Kanban Board */}
-      <KanbanBoard />
+      <KanbanBoard onAddTask={() => setShowModal(true)} />
 
       {/* Task Details Sidebar */}
       <TaskDetailsSidebar />
-
-      {/* Floating Action Button */}
-      <FloatingActionButton onClick={() => setShowModal(true)} />
 
       {/* Create Task Modal */}
       <CreateTaskModal

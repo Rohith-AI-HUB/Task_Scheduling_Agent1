@@ -32,7 +32,7 @@ export default function ExtensionsPage() {
 
   const loadRequests = async () => {
     try {
-      const res = await axios.get('http://localhost:8000/extensions', getAuthHeader());
+      const res = await axios.get('http://localhost:8000/api/extensions', getAuthHeader());
       setRequests(res.data);
     } catch (err) {
       console.error('Failed to load extension requests:', err);
@@ -42,7 +42,7 @@ export default function ExtensionsPage() {
 
   const loadTasks = async () => {
     try {
-      const res = await axios.get('http://localhost:8000/tasks', getAuthHeader());
+      const res = await axios.get('http://localhost:8000/api/tasks', getAuthHeader());
       setTasks(res.data);
     } catch (err) {
       console.error('Failed to load tasks:', err);
@@ -86,7 +86,7 @@ export default function ExtensionsPage() {
         }).join('; ');
         return `Validation Error: ${errors}`;
       }
-      
+
       // Single validation error
       if (typeof data?.detail === 'string') {
         return `Validation Error: ${data.detail}`;
@@ -152,7 +152,7 @@ export default function ExtensionsPage() {
       console.log('Submitting payload:', payload);
 
       const response = await axios.post(
-        'http://localhost:8000/extensions/', 
+        'http://localhost:8000/api/extensions/',
         payload,
         getAuthHeader()
       );
@@ -168,7 +168,7 @@ export default function ExtensionsPage() {
       });
       setShowForm(false);
       setSuccessMessage('Extension request submitted successfully! AI analysis is complete.');
-      
+
       // Reload requests to show the new one
       await loadRequests();
 
