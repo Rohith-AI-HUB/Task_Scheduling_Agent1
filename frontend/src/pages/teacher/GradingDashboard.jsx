@@ -5,6 +5,8 @@ import { useNavigate } from 'react-router-dom';
 import HomeButton from '../../components/HomeButton';
 import { useAuthStore } from '../../store/useStore';
 import { authService } from '../../services/auth.service';
+import GradientButton from '../../components/ui/GradientButton';
+import MetricCard from '../../components/ui/MetricCard';
 
 function GradingDashboard() {
   const navigate = useNavigate();
@@ -152,12 +154,13 @@ function GradingDashboard() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto p-6">
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50 p-6">
+      <div className="max-w-7xl mx-auto">
       {/* Header */}
       <div className="mb-8">
         <div className="flex justify-between items-start">
           <div>
-            <h1 className="text-4xl font-bold mb-2 flex items-center gap-3">
+            <h1 className="text-4xl font-bold mb-2 flex items-center gap-3 bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">
               <Brain className="text-purple-600" size={40} />
               AI Grading Assistant
             </h1>
@@ -180,35 +183,24 @@ function GradingDashboard() {
       {/* Stats Cards */}
       {stats && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-          <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-6">
-            <div className="flex items-center gap-3">
-              <Award className="text-blue-600" size={32} />
-              <div>
-                <div className="text-3xl font-bold text-blue-900">{stats.total_graded}</div>
-                <div className="text-sm text-blue-700">Total Graded</div>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-xl p-6">
-            <div className="flex items-center gap-3">
-              <CheckCircle className="text-green-600" size={32} />
-              <div>
-                <div className="text-3xl font-bold text-green-900">{stats.agreement_rate}%</div>
-                <div className="text-sm text-green-700">AI Agreement</div>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-xl p-6">
-            <div className="flex items-center gap-3">
-              <Clock className="text-orange-600" size={32} />
-              <div>
-                <div className="text-3xl font-bold text-orange-900">{pendingGrades.length}</div>
-                <div className="text-sm text-orange-700">Pending Grades</div>
-              </div>
-            </div>
-          </div>
+          <MetricCard
+            icon={Award}
+            label="Total Graded"
+            value={stats.total_graded}
+            gradient="purple-blue"
+          />
+          <MetricCard
+            icon={CheckCircle}
+            label="AI Agreement"
+            value={`${stats.agreement_rate}%`}
+            gradient="green"
+          />
+          <MetricCard
+            icon={Clock}
+            label="Pending Grades"
+            value={pendingGrades.length}
+            gradient="orange"
+          />
         </div>
       )}
 
@@ -234,12 +226,12 @@ function GradingDashboard() {
                   {pendingGrades.map(submission => (
                     <div
                       key={submission.id}
-                      className="bg-white rounded-lg shadow hover:shadow-lg transition-shadow p-4 cursor-pointer border-l-4 border-purple-500"
+                      className="bg-white/80 backdrop-blur-sm rounded-lg shadow-md hover:shadow-xl transition-all p-4 cursor-pointer border-l-4 border-purple-600 hover:scale-105"
                       onClick={() => analyzeSubmission(submission.task_id, submission.student_id)}
                     >
                       <div className="flex justify-between items-start">
                         <div className="flex-1">
-                          <h3 className="font-bold text-lg">{submission.task_title}</h3>
+                          <h3 className="font-bold text-lg text-purple-900">{submission.task_title}</h3>
                           <p className="text-sm text-gray-600 flex items-center gap-1">
                             <span className="font-medium">{submission.student_name}</span>
                           </p>
@@ -256,7 +248,7 @@ function GradingDashboard() {
                           </div>
                         </div>
 
-                        <button className="bg-purple-500 text-white px-4 py-2 rounded-lg hover:bg-purple-600 transition-colors flex items-center gap-2">
+                        <button className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-4 py-2 rounded-lg hover:from-purple-700 hover:to-indigo-700 transition-all shadow-md flex items-center gap-2">
                           <Brain size={16} />
                           Analyze
                         </button>
@@ -269,14 +261,14 @@ function GradingDashboard() {
           ) : (
             // AI Analysis Results
             <div className="space-y-4">
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-lg p-4 shadow-md">
                 <h2 className="text-2xl font-bold flex items-center gap-2">
-                  <Brain className="text-purple-600" size={28} />
+                  <Brain size={28} />
                   AI Analysis
                 </h2>
                 <button
                   onClick={cancelGrading}
-                  className="text-sm text-gray-600 hover:text-gray-800"
+                  className="text-sm text-white hover:text-purple-100 transition-colors"
                 >
                   ← Back to List
                 </button>
@@ -290,30 +282,30 @@ function GradingDashboard() {
               ) : (
                 <>
                   {/* Suggested Grade */}
-                  <div className="bg-gradient-to-br from-purple-50 to-blue-50 rounded-xl p-6 border-2 border-purple-300">
+                  <div className="bg-gradient-to-br from-purple-600 to-indigo-600 rounded-xl p-6 shadow-lg">
                     <div className="text-center mb-4">
-                      <div className="text-sm text-gray-600 mb-1">AI Suggested Grade</div>
-                      <div className="text-6xl font-bold text-purple-600">
+                      <div className="text-sm text-white/90 mb-1">AI Suggested Grade</div>
+                      <div className="text-6xl font-bold text-white">
                         {aiAnalysis.suggested_grade}
-                        <span className="text-3xl text-gray-500">/100</span>
+                        <span className="text-3xl text-white/70">/100</span>
                       </div>
                     </div>
 
-                    <div className="bg-white bg-opacity-70 rounded-lg p-4">
-                      <p className="text-sm text-gray-700">{aiAnalysis.reasoning}</p>
+                    <div className="bg-white/20 backdrop-blur-sm rounded-lg p-4">
+                      <p className="text-sm text-white">{aiAnalysis.reasoning}</p>
                     </div>
                   </div>
 
                   {/* Performance Summary */}
-                  <div className="bg-white rounded-xl shadow-lg p-6">
-                    <h3 className="font-bold mb-3 flex items-center gap-2">
+                  <div className="bg-white rounded-xl shadow-lg p-6 border-l-4 border-purple-600">
+                    <h3 className="font-bold mb-3 flex items-center gap-2 text-purple-700">
                       <TrendingUp size={20} />
                       Performance Summary
                     </h3>
                     <div className="grid grid-cols-2 gap-3 text-sm">
                       <div>
                         <span className="text-gray-600">Time Efficiency:</span>
-                        <span className="ml-2 font-semibold">{aiAnalysis.performance_summary.time_efficiency}</span>
+                        <span className="ml-2 font-semibold text-purple-700">{aiAnalysis.performance_summary.time_efficiency}</span>
                       </div>
                       <div>
                         <span className="text-gray-600">On Time:</span>
@@ -323,26 +315,26 @@ function GradingDashboard() {
                       </div>
                       <div>
                         <span className="text-gray-600">Completion:</span>
-                        <span className="ml-2 font-semibold">{aiAnalysis.performance_summary.completion_rate}</span>
+                        <span className="ml-2 font-semibold text-purple-700">{aiAnalysis.performance_summary.completion_rate}</span>
                       </div>
                       <div>
                         <span className="text-gray-600">Extensions:</span>
-                        <span className="ml-2 font-semibold">{aiAnalysis.performance_summary.extensions}</span>
+                        <span className="ml-2 font-semibold text-purple-700">{aiAnalysis.performance_summary.extensions}</span>
                       </div>
                     </div>
                   </div>
 
                   {/* Strengths */}
                   {aiAnalysis.strengths && aiAnalysis.strengths.length > 0 && (
-                    <div className="bg-green-50 rounded-xl p-6">
+                    <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-6 border-l-4 border-green-500 shadow-md">
                       <h3 className="font-bold mb-3 flex items-center gap-2 text-green-800">
                         <Award size={20} />
                         Strengths
                       </h3>
                       <ul className="space-y-2">
                         {aiAnalysis.strengths.map((strength, idx) => (
-                          <li key={idx} className="text-sm text-green-700 flex items-start gap-2">
-                            <CheckCircle size={16} className="mt-0.5 flex-shrink-0" />
+                          <li key={idx} className="text-sm text-green-800 flex items-start gap-2">
+                            <CheckCircle size={16} className="mt-0.5 flex-shrink-0 text-green-600" />
                             <span>{strength}</span>
                           </li>
                         ))}
@@ -352,15 +344,15 @@ function GradingDashboard() {
 
                   {/* Weaknesses */}
                   {aiAnalysis.weaknesses && aiAnalysis.weaknesses.length > 0 && (
-                    <div className="bg-orange-50 rounded-xl p-6">
+                    <div className="bg-gradient-to-br from-orange-50 to-amber-50 rounded-xl p-6 border-l-4 border-orange-500 shadow-md">
                       <h3 className="font-bold mb-3 flex items-center gap-2 text-orange-800">
                         <AlertCircle size={20} />
                         Areas for Improvement
                       </h3>
                       <ul className="space-y-2">
                         {aiAnalysis.weaknesses.map((weakness, idx) => (
-                          <li key={idx} className="text-sm text-orange-700 flex items-start gap-2">
-                            <span className="text-orange-500 mt-0.5">•</span>
+                          <li key={idx} className="text-sm text-orange-800 flex items-start gap-2">
+                            <span className="text-orange-600 mt-0.5">•</span>
                             <span>{weakness}</span>
                           </li>
                         ))}
@@ -370,15 +362,15 @@ function GradingDashboard() {
 
                   {/* Improvement Suggestions */}
                   {aiAnalysis.improvements && aiAnalysis.improvements.length > 0 && (
-                    <div className="bg-blue-50 rounded-xl p-6">
+                    <div className="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-xl p-6 border-l-4 border-blue-500 shadow-md">
                       <h3 className="font-bold mb-3 flex items-center gap-2 text-blue-800">
                         <Lightbulb size={20} />
                         Suggestions for Future
                       </h3>
                       <ul className="space-y-2">
                         {aiAnalysis.improvements.map((improvement, idx) => (
-                          <li key={idx} className="text-sm text-blue-700 flex items-start gap-2">
-                            <span className="text-blue-500 mt-0.5">→</span>
+                          <li key={idx} className="text-sm text-blue-800 flex items-start gap-2">
+                            <span className="text-blue-600 mt-0.5">→</span>
                             <span>{improvement}</span>
                           </li>
                         ))}
@@ -388,10 +380,10 @@ function GradingDashboard() {
 
                   {/* Encouragement */}
                   {aiAnalysis.encouragement && (
-                    <div className="bg-gradient-to-r from-pink-50 to-purple-50 rounded-xl p-6 border-l-4 border-pink-500">
+                    <div className="bg-gradient-to-r from-pink-50 to-purple-50 rounded-xl p-6 border-l-4 border-pink-500 shadow-md">
                       <div className="flex items-start gap-3">
                         <Heart className="text-pink-500 flex-shrink-0" size={24} />
-                        <p className="text-sm font-medium text-gray-700">{aiAnalysis.encouragement}</p>
+                        <p className="text-sm font-medium text-pink-800">{aiAnalysis.encouragement}</p>
                       </div>
                     </div>
                   )}
@@ -410,7 +402,7 @@ function GradingDashboard() {
 
               {/* Grade Input */}
               <div className="mb-4">
-                <label className="block text-sm font-medium mb-2">Final Grade (0-100)</label>
+                <label className="block text-sm font-medium mb-2 text-purple-700">Final Grade (0-100)</label>
                 <input
                   type="number"
                   min="0"
@@ -418,7 +410,7 @@ function GradingDashboard() {
                   step="0.1"
                   value={finalGrade}
                   onChange={(e) => setFinalGrade(e.target.value)}
-                  className="w-full border-2 border-gray-300 rounded-lg px-4 py-3 text-lg font-bold focus:border-purple-500 focus:outline-none"
+                  className="w-full border-2 border-purple-200 rounded-lg px-4 py-3 text-lg font-bold focus:border-purple-600 focus:ring-2 focus:ring-purple-600 focus:outline-none"
                   placeholder="Enter grade"
                 />
                 {Math.abs(parseFloat(finalGrade) - aiAnalysis.suggested_grade) > 5 && (
@@ -430,12 +422,12 @@ function GradingDashboard() {
 
               {/* Teacher Comments */}
               <div className="mb-4">
-                <label className="block text-sm font-medium mb-2">Teacher Feedback</label>
+                <label className="block text-sm font-medium mb-2 text-purple-700">Teacher Feedback</label>
                 <textarea
                   value={teacherComments}
                   onChange={(e) => setTeacherComments(e.target.value)}
                   rows="4"
-                  className="w-full border-2 border-gray-300 rounded-lg px-4 py-2 focus:border-purple-500 focus:outline-none"
+                  className="w-full border-2 border-purple-200 rounded-lg px-4 py-2 focus:border-purple-600 focus:ring-2 focus:ring-purple-600 focus:outline-none"
                   placeholder="Provide constructive feedback for the student..."
                 />
               </div>
@@ -450,7 +442,7 @@ function GradingDashboard() {
                     value={overrideReason}
                     onChange={(e) => setOverrideReason(e.target.value)}
                     rows="2"
-                    className="w-full border-2 border-orange-300 rounded-lg px-4 py-2 focus:border-orange-500 focus:outline-none"
+                    className="w-full border-2 border-orange-300 rounded-lg px-4 py-2 focus:border-orange-500 focus:ring-2 focus:ring-orange-500 focus:outline-none"
                     placeholder="Why does your grade differ significantly from AI suggestion?"
                   />
                 </div>
@@ -458,15 +450,16 @@ function GradingDashboard() {
 
               {/* Action Buttons */}
               <div className="flex gap-3">
-                <button
+                <GradientButton
+                  variant="purple"
                   onClick={finalizeGrade}
-                  className="flex-1 bg-gradient-to-r from-purple-500 to-blue-500 text-white py-3 rounded-lg font-semibold hover:shadow-lg transition-all"
+                  className="flex-1 py-3"
                 >
                   Finalize & Notify Student
-                </button>
+                </GradientButton>
                 <button
                   onClick={cancelGrading}
-                  className="px-6 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300"
+                  className="px-6 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-all"
                 >
                   Cancel
                 </button>
@@ -475,16 +468,16 @@ function GradingDashboard() {
           ) : (
             // Grading History
             <div>
-              <h2 className="text-2xl font-bold mb-4">Recent Grades</h2>
+              <h2 className="text-2xl font-bold mb-4 text-purple-700">Recent Grades</h2>
               <div className="space-y-3 max-h-[600px] overflow-y-auto">
                 {history.slice(0, 10).map(item => (
                   <div
                     key={item.id}
-                    className="bg-white rounded-lg shadow p-4"
+                    className="bg-white rounded-lg shadow-md hover:shadow-lg transition-all p-4 border-l-4 border-purple-300"
                   >
                     <div className="flex justify-between items-start mb-2">
                       <div>
-                        <h3 className="font-semibold">{item.task_title}</h3>
+                        <h3 className="font-semibold text-purple-900">{item.task_title}</h3>
                         <p className="text-sm text-gray-600">{item.student_name}</p>
                       </div>
                       <div className="text-right">
@@ -497,11 +490,11 @@ function GradingDashboard() {
 
                     <div className="flex items-center gap-2 text-sm">
                       {item.ai_agreement ? (
-                        <span className="bg-green-100 text-green-700 px-2 py-1 rounded text-xs">
+                        <span className="bg-green-100 text-green-700 px-2 py-1 rounded text-xs border border-green-300">
                           ✓ AI Agreement
                         </span>
                       ) : (
-                        <span className="bg-orange-100 text-orange-700 px-2 py-1 rounded text-xs">
+                        <span className="bg-orange-100 text-orange-700 px-2 py-1 rounded text-xs border border-orange-300">
                           Override ({Math.abs(item.grade_difference).toFixed(1)} pts)
                         </span>
                       )}
@@ -512,6 +505,7 @@ function GradingDashboard() {
             </div>
           )}
         </div>
+      </div>
       </div>
     </div>
   );

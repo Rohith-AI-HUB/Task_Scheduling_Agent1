@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import HomeButton from '../../components/HomeButton';
 import { useAuthStore } from '../../store/useStore';
 import { authService } from '../../services/auth.service';
+import GradientButton from '../../components/ui/GradientButton';
 
 function BulkTaskCreator() {
   const navigate = useNavigate();
@@ -191,13 +192,14 @@ function BulkTaskCreator() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto p-6">
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50 p-6">
+      <div className="max-w-7xl mx-auto">
       {/* Header */}
       <div className="mb-8">
         <div className="flex justify-between items-start">
           <div>
-            <h1 className="text-4xl font-bold mb-2 flex items-center gap-3">
-              <Send className="text-green-600" size={40} />
+            <h1 className="text-4xl font-bold mb-2 flex items-center gap-3 bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+              <Send className="text-purple-600" size={40} />
               Bulk Task Creator
             </h1>
             <p className="text-gray-600">Welcome back, {user?.full_name || 'Teacher'}! 👋</p>
@@ -219,14 +221,14 @@ function BulkTaskCreator() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left Column: Task Form */}
         <div className="lg:col-span-2">
-          <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-lg p-6 space-y-6">
+          <form onSubmit={handleSubmit} className="bg-white/80 backdrop-blur-sm rounded-xl shadow-lg p-6 space-y-6 border-t-4 border-purple-600">
             {/* Templates */}
             {templates.length > 0 && (
               <div>
-                <label className="block text-sm font-medium mb-2">Load from Template</label>
+                <label className="block text-sm font-medium mb-2 text-purple-700">Load from Template</label>
                 <select
                   onChange={(e) => e.target.value && loadTemplate(e.target.value)}
-                  className="w-full border-2 border-gray-300 rounded-lg px-4 py-2 focus:border-blue-500 focus:outline-none"
+                  className="w-full border-2 border-purple-200 rounded-lg px-4 py-2 focus:border-purple-600 focus:ring-2 focus:ring-purple-600 focus:outline-none"
                 >
                   <option value="">Choose a template...</option>
                   {templates.map(template => (
@@ -240,12 +242,12 @@ function BulkTaskCreator() {
 
             {/* Title */}
             <div>
-              <label className="block text-sm font-medium mb-2">Task Title *</label>
+              <label className="block text-sm font-medium mb-2 text-purple-700">Task Title *</label>
               <input
                 type="text"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                className="w-full border-2 border-gray-300 rounded-lg px-4 py-2 focus:border-blue-500 focus:outline-none"
+                className="w-full border-2 border-purple-200 rounded-lg px-4 py-2 focus:border-purple-600 focus:ring-2 focus:ring-purple-600 focus:outline-none"
                 placeholder="e.g., Complete Chapter 5 Exercises"
                 required
               />
@@ -253,12 +255,12 @@ function BulkTaskCreator() {
 
             {/* Description */}
             <div>
-              <label className="block text-sm font-medium mb-2">Description</label>
+              <label className="block text-sm font-medium mb-2 text-purple-700">Description</label>
               <textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 rows="4"
-                className="w-full border-2 border-gray-300 rounded-lg px-4 py-2 focus:border-blue-500 focus:outline-none"
+                className="w-full border-2 border-purple-200 rounded-lg px-4 py-2 focus:border-purple-600 focus:ring-2 focus:ring-purple-600 focus:outline-none"
                 placeholder="Describe what students need to do..."
               />
             </div>
@@ -266,22 +268,22 @@ function BulkTaskCreator() {
             {/* Deadline and Priority */}
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium mb-2">Deadline *</label>
+                <label className="block text-sm font-medium mb-2 text-purple-700">Deadline *</label>
                 <input
                   type="datetime-local"
                   value={deadline}
                   onChange={(e) => setDeadline(e.target.value)}
-                  className="w-full border-2 border-gray-300 rounded-lg px-4 py-2 focus:border-blue-500 focus:outline-none"
+                  className="w-full border-2 border-purple-200 rounded-lg px-4 py-2 focus:border-purple-600 focus:ring-2 focus:ring-purple-600 focus:outline-none"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-2">Priority</label>
+                <label className="block text-sm font-medium mb-2 text-purple-700">Priority</label>
                 <select
                   value={priority}
                   onChange={(e) => setPriority(e.target.value)}
-                  className="w-full border-2 border-gray-300 rounded-lg px-4 py-2 focus:border-blue-500 focus:outline-none"
+                  className="w-full border-2 border-purple-200 rounded-lg px-4 py-2 focus:border-purple-600 focus:ring-2 focus:ring-purple-600 focus:outline-none"
                 >
                   <option value="low">Low</option>
                   <option value="medium">Medium</option>
@@ -294,26 +296,26 @@ function BulkTaskCreator() {
             {/* Estimated Hours and Complexity */}
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium mb-2">Estimated Hours</label>
+                <label className="block text-sm font-medium mb-2 text-purple-700">Estimated Hours</label>
                 <input
                   type="number"
                   value={estimatedHours}
                   onChange={(e) => setEstimatedHours(parseFloat(e.target.value))}
                   min="0.5"
                   step="0.5"
-                  className="w-full border-2 border-gray-300 rounded-lg px-4 py-2 focus:border-blue-500 focus:outline-none"
+                  className="w-full border-2 border-purple-200 rounded-lg px-4 py-2 focus:border-purple-600 focus:ring-2 focus:ring-purple-600 focus:outline-none"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-2">Complexity (1-10)</label>
+                <label className="block text-sm font-medium mb-2 text-purple-700">Complexity (1-10)</label>
                 <input
                   type="number"
                   value={complexityScore}
                   onChange={(e) => setComplexityScore(parseInt(e.target.value))}
                   min="1"
                   max="10"
-                  className="w-full border-2 border-gray-300 rounded-lg px-4 py-2 focus:border-blue-500 focus:outline-none"
+                  className="w-full border-2 border-purple-200 rounded-lg px-4 py-2 focus:border-purple-600 focus:ring-2 focus:ring-purple-600 focus:outline-none"
                 />
               </div>
             </div>
@@ -325,7 +327,7 @@ function BulkTaskCreator() {
                 <button
                   type="button"
                   onClick={addSubtask}
-                  className="text-sm text-blue-600 hover:text-blue-700 flex items-center gap-1"
+                  className="text-sm text-purple-600 hover:text-purple-700 flex items-center gap-1 font-medium"
                 >
                   <Plus size={16} /> Add Subtask
                 </button>
@@ -379,10 +381,11 @@ function BulkTaskCreator() {
             </div>
 
             {/* Submit Button */}
-            <button
+            <GradientButton
+              variant="purple"
               type="submit"
               disabled={loading || selectedStudents.length === 0}
-              className="w-full bg-gradient-to-r from-green-500 to-blue-500 text-white py-3 rounded-lg font-semibold hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              className="w-full py-3 flex items-center justify-center gap-2"
             >
               {loading ? (
                 <>Creating Tasks...</>
@@ -392,36 +395,38 @@ function BulkTaskCreator() {
                   Create Tasks for {selectedStudents.length} Student{selectedStudents.length !== 1 ? 's' : ''}
                 </>
               )}
-            </button>
+            </GradientButton>
           </form>
         </div>
 
         {/* Right Column: Student Selection */}
         <div>
-          <div className="bg-white rounded-xl shadow-lg p-6 sticky top-6">
-            <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
-              <Users size={24} />
-              Select Students
-            </h3>
+          <div className="bg-white rounded-xl shadow-lg p-6 sticky top-6 border-t-4 border-purple-600">
+            <div className="bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg p-4 mb-4 -mx-6 -mt-6">
+              <h3 className="text-xl font-bold flex items-center gap-2">
+                <Users size={24} />
+                Select Students
+              </h3>
+            </div>
 
             <div className="flex gap-2 mb-4">
               <button
                 type="button"
                 onClick={selectAllStudents}
-                className="flex-1 text-sm bg-blue-100 text-blue-700 py-2 rounded hover:bg-blue-200"
+                className="flex-1 text-sm bg-purple-100 text-purple-700 py-2 rounded-lg hover:bg-purple-200 font-medium transition-all"
               >
                 Select All
               </button>
               <button
                 type="button"
                 onClick={deselectAllStudents}
-                className="flex-1 text-sm bg-gray-100 text-gray-700 py-2 rounded hover:bg-gray-200"
+                className="flex-1 text-sm bg-gray-100 text-gray-700 py-2 rounded-lg hover:bg-gray-200 font-medium transition-all"
               >
                 Clear
               </button>
             </div>
 
-            <div className="text-sm text-gray-600 mb-2">
+            <div className="text-sm text-purple-700 mb-3 font-semibold">
               {selectedStudents.length} of {students.length} selected
             </div>
 
@@ -429,31 +434,32 @@ function BulkTaskCreator() {
               {students.map(student => (
                 <label
                   key={student.id}
-                  className={`flex items-center gap-3 p-3 rounded-lg border-2 cursor-pointer transition-colors ${
+                  className={`flex items-center gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all ${
                     selectedStudents.includes(student.id)
-                      ? 'bg-blue-50 border-blue-300'
-                      : 'bg-gray-50 border-gray-200 hover:bg-gray-100'
+                      ? 'bg-purple-50 border-purple-400 shadow-md'
+                      : 'bg-gray-50 border-gray-200 hover:bg-purple-50/50 hover:border-purple-200'
                   }`}
                 >
                   <input
                     type="checkbox"
                     checked={selectedStudents.includes(student.id)}
                     onChange={() => toggleStudent(student.id)}
-                    className="w-4 h-4"
+                    className="w-4 h-4 accent-purple-600"
                   />
                   <div className="flex-1">
                     <div className="font-semibold text-sm">{student.name}</div>
                     <div className="text-xs text-gray-600">{student.email}</div>
-                    <div className="text-xs text-gray-500">{student.tasks_assigned} tasks assigned</div>
+                    <div className="text-xs text-purple-600 font-medium">{student.tasks_assigned} tasks assigned</div>
                   </div>
                   {selectedStudents.includes(student.id) && (
-                    <CheckSquare className="text-blue-600" size={20} />
+                    <CheckSquare className="text-purple-600" size={20} />
                   )}
                 </label>
               ))}
             </div>
           </div>
         </div>
+      </div>
       </div>
     </div>
   );

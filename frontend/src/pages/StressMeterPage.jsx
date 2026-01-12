@@ -3,6 +3,9 @@ import { Brain, TrendingUp, AlertCircle, CheckCircle, Clock, Target } from 'luci
 import axios from 'axios';
 import { Line } from 'recharts';
 import HomeButton from '../components/HomeButton';
+import GlassCard from '../components/ui/GlassCard';
+import GradientButton from '../components/ui/GradientButton';
+import MetricCard from '../components/ui/MetricCard';
 
 function StressMeterPage() {
   const [stressData, setStressData] = useState(null);
@@ -77,17 +80,18 @@ function StressMeterPage() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto p-6">
-      {/* Header */}
-      <div className="mb-8">
-        <div className="flex justify-between items-start">
-          <div>
-            <h1 className="text-4xl font-bold mb-2">Stress Meter</h1>
-            <p className="text-gray-600">AI-powered workload stress analysis and recommendations</p>
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 p-6">
+      <div className="max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="mb-8">
+          <div className="flex justify-between items-start">
+            <div>
+              <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-purple-600 via-pink-600 to-blue-600 bg-clip-text text-transparent">Stress Meter</h1>
+              <p className="text-gray-600">AI-powered workload stress analysis and recommendations</p>
+            </div>
+            <HomeButton />
           </div>
-          <HomeButton />
         </div>
-      </div>
 
       {/* Main Stress Display */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
@@ -134,7 +138,7 @@ function StressMeterPage() {
                   </div>
                   <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
                     <div
-                      className={`h-full ${getBarColor(value)}`}
+                      className="h-full bg-gradient-to-r from-purple-600 to-pink-600"
                       style={{ width: `${(value / 4) * 100}%` }}
                     />
                   </div>
@@ -146,48 +150,34 @@ function StressMeterPage() {
 
         {/* Quick Stats */}
         <div className="space-y-4">
-          <div className="bg-white rounded-xl shadow p-6">
-            <div className="flex items-center gap-3 mb-2">
-              <div className="bg-blue-100 p-2 rounded-lg">
-                <CheckCircle className="text-blue-600" size={24} />
-              </div>
-              <div>
-                <div className="text-2xl font-bold">{stressData?.active_tasks_count || 0}</div>
-                <div className="text-sm text-gray-600">Active Tasks</div>
-              </div>
-            </div>
-          </div>
+          <MetricCard
+            icon={CheckCircle}
+            label="Active Tasks"
+            value={stressData?.active_tasks_count || 0}
+            gradient="purple-blue"
+          />
 
-          <div className="bg-white rounded-xl shadow p-6">
-            <div className="flex items-center gap-3 mb-2">
-              <div className="bg-orange-100 p-2 rounded-lg">
-                <Clock className="text-orange-600" size={24} />
-              </div>
-              <div>
-                <div className="text-2xl font-bold">{stressData?.urgent_tasks_count || 0}</div>
-                <div className="text-sm text-gray-600">Urgent Tasks</div>
-              </div>
-            </div>
-          </div>
+          <MetricCard
+            icon={Clock}
+            label="Urgent Tasks"
+            value={stressData?.urgent_tasks_count || 0}
+            gradient="orange"
+          />
 
-          <div className="bg-white rounded-xl shadow p-6">
-            <div className="flex items-center gap-3 mb-2">
-              <div className="bg-purple-100 p-2 rounded-lg">
-                <TrendingUp className="text-purple-600" size={24} />
-              </div>
-              <div>
-                <div className="text-2xl font-bold">{stressData?.deadlines_this_week || 0}</div>
-                <div className="text-sm text-gray-600">Deadlines This Week</div>
-              </div>
-            </div>
-          </div>
+          <MetricCard
+            icon={TrendingUp}
+            label="Deadlines This Week"
+            value={stressData?.deadlines_this_week || 0}
+            gradient="purple-pink"
+          />
 
-          <button
+          <GradientButton
+            variant="purple"
             onClick={() => setShowFeelingModal(true)}
-            className="w-full bg-gradient-to-r from-purple-500 to-blue-500 text-white py-3 rounded-lg font-semibold hover:shadow-lg transition-all"
+            className="w-full py-3"
           >
             How Do You Feel?
-          </button>
+          </GradientButton>
         </div>
       </div>
 
@@ -264,23 +254,24 @@ function StressMeterPage() {
                 onChange={(e) => setNotes(e.target.value)}
                 rows="3"
                 placeholder="How are you feeling? Any specific concerns?"
-                className="w-full border-2 border-gray-300 rounded-lg px-4 py-2 focus:border-purple-500 focus:outline-none"
+                className="w-full border-2 border-purple-200 rounded-lg px-4 py-2 focus:border-purple-600 focus:ring-2 focus:ring-purple-600 focus:outline-none"
               />
             </div>
 
             <div className="flex gap-3">
-              <button
+              <GradientButton
+                variant="purple"
                 onClick={submitFeeling}
-                className="flex-1 bg-purple-500 text-white py-3 rounded-lg font-semibold hover:bg-purple-600"
+                className="flex-1 py-3"
               >
                 Submit
-              </button>
+              </GradientButton>
               <button
                 onClick={() => {
                   setShowFeelingModal(false);
                   setNotes('');
                 }}
-                className="px-6 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300"
+                className="px-6 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-all"
               >
                 Cancel
               </button>
@@ -288,6 +279,7 @@ function StressMeterPage() {
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 }
@@ -307,7 +299,7 @@ function StressHistoryChart({ history }) {
           <div key={index} className="flex-1 flex flex-col items-center">
             <div className="w-full flex items-end justify-center h-48">
               <div
-                className={`w-full rounded-t-lg ${getBarColor(score)}`}
+                className="w-full rounded-t-lg bg-gradient-to-t from-purple-600 to-pink-500"
                 style={{ height: `${height}%` }}
                 title={`${score.toFixed(1)}/10`}
               />

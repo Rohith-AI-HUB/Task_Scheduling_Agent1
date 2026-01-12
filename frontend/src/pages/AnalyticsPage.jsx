@@ -6,6 +6,8 @@ import { TrendingUp, Clock, CheckCircle, AlertCircle } from 'lucide-react';
 import NotificationBell from '../components/NotificationBell';
 import HomeButton from '../components/HomeButton';
 import { useAuth } from '../store/useStore';
+import MetricCard from '../components/ui/MetricCard';
+import GlassCard from '../components/ui/GlassCard';
 
 export default function AnalyticsPage() {
   const [stats, setStats] = useState(null);
@@ -42,9 +44,9 @@ export default function AnalyticsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-100 p-6">
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-gray-50 p-6">
         <div className="flex items-center justify-center h-64">
-          <div className="text-xl text-gray-600">Loading analytics...</div>
+          <div className="text-xl text-purple-600">Loading analytics...</div>
         </div>
       </div>
     );
@@ -52,7 +54,7 @@ export default function AnalyticsPage() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-100 p-6">
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-gray-50 p-6">
         <div className="bg-red-100 text-red-700 p-4 rounded">{error}</div>
       </div>
     );
@@ -63,8 +65,8 @@ export default function AnalyticsPage() {
   // Prepare data for charts
   const statusData = [
     { name: 'Completed', value: stats.completed, color: '#10b981' },
-    { name: 'In Progress', value: stats.in_progress, color: '#3b82f6' },
-    { name: 'Todo', value: stats.todo, color: '#f59e0b' }
+    { name: 'In Progress', value: stats.in_progress, color: '#7C3AED' },
+    { name: 'Todo', value: stats.todo, color: '#3B82F6' }
   ].filter(item => item.value > 0);
 
   const priorityData = Object.entries(stats.priority_distribution).map(([name, value]) => ({
@@ -86,11 +88,11 @@ export default function AnalyticsPage() {
   })) || [];
 
   return (
-    <div className="min-h-screen bg-gray-100 p-6">
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-gray-50 p-6">
       {/* Header */}
       <div className="flex justify-between items-center mb-6">
         <div className="flex items-center gap-4">
-          <h1 className="text-3xl font-bold text-gray-800">
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
             {isTeacher ? 'My Analytics & Class Overview' : 'My Analytics Dashboard'}
           </h1>
         </div>
@@ -102,95 +104,76 @@ export default function AnalyticsPage() {
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
-        <div className="bg-white p-4 rounded-lg shadow-md border-l-4 border-blue-500">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-gray-600 text-sm">Total Tasks</p>
-              <p className="text-3xl font-bold text-gray-800">{stats.total_tasks}</p>
-            </div>
-            <TrendingUp size={32} className="text-blue-500" />
-          </div>
-        </div>
-
-        <div className="bg-white p-4 rounded-lg shadow-md border-l-4 border-green-500">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-gray-600 text-sm">Completed</p>
-              <p className="text-3xl font-bold text-green-600">{stats.completed}</p>
-            </div>
-            <CheckCircle size={32} className="text-green-500" />
-          </div>
-        </div>
-
-        <div className="bg-white p-4 rounded-lg shadow-md border-l-4 border-yellow-500">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-gray-600 text-sm">In Progress</p>
-              <p className="text-3xl font-bold text-yellow-600">{stats.in_progress}</p>
-            </div>
-            <AlertCircle size={32} className="text-yellow-500" />
-          </div>
-        </div>
-
-        <div className="bg-white p-4 rounded-lg shadow-md border-l-4 border-orange-500">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-gray-600 text-sm">Todo</p>
-              <p className="text-3xl font-bold text-orange-600">{stats.todo}</p>
-            </div>
-            <Clock size={32} className="text-orange-500" />
-          </div>
-        </div>
-
-        <div className="bg-white p-4 rounded-lg shadow-md border-l-4 border-red-500">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-gray-600 text-sm">Hours Left</p>
-              <p className="text-3xl font-bold text-red-600">{stats.total_hours_remaining.toFixed(1)}</p>
-            </div>
-            <Clock size={32} className="text-red-500" />
-          </div>
-        </div>
+        <MetricCard
+          icon={TrendingUp}
+          label="Total Tasks"
+          value={stats.total_tasks}
+          gradient="purple-blue"
+        />
+        <MetricCard
+          icon={CheckCircle}
+          label="Completed"
+          value={stats.completed}
+          gradient="green"
+        />
+        <MetricCard
+          icon={AlertCircle}
+          label="In Progress"
+          value={stats.in_progress}
+          gradient="purple-indigo"
+        />
+        <MetricCard
+          icon={Clock}
+          label="Todo"
+          value={stats.todo}
+          gradient="blue"
+        />
+        <MetricCard
+          icon={Clock}
+          label="Hours Left"
+          value={stats.total_hours_remaining.toFixed(1)}
+          gradient="orange"
+        />
       </div>
 
       {/* Performance Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-        <div className="bg-white p-6 rounded-lg shadow-md">
-          <h2 className="text-xl font-bold mb-2">Completion Rate</h2>
+        <GlassCard borderColor="purple" className="p-6">
+          <h2 className="text-xl font-bold mb-2 text-purple-600">Completion Rate</h2>
           <div className="flex items-center gap-4">
             <div className="text-5xl font-bold text-green-600">{stats.completion_rate}%</div>
             <div className="flex-1">
               <div className="w-full bg-gray-200 rounded-full h-4">
                 <div
-                  className="bg-green-500 h-4 rounded-full transition-all"
+                  className="bg-gradient-to-r from-green-500 to-emerald-500 h-4 rounded-full transition-all"
                   style={{ width: `${stats.completion_rate}%` }}
                 ></div>
               </div>
             </div>
           </div>
-        </div>
+        </GlassCard>
 
-        <div className="bg-white p-6 rounded-lg shadow-md">
-          <h2 className="text-xl font-bold mb-2">Average Complexity</h2>
+        <GlassCard borderColor="blue" className="p-6">
+          <h2 className="text-xl font-bold mb-2 text-blue-600">Average Complexity</h2>
           <div className="flex items-center gap-4">
-            <div className="text-5xl font-bold text-blue-600">{stats.average_complexity}/10</div>
+            <div className="text-5xl font-bold text-purple-600">{stats.average_complexity}/10</div>
             <div className="flex-1">
               <div className="w-full bg-gray-200 rounded-full h-4">
                 <div
-                  className="bg-blue-500 h-4 rounded-full transition-all"
+                  className="bg-gradient-to-r from-purple-600 to-blue-600 h-4 rounded-full transition-all"
                   style={{ width: `${stats.average_complexity * 10}%` }}
                 ></div>
               </div>
             </div>
           </div>
-        </div>
+        </GlassCard>
       </div>
 
       {/* Charts Row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
         {/* Task Status Distribution */}
-        <div className="bg-white p-6 rounded-lg shadow-md">
-          <h2 className="font-bold text-xl mb-4">Task Status Distribution</h2>
+        <GlassCard borderColor="purple" className="p-6">
+          <h2 className="font-bold text-xl mb-4 text-purple-600">Task Status Distribution</h2>
           {statusData.length > 0 ? (
             <ResponsiveContainer width="100%" height={300}>
               <PieChart>
@@ -214,11 +197,11 @@ export default function AnalyticsPage() {
           ) : (
             <p className="text-gray-500 text-center py-8">No tasks available</p>
           )}
-        </div>
+        </GlassCard>
 
         {/* Priority Distribution */}
-        <div className="bg-white p-6 rounded-lg shadow-md">
-          <h2 className="font-bold text-xl mb-4">Priority Distribution</h2>
+        <GlassCard borderColor="blue" className="p-6">
+          <h2 className="font-bold text-xl mb-4 text-blue-600">Priority Distribution</h2>
           {priorityData.length > 0 ? (
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={priorityData}>
@@ -236,12 +219,12 @@ export default function AnalyticsPage() {
           ) : (
             <p className="text-gray-500 text-center py-8">No priority data available</p>
           )}
-        </div>
+        </GlassCard>
       </div>
 
       {/* Workload Analysis */}
-      <div className="bg-white p-6 rounded-lg shadow-md mb-6">
-        <h2 className="font-bold text-xl mb-4">7-Day Workload Forecast</h2>
+      <GlassCard borderColor="purple" className="p-6 mb-6">
+        <h2 className="font-bold text-xl mb-4 text-purple-600">7-Day Workload Forecast</h2>
         {workloadData.length > 0 ? (
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={workloadData}>
@@ -250,8 +233,8 @@ export default function AnalyticsPage() {
               <YAxis yAxisId="right" orientation="right" label={{ value: 'Tasks', angle: 90, position: 'insideRight' }} />
               <Tooltip />
               <Legend />
-              <Bar yAxisId="left" dataKey="hours" fill="#3b82f6" name="Total Hours" radius={[8, 8, 0, 0]} />
-              <Bar yAxisId="right" dataKey="tasks" fill="#10b981" name="Task Count" radius={[8, 8, 0, 0]} />
+              <Bar yAxisId="left" dataKey="hours" fill="#7C3AED" name="Total Hours" radius={[8, 8, 0, 0]} />
+              <Bar yAxisId="right" dataKey="tasks" fill="#3B82F6" name="Task Count" radius={[8, 8, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         ) : (
@@ -262,18 +245,18 @@ export default function AnalyticsPage() {
             Peak workload day: <strong>{new Date(workload.peak_day).toLocaleDateString()}</strong>
           </p>
         )}
-      </div>
+      </GlassCard>
 
       {/* Upcoming Deadlines */}
-      <div className="bg-white p-6 rounded-lg shadow-md">
-        <h2 className="font-bold text-xl mb-4">Upcoming Deadlines</h2>
+      <GlassCard borderColor="purple" className="p-6">
+        <h2 className="font-bold text-xl mb-4 text-purple-600">Upcoming Deadlines</h2>
         {stats.upcoming_deadlines.length > 0 ? (
           <div className="space-y-3">
             {stats.upcoming_deadlines.map(task => {
               const priorityColors = {
                 low: 'bg-green-100 text-green-800',
-                medium: 'bg-yellow-100 text-yellow-800',
-                high: 'bg-orange-100 text-orange-800',
+                medium: 'bg-purple-100 text-purple-800',
+                high: 'bg-blue-100 text-blue-800',
                 urgent: 'bg-red-100 text-red-800'
               };
 
@@ -301,12 +284,12 @@ export default function AnalyticsPage() {
         ) : (
           <p className="text-gray-500 text-center py-4">No upcoming deadlines</p>
         )}
-      </div>
+      </GlassCard>
 
       {/* Teacher-Specific Section */}
       {isTeacher && (
-        <div className="mt-6 bg-white rounded-lg shadow-md p-6">
-          <h2 className="text-xl font-bold mb-4 text-purple-700">Class Overview</h2>
+        <GlassCard borderColor="purple" className="mt-6 p-6">
+          <h2 className="text-xl font-bold mb-4 bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">Class Overview</h2>
           <p className="text-gray-600">
             For detailed class performance analytics, student progress tracking, and at-risk student identification,
             visit the{' '}
@@ -314,7 +297,7 @@ export default function AnalyticsPage() {
               Class Dashboard
             </Link>.
           </p>
-        </div>
+        </GlassCard>
       )}
     </div>
   );

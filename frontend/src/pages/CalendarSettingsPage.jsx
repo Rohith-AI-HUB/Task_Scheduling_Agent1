@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { calendarService } from '../services/calendar.service';
 import { useCalendarStore } from '../store/useStore';
 import HomeButton from '../components/HomeButton';
+import GradientButton from '../components/ui/GradientButton';
 
 const CalendarSettingsPage = () => {
   const {
@@ -151,7 +152,7 @@ const CalendarSettingsPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 dark:from-gray-900 dark:to-gray-800 p-6">
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-gray-50 dark:from-gray-900 dark:to-gray-800 p-6">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <motion.div
@@ -161,8 +162,8 @@ const CalendarSettingsPage = () => {
         >
           <div className="flex justify-between items-start mb-4">
             <div>
-              <h1 className="text-4xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
-                <Calendar className="w-10 h-10 text-blue-600" />
+              <h1 className="text-4xl font-bold flex items-center gap-3 bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+                <Calendar className="w-10 h-10 text-purple-600" />
                 Google Calendar Integration
               </h1>
               <p className="text-gray-600 dark:text-gray-300 mt-2">
@@ -228,19 +229,20 @@ const CalendarSettingsPage = () => {
               <p className="text-gray-600 dark:text-gray-300 mb-6">
                 Sync your tasks and study schedules automatically with Google Calendar
               </p>
-              <button
+              <GradientButton
+                variant="purple"
                 onClick={handleConnectCalendar}
                 disabled={loading}
-                className="px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 mx-auto shadow-lg hover:shadow-xl"
+                className="px-8 py-4 flex items-center gap-2 mx-auto"
               >
                 <LinkIcon className="w-5 h-5" />
                 {loading ? 'Connecting...' : 'Connect Google Calendar'}
-              </button>
+              </GradientButton>
             </div>
           ) : (
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
-                <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                <div className="p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg border-l-4 border-purple-600">
                   <div className="text-sm text-gray-600 dark:text-gray-400">Calendar ID</div>
                   <div className="text-lg font-semibold text-gray-900 dark:text-white truncate">
                     {calendarId || 'primary'}
@@ -292,7 +294,7 @@ const CalendarSettingsPage = () => {
                     onChange={(e) => setSyncPrefs({ ...syncPrefs, sync_tasks: e.target.checked })}
                     className="sr-only peer"
                   />
-                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 dark:peer-focus:ring-purple-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-purple-600"></div>
                 </label>
               </div>
 
@@ -310,7 +312,7 @@ const CalendarSettingsPage = () => {
                     onChange={(e) => setSyncPrefs({ ...syncPrefs, sync_study_plans: e.target.checked })}
                     className="sr-only peer"
                   />
-                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 dark:peer-focus:ring-purple-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-purple-600"></div>
                 </label>
               </div>
 
@@ -324,20 +326,21 @@ const CalendarSettingsPage = () => {
                   max="60"
                   value={syncPrefs.auto_sync_interval}
                   onChange={(e) => setSyncPrefs({ ...syncPrefs, auto_sync_interval: parseInt(e.target.value) })}
-                  className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border-2 border-purple-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-purple-600 focus:border-purple-600 focus:outline-none"
                 />
                 <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">
                   How often to check for calendar changes (5-60 minutes)
                 </p>
               </div>
 
-              <button
+              <GradientButton
+                variant="purple"
                 onClick={handleUpdatePreferences}
                 disabled={loading}
-                className="w-full px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-colors disabled:opacity-50 shadow-md hover:shadow-lg"
+                className="w-full py-3"
               >
                 {loading ? 'Saving...' : 'Save Preferences'}
-              </button>
+              </GradientButton>
             </div>
           </motion.div>
         )}
@@ -365,14 +368,15 @@ const CalendarSettingsPage = () => {
                     </div>
                   </div>
                 </div>
-                <button
+                <GradientButton
+                  variant="purple"
                   onClick={handleFullSync}
                   disabled={syncing}
-                  className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shadow-md hover:shadow-lg"
+                  className="px-6 py-2 flex items-center gap-2"
                 >
                   <RefreshCw className={`w-4 h-4 ${syncing ? 'animate-spin' : ''}`} />
                   {syncing ? 'Syncing...' : 'Sync Now'}
-                </button>
+                </GradientButton>
               </div>
 
               {pendingConflicts > 0 && (

@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import HomeButton from '../../components/HomeButton';
 import { useAuthStore } from '../../store/useStore';
 import { authService } from '../../services/auth.service';
+import MetricCard from '../../components/ui/MetricCard';
 
 function ClassDashboard() {
   const [analytics, setAnalytics] = useState(null);
@@ -79,9 +80,9 @@ function ClassDashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 to-blue-50">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-purple-600 mx-auto mb-4"></div>
           <p className="text-gray-600">Loading class analytics...</p>
         </div>
       </div>
@@ -90,13 +91,13 @@ function ClassDashboard() {
 
   if (!analytics || analytics.total_tasks === 0) {
     return (
-      <div className="min-h-screen bg-gray-50 p-6">
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50 p-6">
         <div className="max-w-4xl mx-auto">
           {/* Header */}
           <div className="flex justify-between items-start mb-8">
             <div>
-              <h1 className="text-4xl font-bold mb-2 flex items-center gap-3">
-                <Users className="text-blue-600" size={40} />
+              <h1 className="text-4xl font-bold mb-2 flex items-center gap-3 bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+                <Users className="text-purple-600" size={40} />
                 Class Performance Dashboard
               </h1>
               <p className="text-gray-600">Welcome back, {user?.full_name || 'Teacher'}! 👋</p>
@@ -115,7 +116,7 @@ function ClassDashboard() {
           </div>
 
           {/* Welcome Card */}
-          <div className="bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl p-8 text-white shadow-2xl mb-8">
+          <div className="bg-gradient-to-br from-purple-600 to-blue-600 rounded-2xl p-8 text-white shadow-2xl mb-8">
             <h2 className="text-3xl font-bold mb-4">👋 Welcome, Teacher!</h2>
             <p className="text-lg mb-6 opacity-90">
               Your class dashboard is ready. Get started by creating tasks and assigning them to students.
@@ -138,7 +139,7 @@ function ClassDashboard() {
             <div className="space-y-6">
               {/* Step 1 */}
               <div className="flex gap-4">
-                <div className="flex-shrink-0 w-10 h-10 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center font-bold text-lg">
+                <div className="flex-shrink-0 w-10 h-10 bg-purple-100 text-purple-700 rounded-full flex items-center justify-center font-bold text-lg">
                   1
                 </div>
                 <div>
@@ -148,7 +149,7 @@ function ClassDashboard() {
                   </p>
                   <button
                     onClick={() => window.location.href = '/teacher/bulk-tasks'}
-                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors"
+                    className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white px-4 py-2 rounded-lg transition-all shadow-md"
                   >
                     Go to Bulk Task Creator →
                   </button>
@@ -157,7 +158,7 @@ function ClassDashboard() {
 
               {/* Step 2 */}
               <div className="flex gap-4">
-                <div className="flex-shrink-0 w-10 h-10 bg-purple-100 text-purple-600 rounded-full flex items-center justify-center font-bold text-lg">
+                <div className="flex-shrink-0 w-10 h-10 bg-blue-100 text-blue-700 rounded-full flex items-center justify-center font-bold text-lg">
                   2
                 </div>
                 <div>
@@ -170,7 +171,7 @@ function ClassDashboard() {
 
               {/* Step 3 */}
               <div className="flex gap-4">
-                <div className="flex-shrink-0 w-10 h-10 bg-green-100 text-green-600 rounded-full flex items-center justify-center font-bold text-lg">
+                <div className="flex-shrink-0 w-10 h-10 bg-indigo-100 text-indigo-700 rounded-full flex items-center justify-center font-bold text-lg">
                   3
                 </div>
                 <div>
@@ -187,7 +188,7 @@ function ClassDashboard() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div
               onClick={() => window.location.href = '/teacher/bulk-tasks'}
-              className="bg-gradient-to-br from-green-500 to-emerald-600 p-6 rounded-xl shadow-lg cursor-pointer hover:scale-105 transition-transform"
+              className="bg-gradient-to-br from-purple-600 to-indigo-600 p-6 rounded-xl shadow-lg cursor-pointer hover:scale-105 transition-transform"
             >
               <CheckCircle className="text-white mb-4" size={48} />
               <h3 className="text-white text-xl font-bold mb-2">Bulk Task Creator</h3>
@@ -196,7 +197,7 @@ function ClassDashboard() {
 
             <div
               onClick={() => window.location.href = '/teacher/grading'}
-              className="bg-gradient-to-br from-purple-500 to-blue-600 p-6 rounded-xl shadow-lg cursor-pointer hover:scale-105 transition-transform"
+              className="bg-gradient-to-br from-purple-600 to-blue-600 p-6 rounded-xl shadow-lg cursor-pointer hover:scale-105 transition-transform"
             >
               <Award className="text-white mb-4" size={48} />
               <h3 className="text-white text-xl font-bold mb-2">AI Grading</h3>
@@ -205,7 +206,7 @@ function ClassDashboard() {
 
             <div
               onClick={() => window.location.href = '/groups'}
-              className="bg-gradient-to-br from-orange-500 to-red-600 p-6 rounded-xl shadow-lg cursor-pointer hover:scale-105 transition-transform"
+              className="bg-gradient-to-br from-blue-600 to-cyan-600 p-6 rounded-xl shadow-lg cursor-pointer hover:scale-105 transition-transform"
             >
               <Users className="text-white mb-4" size={48} />
               <h3 className="text-white text-xl font-bold mb-2">Manage Groups</h3>
@@ -220,13 +221,14 @@ function ClassDashboard() {
   const { class_metrics, grade_distribution, at_risk_students, top_performers, struggle_areas, all_students } = analytics;
 
   return (
-    <div className="max-w-7xl mx-auto p-6">
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50 p-6">
+      <div className="max-w-7xl mx-auto">
       {/* Header */}
       <div className="mb-8">
         <div className="flex justify-between items-start">
           <div>
-            <h1 className="text-4xl font-bold mb-2 flex items-center gap-3">
-              <Users className="text-blue-600" size={40} />
+            <h1 className="text-4xl font-bold mb-2 flex items-center gap-3 bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+              <Users className="text-purple-600" size={40} />
               Class Performance Dashboard
             </h1>
             <p className="text-gray-600">Welcome back, {user?.full_name || 'Teacher'}! 👋</p>
@@ -247,87 +249,70 @@ function ClassDashboard() {
 
       {/* Class Metrics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-6 shadow-lg">
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="text-sm text-blue-700 mb-1">Total Students</div>
-              <div className="text-4xl font-bold text-blue-900">{class_metrics.total_students}</div>
-            </div>
-            <Users className="text-blue-600" size={48} />
-          </div>
-        </div>
-
-        <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-xl p-6 shadow-lg">
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="text-sm text-green-700 mb-1">Completion Rate</div>
-              <div className="text-4xl font-bold text-green-900">{class_metrics.class_completion_rate}%</div>
-            </div>
-            <CheckCircle className="text-green-600" size={48} />
-          </div>
-        </div>
-
-        <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl p-6 shadow-lg">
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="text-sm text-purple-700 mb-1">Class Average</div>
-              <div className="text-4xl font-bold text-purple-900">
-                {class_metrics.class_average_grade ? `${class_metrics.class_average_grade}%` : 'N/A'}
-              </div>
-            </div>
-            <Award className="text-purple-600" size={48} />
-          </div>
-        </div>
-
-        <div className="bg-gradient-to-br from-red-50 to-red-100 rounded-xl p-6 shadow-lg">
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="text-sm text-red-700 mb-1">At-Risk Students</div>
-              <div className="text-4xl font-bold text-red-900">{class_metrics.at_risk_count}</div>
-            </div>
-            <AlertTriangle className="text-red-600" size={48} />
-          </div>
-        </div>
+        <MetricCard
+          icon={Users}
+          label="Total Students"
+          value={class_metrics.total_students}
+          gradient="purple-blue"
+        />
+        <MetricCard
+          icon={CheckCircle}
+          label="Completion Rate"
+          value={`${class_metrics.class_completion_rate}%`}
+          gradient="green"
+        />
+        <MetricCard
+          icon={Award}
+          label="Class Average"
+          value={class_metrics.class_average_grade ? `${class_metrics.class_average_grade}%` : 'N/A'}
+          gradient="purple-indigo"
+        />
+        <MetricCard
+          icon={AlertTriangle}
+          label="At-Risk Students"
+          value={class_metrics.at_risk_count}
+          gradient="orange"
+        />
       </div>
 
       {/* View Selector */}
-      <div className="flex gap-2 mb-6">
+      <div className="flex gap-2 mb-6 flex-wrap">
         <button
           onClick={() => setSelectedView('overview')}
-          className={`px-6 py-2 rounded-lg font-semibold transition-colors ${
+          className={`px-6 py-2 rounded-lg font-semibold transition-all ${
             selectedView === 'overview'
-              ? 'bg-blue-600 text-white'
-              : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+              ? 'bg-purple-600 text-white shadow-md'
+              : 'bg-white/80 text-gray-700 hover:bg-purple-50 hover:text-purple-600 border border-purple-100'
           }`}
         >
           Overview
         </button>
         <button
           onClick={() => setSelectedView('at-risk')}
-          className={`px-6 py-2 rounded-lg font-semibold transition-colors ${
+          className={`px-6 py-2 rounded-lg font-semibold transition-all ${
             selectedView === 'at-risk'
-              ? 'bg-red-600 text-white'
-              : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+              ? 'bg-orange-600 text-white shadow-md'
+              : 'bg-white/80 text-gray-700 hover:bg-orange-50 hover:text-orange-600 border border-purple-100'
           }`}
         >
           At-Risk ({at_risk_students.length})
         </button>
         <button
           onClick={() => setSelectedView('top-performers')}
-          className={`px-6 py-2 rounded-lg font-semibold transition-colors ${
+          className={`px-6 py-2 rounded-lg font-semibold transition-all ${
             selectedView === 'top-performers'
-              ? 'bg-green-600 text-white'
-              : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+              ? 'bg-green-600 text-white shadow-md'
+              : 'bg-white/80 text-gray-700 hover:bg-green-50 hover:text-green-600 border border-purple-100'
           }`}
         >
           Top Performers ({top_performers.length})
         </button>
         <button
           onClick={() => setSelectedView('all-students')}
-          className={`px-6 py-2 rounded-lg font-semibold transition-colors ${
+          className={`px-6 py-2 rounded-lg font-semibold transition-all ${
             selectedView === 'all-students'
-              ? 'bg-purple-600 text-white'
-              : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+              ? 'bg-purple-600 text-white shadow-md'
+              : 'bg-white/80 text-gray-700 hover:bg-purple-50 hover:text-purple-600 border border-purple-100'
           }`}
         >
           All Students ({all_students.length})
@@ -338,8 +323,8 @@ function ClassDashboard() {
       {selectedView === 'overview' && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Grade Distribution */}
-          <div className="bg-white rounded-xl shadow-lg p-6">
-            <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
+          <div className="bg-white rounded-xl shadow-lg p-6 border-l-4 border-purple-600">
+            <h3 className="text-xl font-bold mb-4 flex items-center gap-2 text-purple-700">
               <Activity size={24} />
               Grade Distribution
             </h3>
@@ -354,7 +339,7 @@ function ClassDashboard() {
                     <div
                       className={`h-2 rounded-full ${
                         grade.startsWith('A') ? 'bg-green-500' :
-                        grade.startsWith('B') ? 'bg-blue-500' :
+                        grade.startsWith('B') ? 'bg-purple-500' :
                         grade.startsWith('C') ? 'bg-yellow-500' :
                         grade.startsWith('D') ? 'bg-orange-500' :
                         grade.startsWith('F') ? 'bg-red-500' :
@@ -579,6 +564,7 @@ function ClassDashboard() {
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 }

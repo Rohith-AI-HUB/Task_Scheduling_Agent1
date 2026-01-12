@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Play, Pause, Square, Clock, Zap, Coffee, AlertCircle, TrendingUp } from 'lucide-react';
 import axios from 'axios';
 import HomeButton from '../components/HomeButton';
+import GradientButton from '../components/ui/GradientButton';
+import MetricCard from '../components/ui/MetricCard';
 
 function FocusModePage() {
   const [activeSession, setActiveSession] = useState(null);
@@ -179,17 +181,18 @@ function FocusModePage() {
   const timeLeft = getRemainingTime();
 
   return (
-    <div className="max-w-7xl mx-auto p-6">
-      {/* Header */}
-      <div className="mb-8">
-        <div className="flex justify-between items-start">
-          <div>
-            <h1 className="text-4xl font-bold mb-2">Focus Mode & Pomodoro</h1>
-            <p className="text-gray-600">Stay focused and track your productive time</p>
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-indigo-50 to-blue-50 p-6">
+      <div className="max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="mb-8">
+          <div className="flex justify-between items-start">
+            <div>
+              <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">Focus Mode & Pomodoro</h1>
+              <p className="text-gray-600">Stay focused and track your productive time</p>
+            </div>
+            <HomeButton />
           </div>
-          <HomeButton />
         </div>
-      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Main Timer Area */}
@@ -212,7 +215,7 @@ function FocusModePage() {
 
                 {/* Timer Display */}
                 <div className="mb-8">
-                  <div className="text-8xl font-bold text-purple-600 mb-4">
+                  <div className="text-9xl font-bold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent mb-4">
                     {timeLeft ? `${String(timeLeft.minutes).padStart(2, '0')}:${String(timeLeft.seconds).padStart(2, '0')}` : '00:00'}
                   </div>
 
@@ -231,7 +234,7 @@ function FocusModePage() {
                 <div className="mb-8">
                   <div className="h-4 bg-gray-200 rounded-full overflow-hidden">
                     <div
-                      className="h-full bg-gradient-to-r from-purple-500 to-blue-500 transition-all duration-1000"
+                      className="h-full bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 transition-all duration-1000"
                       style={{
                         width: `${Math.min(100, ((activeSession.planned_duration_minutes - (timeLeft?.minutes || 0)) / activeSession.planned_duration_minutes) * 100)}%`
                       }}
@@ -261,17 +264,19 @@ function FocusModePage() {
 
                 {/* Action Buttons */}
                 <div className="flex gap-3 justify-center">
-                  <button
+                  <GradientButton
+                    variant="green"
                     onClick={() => setShowCompleteModal(true)}
-                    className="bg-green-500 text-white px-8 py-3 rounded-lg font-semibold hover:bg-green-600 flex items-center gap-2"
+                    size="lg"
+                    className="flex items-center gap-2"
                   >
                     <Square size={18} />
                     Complete Session
-                  </button>
+                  </GradientButton>
 
                   <button
                     onClick={cancelSession}
-                    className="bg-gray-200 text-gray-700 px-6 py-3 rounded-lg font-semibold hover:bg-gray-300"
+                    className="bg-gray-200 text-gray-700 px-6 py-3 rounded-lg font-semibold hover:bg-gray-300 transition-all"
                   >
                     Cancel
                   </button>
@@ -283,19 +288,19 @@ function FocusModePage() {
                   <div className="flex gap-2 justify-center">
                     <button
                       onClick={() => logInterruption('notification')}
-                      className="text-xs bg-orange-100 text-orange-700 px-3 py-2 rounded hover:bg-orange-200"
+                      className="text-sm border-2 border-purple-600 text-purple-600 px-6 py-3 rounded-lg hover:bg-purple-50 transition-all"
                     >
                       Notification
                     </button>
                     <button
                       onClick={() => logInterruption('distraction')}
-                      className="text-xs bg-red-100 text-red-700 px-3 py-2 rounded hover:bg-red-200"
+                      className="text-sm border-2 border-purple-600 text-purple-600 px-6 py-3 rounded-lg hover:bg-purple-50 transition-all"
                     >
                       Distraction
                     </button>
                     <button
                       onClick={() => logInterruption('break')}
-                      className="text-xs bg-blue-100 text-blue-700 px-3 py-2 rounded hover:bg-blue-200"
+                      className="text-sm border-2 border-purple-600 text-purple-600 px-6 py-3 rounded-lg hover:bg-purple-50 transition-all"
                     >
                       Quick Break
                     </button>
@@ -306,19 +311,21 @@ function FocusModePage() {
           ) : (
             // No Active Session
             <div className="bg-white rounded-2xl shadow-lg p-12 text-center">
-              <Zap className="mx-auto mb-6 text-purple-500" size={64} />
-              <h2 className="text-3xl font-bold mb-4">Ready to Focus?</h2>
+              <Zap className="mx-auto mb-6 text-purple-600" size={64} />
+              <h2 className="text-3xl font-bold mb-4 bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">Ready to Focus?</h2>
               <p className="text-gray-600 mb-8">
                 Start a focus session to boost your productivity and track your time
               </p>
 
-              <button
+              <GradientButton
+                variant="indigo"
                 onClick={() => setShowStartModal(true)}
-                className="bg-gradient-to-r from-purple-500 to-blue-500 text-white px-8 py-4 rounded-lg font-semibold text-lg hover:shadow-lg transition-all flex items-center gap-3 mx-auto"
+                size="xl"
+                className="flex items-center gap-3 mx-auto"
               >
                 <Play size={24} />
                 Start Focus Session
-              </button>
+              </GradientButton>
             </div>
           )}
         </div>
@@ -327,41 +334,26 @@ function FocusModePage() {
         <div className="space-y-4">
           {stats && (
             <>
-              <div className="bg-white rounded-xl shadow p-6">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="bg-purple-100 p-2 rounded-lg">
-                    <Clock className="text-purple-600" size={24} />
-                  </div>
-                  <div>
-                    <div className="text-2xl font-bold">{stats.total_focus_time?.toFixed(0) || 0}</div>
-                    <div className="text-sm text-gray-600">Total Focus Time (min)</div>
-                  </div>
-                </div>
-              </div>
+              <MetricCard
+                icon={Clock}
+                label="Total Focus Time (min)"
+                value={stats.total_focus_time?.toFixed(0) || 0}
+                gradient="purple-indigo"
+              />
 
-              <div className="bg-white rounded-xl shadow p-6">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="bg-green-100 p-2 rounded-lg">
-                    <TrendingUp className="text-green-600" size={24} />
-                  </div>
-                  <div>
-                    <div className="text-2xl font-bold">{stats.total_sessions || 0}</div>
-                    <div className="text-sm text-gray-600">Sessions Completed</div>
-                  </div>
-                </div>
-              </div>
+              <MetricCard
+                icon={TrendingUp}
+                label="Sessions Completed"
+                value={stats.total_sessions || 0}
+                gradient="green"
+              />
 
-              <div className="bg-white rounded-xl shadow p-6">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="bg-blue-100 p-2 rounded-lg">
-                    <Zap className="text-blue-600" size={24} />
-                  </div>
-                  <div>
-                    <div className="text-2xl font-bold">{stats.completion_rate?.toFixed(0) || 0}%</div>
-                    <div className="text-sm text-gray-600">Completion Rate</div>
-                  </div>
-                </div>
-              </div>
+              <MetricCard
+                icon={Zap}
+                label="Completion Rate"
+                value={`${stats.completion_rate?.toFixed(0) || 0}%`}
+                gradient="purple-blue"
+              />
 
               <div className="bg-white rounded-xl shadow p-6">
                 <h3 className="font-semibold mb-3 text-sm text-gray-600">Session Types</h3>
@@ -378,8 +370,8 @@ function FocusModePage() {
           )}
 
           {!activeSession && (
-            <div className="bg-gradient-to-br from-blue-50 to-purple-50 rounded-xl p-6">
-              <h3 className="font-semibold mb-3 flex items-center gap-2">
+            <div className="bg-gradient-to-br from-purple-50 to-indigo-50 rounded-xl p-6">
+              <h3 className="font-semibold mb-3 flex items-center gap-2 text-purple-600">
                 <Coffee size={18} />
                 Focus Tips
               </h3>
@@ -392,6 +384,7 @@ function FocusModePage() {
             </div>
           )}
         </div>
+      </div>
       </div>
 
       {/* Start Session Modal */}
@@ -443,7 +436,7 @@ function FocusModePage() {
               <select
                 value={selectedTask || ''}
                 onChange={(e) => setSelectedTask(e.target.value || null)}
-                className="w-full border-2 border-gray-300 rounded-lg px-4 py-2 focus:border-purple-500 focus:outline-none"
+                className="w-full border-2 border-purple-200 rounded-lg px-4 py-2 focus:border-purple-600 focus:ring-2 focus:ring-purple-600 focus:outline-none"
               >
                 <option value="">No specific task</option>
                 {tasks.map(task => (
@@ -456,19 +449,20 @@ function FocusModePage() {
 
             {/* Action Buttons */}
             <div className="flex gap-3">
-              <button
+              <GradientButton
+                variant="indigo"
                 onClick={startSession}
-                className="flex-1 bg-purple-500 text-white py-3 rounded-lg font-semibold hover:bg-purple-600 flex items-center justify-center gap-2"
+                className="flex-1 flex items-center justify-center gap-2"
               >
                 <Play size={18} />
                 Start Session
-              </button>
+              </GradientButton>
               <button
                 onClick={() => {
                   setShowStartModal(false);
                   setSelectedTask(null);
                 }}
-                className="px-6 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300"
+                className="px-6 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-all"
               >
                 Cancel
               </button>
@@ -495,8 +489,8 @@ function FocusModePage() {
                     onClick={() => setProductivityRating(rating)}
                     className={`w-12 h-12 rounded-full border-2 font-bold transition-all ${
                       productivityRating >= rating
-                        ? 'bg-purple-500 text-white border-purple-500'
-                        : 'border-gray-300 text-gray-400 hover:border-purple-300'
+                        ? 'bg-gradient-to-br from-purple-600 to-indigo-600 text-white border-purple-600'
+                        : 'border-gray-300 text-gray-400 hover:border-purple-400'
                     }`}
                   >
                     {rating}
@@ -514,20 +508,21 @@ function FocusModePage() {
                 onChange={(e) => setSessionNotes(e.target.value)}
                 rows="3"
                 placeholder="What did you accomplish?"
-                className="w-full border-2 border-gray-300 rounded-lg px-4 py-2 focus:border-purple-500 focus:outline-none"
+                className="w-full border-2 border-purple-200 rounded-lg px-4 py-2 focus:border-purple-600 focus:ring-2 focus:ring-purple-600 focus:outline-none"
               />
             </div>
 
             <div className="flex gap-3">
-              <button
+              <GradientButton
+                variant="green"
                 onClick={completeSession}
-                className="flex-1 bg-green-500 text-white py-3 rounded-lg font-semibold hover:bg-green-600"
+                className="flex-1"
               >
                 Complete Session
-              </button>
+              </GradientButton>
               <button
                 onClick={() => setShowCompleteModal(false)}
-                className="px-6 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300"
+                className="px-6 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-all"
               >
                 Back
               </button>
@@ -535,6 +530,7 @@ function FocusModePage() {
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 }

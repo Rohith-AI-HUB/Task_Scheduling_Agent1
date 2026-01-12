@@ -5,6 +5,8 @@ import { Users, Plus, Trash2, Send } from 'lucide-react';
 import NotificationBell from '../components/NotificationBell';
 import HomeButton from '../components/HomeButton';
 import { useAuth } from '../store/useStore';
+import GlassCard from '../components/ui/GlassCard';
+import GradientButton from '../components/ui/GradientButton';
 
 export default function GroupsPage() {
   const [groups, setGroups] = useState([]);
@@ -121,21 +123,21 @@ export default function GroupsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-100 p-6">
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50 p-6">
         <div className="flex items-center justify-center h-64">
-          <div className="text-xl text-gray-600">Loading groups...</div>
+          <div className="text-xl text-purple-600">Loading groups...</div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 p-6">
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50 p-6">
       {/* Header */}
       <div className="flex justify-between items-center mb-6">
         <div className="flex items-center gap-4">
-          <h1 className="text-3xl font-bold text-gray-800 flex items-center gap-2">
-            <Users size={32} />
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent flex items-center gap-2">
+            <Users size={32} className="text-purple-600" />
             Group Coordinator
           </h1>
         </div>
@@ -159,8 +161,8 @@ export default function GroupsPage() {
 
       {/* Student Info Message */}
       {isStudent && (
-        <div className="mb-4 bg-blue-50 border border-blue-200 p-4 rounded-lg">
-          <p className="text-blue-800 text-sm">
+        <div className="mb-4 bg-purple-50 border border-purple-200 p-4 rounded-lg">
+          <p className="text-purple-800 text-sm">
             You can view groups you're a member of. Only teachers can create and manage groups.
           </p>
         </div>
@@ -168,19 +170,20 @@ export default function GroupsPage() {
 
       {/* Create Group Button - Teacher Only */}
       {isTeacher && (
-        <button
+        <GradientButton
+          variant="purple"
           onClick={() => setShowCreateForm(!showCreateForm)}
-          className="mb-6 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded flex items-center gap-2 transition"
+          className="mb-6 flex items-center gap-2"
         >
           <Plus size={20} />
           {showCreateForm ? 'Cancel' : 'Create New Group'}
-        </button>
+        </GradientButton>
       )}
 
       {/* Create Group Form - Teacher Only */}
       {showCreateForm && isTeacher && (
-        <div className="bg-white p-6 rounded-lg shadow-md mb-6">
-          <h2 className="text-xl font-bold mb-4">Create New Group</h2>
+        <GlassCard borderColor="purple" className="p-6 mb-6">
+          <h2 className="text-xl font-bold mb-4 text-purple-600">Create New Group</h2>
           <form onSubmit={handleCreateGroup}>
             <div className="mb-4">
               <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -190,7 +193,7 @@ export default function GroupsPage() {
                 type="text"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full p-2 border border-purple-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600 focus:border-purple-600"
                 placeholder="e.g., Project Team Alpha"
                 required
               />
@@ -203,7 +206,7 @@ export default function GroupsPage() {
               <input
                 type="text"
                 onChange={handleMemberIdChange}
-                className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full p-2 border border-purple-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600 focus:border-purple-600"
                 placeholder="e.g., 1ms25scs032, 1ms25scs032-t, 1ms25scs033"
                 required
               />
@@ -212,29 +215,30 @@ export default function GroupsPage() {
               </p>
             </div>
 
-            <button
+            <GradientButton
               type="submit"
-              className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded transition"
+              variant="green"
+              className="flex items-center gap-2"
             >
               Create Group
-            </button>
+            </GradientButton>
           </form>
-        </div>
+        </GlassCard>
       )}
 
       {/* Groups List */}
       <div className="space-y-4">
         {groups.length === 0 ? (
-          <div className="bg-white p-8 rounded-lg shadow-md text-center">
-            <Users size={48} className="mx-auto text-gray-400 mb-4" />
+          <GlassCard borderColor="purple" className="p-8 text-center">
+            <Users size={48} className="mx-auto text-purple-400 mb-4" />
             <p className="text-gray-600">No groups created yet. Create your first group!</p>
-          </div>
+          </GlassCard>
         ) : (
           groups.map(group => (
-            <div key={group.id} className="bg-white p-6 rounded-lg shadow-md">
+            <GlassCard key={group.id} borderColor="purple" className="p-6" hoverEffect={true}>
               <div className="flex justify-between items-start mb-4">
                 <div>
-                  <h3 className="text-xl font-bold text-gray-800">{group.name}</h3>
+                  <h3 className="text-xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">{group.name}</h3>
                   <p className="text-sm text-gray-500">
                     Created: {new Date(group.created_at).toLocaleDateString()}
                   </p>
@@ -252,19 +256,19 @@ export default function GroupsPage() {
 
               {/* Members */}
               <div className="mb-4">
-                <h4 className="font-semibold text-gray-700 mb-2">Members ({group.member_details?.length || 0})</h4>
+                <h4 className="font-semibold text-purple-700 mb-2">Members ({group.member_details?.length || 0})</h4>
                 {group.member_details && group.member_details.length > 0 ? (
                   <div className="space-y-2">
-                    {group.member_details.map((member) => (
-                      <div key={member.id} className="flex items-center gap-2 bg-gray-50 p-2 rounded">
-                        <div className="w-8 h-8 bg-blue-500 text-white rounded-full flex items-center justify-center font-semibold">
+                    {group.member_details.map((member, idx) => (
+                      <div key={member.id} className="flex items-center gap-2 bg-purple-50 p-2 rounded">
+                        <div className={`w-8 h-8 bg-gradient-to-br ${idx % 2 === 0 ? 'from-purple-500 to-blue-500' : 'from-blue-500 to-purple-500'} text-white rounded-full flex items-center justify-center font-semibold shadow-md`}>
                           {member.full_name.charAt(0).toUpperCase()}
                         </div>
                         <div>
                           <p className="font-medium text-sm">{member.full_name}</p>
                           <p className="text-xs text-gray-500">{member.email}</p>
                           {member.usn && (
-                            <p className="text-xs text-blue-600 font-mono">USN: {member.usn}</p>
+                            <p className="text-xs text-purple-600 font-mono">USN: {member.usn}</p>
                           )}
                         </div>
                       </div>
@@ -277,23 +281,24 @@ export default function GroupsPage() {
 
               {/* Assign Task Button - Teacher Only */}
               {isTeacher && (
-                <button
+                <GradientButton
+                  variant="blue"
                   onClick={() => setShowAssignForm(showAssignForm === group.id ? null : group.id)}
-                  className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded flex items-center gap-2 transition"
+                  className="flex items-center gap-2"
                 >
                   <Send size={16} />
                   {showAssignForm === group.id ? 'Cancel' : 'Assign Task to Group'}
-                </button>
+                </GradientButton>
               )}
 
               {/* Assign Task Form - Teacher Only */}
               {showAssignForm === group.id && isTeacher && (
-                <div className="mt-4 p-4 bg-gray-50 rounded">
-                  <h4 className="font-semibold mb-2">Select Task to Assign</h4>
+                <div className="mt-4 p-4 bg-purple-50 rounded-lg">
+                  <h4 className="font-semibold mb-2 text-purple-700">Select Task to Assign</h4>
                   <select
                     value={assignData.task_id}
                     onChange={(e) => setAssignData({ task_id: e.target.value })}
-                    className="w-full p-2 border border-gray-300 rounded mb-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full p-2 border border-purple-200 rounded-lg mb-3 focus:outline-none focus:ring-2 focus:ring-purple-600 focus:border-purple-600"
                   >
                     <option value="">-- Select Task --</option>
                     {tasks.map(task => (
@@ -302,30 +307,30 @@ export default function GroupsPage() {
                       </option>
                     ))}
                   </select>
-                  <button
+                  <GradientButton
+                    variant="green"
                     onClick={() => handleAssignTask(group.id)}
                     disabled={!assignData.task_id}
-                    className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded disabled:bg-gray-400 disabled:cursor-not-allowed transition"
                   >
                     Assign Task
-                  </button>
+                  </GradientButton>
                 </div>
               )}
-            </div>
+            </GlassCard>
           ))
         )}
       </div>
 
       {/* Info Box */}
-      <div className="mt-6 bg-blue-50 p-4 rounded-lg">
-        <h3 className="font-bold text-blue-900 mb-2">How to use Groups:</h3>
-        <ul className="text-sm text-blue-800 space-y-1 list-disc list-inside">
+      <GlassCard borderColor="purple" className="mt-6 p-4">
+        <h3 className="font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent mb-2">How to use Groups:</h3>
+        <ul className="text-sm text-gray-700 space-y-1 list-disc list-inside">
           <li>Create groups to organize team members</li>
           <li>Assign tasks to entire groups at once</li>
           <li>All group members will receive the task and a notification</li>
           <li>Get user IDs from the Users section or MongoDB</li>
         </ul>
-      </div>
+      </GlassCard>
     </div>
   );
 }

@@ -8,6 +8,8 @@ import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { studyPlannerService } from '../services/studyPlanner.service';
 import HomeButton from '../components/HomeButton';
+import GradientButton from '../components/ui/GradientButton';
+import MetricCard from '../components/ui/MetricCard';
 
 function StudyPlannerPage() {
   const navigate = useNavigate();
@@ -210,18 +212,19 @@ function StudyPlannerPage() {
   const stressInfo = getStressInfo();
 
   return (
-    <div className="max-w-7xl mx-auto p-6">
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-indigo-50 to-blue-50 p-6">
+      <div className="max-w-7xl mx-auto">
       {/* Header */}
       <div className="mb-8">
         <div className="flex items-center justify-between mb-2">
-          <h1 className="text-4xl font-bold flex items-center gap-3">
-            <Calendar className="text-emerald-500" />
+          <h1 className="text-4xl font-bold flex items-center gap-3 bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">
+            <Calendar className="text-purple-600" />
             Smart Study Planner
           </h1>
           <div className="flex items-center gap-2">
             <button
               onClick={() => setShowPreferencesModal(true)}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              className="p-2 hover:bg-purple-50 rounded-lg transition-colors text-purple-600"
               title="Settings"
             >
               <Settings size={24} />
@@ -261,7 +264,7 @@ function StudyPlannerPage() {
           {!isToday && (
             <button
               onClick={goToToday}
-              className="px-3 py-1 text-sm bg-emerald-100 text-emerald-700 rounded-full hover:bg-emerald-200"
+              className="px-3 py-1 text-sm bg-purple-100 text-purple-700 rounded-full hover:bg-purple-200 font-medium transition-all"
             >
               Today
             </button>
@@ -270,7 +273,7 @@ function StudyPlannerPage() {
 
         {/* Stress Level Pill */}
         {stressLevel && (
-          <div className={`px-4 py-2 rounded-full flex items-center gap-2 ${stressInfo.color}`}>
+          <div className={`px-4 py-2 rounded-full flex items-center gap-2 shadow-md ${stressInfo.color}`}>
             <Brain size={18} />
             <span className="font-medium">Stress: {stressLevel.objective_score?.toFixed(1)}/10</span>
             <span className="text-sm">({stressInfo.text})</span>
@@ -288,16 +291,17 @@ function StudyPlannerPage() {
             </div>
           ) : !schedule ? (
             // No Schedule - Generate Prompt
-            <div className="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-2xl shadow-lg p-12 text-center">
-              <Sparkles className="mx-auto mb-6 text-emerald-500" size={64} />
-              <h2 className="text-3xl font-bold mb-4">No Schedule Yet</h2>
+            <div className="bg-gradient-to-br from-purple-50 via-indigo-50 to-blue-50 rounded-2xl shadow-lg p-12 text-center border-t-4 border-purple-600">
+              <Sparkles className="mx-auto mb-6 text-purple-500" size={64} />
+              <h2 className="text-3xl font-bold mb-4 bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">No Schedule Yet</h2>
               <p className="text-gray-600 mb-8 max-w-md mx-auto">
                 Let AI create an optimized study schedule based on your tasks, deadlines, and current stress level.
               </p>
-              <button
+              <GradientButton
+                variant="purple"
                 onClick={() => generateSchedule(false)}
                 disabled={generating}
-                className="bg-gradient-to-r from-emerald-500 to-teal-500 text-white px-8 py-4 rounded-lg font-semibold text-lg hover:shadow-lg transition-all flex items-center gap-3 mx-auto disabled:opacity-50"
+                className="px-8 py-4 text-lg flex items-center gap-3 mx-auto"
               >
                 {generating ? (
                   <>
@@ -310,7 +314,7 @@ function StudyPlannerPage() {
                     Generate My Schedule
                   </>
                 )}
-              </button>
+              </GradientButton>
               {tasks.length === 0 && (
                 <p className="mt-4 text-sm text-gray-500">
                   No active tasks found. Add some tasks first!
@@ -464,8 +468,8 @@ function StudyPlannerPage() {
             <>
               <div className="bg-white rounded-xl shadow p-6">
                 <div className="flex items-center gap-3">
-                  <div className="bg-emerald-100 p-2 rounded-lg">
-                    <Clock className="text-emerald-600" size={24} />
+                  <div className="bg-purple-100 p-2 rounded-lg">
+                    <Clock className="text-purple-600" size={24} />
                   </div>
                   <div>
                     <div className="text-2xl font-bold">{stats.total_planned_hours || 0}h</div>
@@ -525,9 +529,9 @@ function StudyPlannerPage() {
           )}
 
           {/* Tips */}
-          <div className="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-xl p-6">
+          <div className="bg-gradient-to-br from-purple-50 via-indigo-50 to-blue-50 rounded-xl p-6 border-t-4 border-purple-600">
             <h3 className="font-semibold mb-3 flex items-center gap-2">
-              <Sparkles size={18} className="text-emerald-500" />
+              <Sparkles size={18} className="text-purple-500" />
               AI Tips
             </h3>
             <ul className="text-sm space-y-2 text-gray-700">
@@ -577,7 +581,7 @@ function StudyPlannerPage() {
                       ...prefsForm,
                       study_hours: { ...prefsForm.study_hours, start: e.target.value }
                     })}
-                    className="border rounded-lg px-3 py-2"
+                    className="border-2 border-purple-200 rounded-lg px-3 py-2 focus:border-purple-600 focus:ring-2 focus:ring-purple-600 focus:outline-none"
                   />
                 </div>
                 <span>to</span>
@@ -590,7 +594,7 @@ function StudyPlannerPage() {
                       ...prefsForm,
                       study_hours: { ...prefsForm.study_hours, end: e.target.value }
                     })}
-                    className="border rounded-lg px-3 py-2"
+                    className="border-2 border-purple-200 rounded-lg px-3 py-2 focus:border-purple-600 focus:ring-2 focus:ring-purple-600 focus:outline-none"
                   />
                 </div>
               </div>
@@ -629,7 +633,7 @@ function StudyPlannerPage() {
                     ...prefsForm,
                     break_duration_short: parseInt(e.target.value)
                   })}
-                  className="w-full border rounded-lg px-3 py-2"
+                  className="w-full border-2 border-purple-200 rounded-lg px-3 py-2 focus:border-purple-600 focus:ring-2 focus:ring-purple-600 focus:outline-none"
                 >
                   <option value={3}>3 min</option>
                   <option value={5}>5 min</option>
@@ -644,7 +648,7 @@ function StudyPlannerPage() {
                     ...prefsForm,
                     break_duration_long: parseInt(e.target.value)
                   })}
-                  className="w-full border rounded-lg px-3 py-2"
+                  className="w-full border-2 border-purple-200 rounded-lg px-3 py-2 focus:border-purple-600 focus:ring-2 focus:ring-purple-600 focus:outline-none"
                 >
                   <option value={10}>10 min</option>
                   <option value={15}>15 min</option>
@@ -690,8 +694,8 @@ function StudyPlannerPage() {
                     key={pattern.id}
                     className={`flex items-center p-3 rounded-lg border-2 cursor-pointer transition-all ${
                       prefsForm.preferred_complexity_pattern === pattern.id
-                        ? 'border-emerald-500 bg-emerald-50'
-                        : 'border-gray-200 hover:border-gray-300'
+                        ? 'border-purple-500 bg-purple-50'
+                        : 'border-gray-200 hover:border-purple-100'
                     }`}
                   >
                     <input
@@ -733,12 +737,13 @@ function StudyPlannerPage() {
 
             {/* Actions */}
             <div className="flex gap-3">
-              <button
+              <GradientButton
+                variant="purple"
                 onClick={savePreferences}
-                className="flex-1 bg-emerald-500 text-white py-3 rounded-lg font-semibold hover:bg-emerald-600"
+                className="flex-1 py-3"
               >
                 Save Preferences
-              </button>
+              </GradientButton>
               <button
                 onClick={() => setShowPreferencesModal(false)}
                 className="px-6 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300"

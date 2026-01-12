@@ -3,6 +3,8 @@ import { Upload, FileText, Link as LinkIcon, Search, Star, Trash2, Eye, Sparkles
 import axios from 'axios';
 import HomeButton from '../components/HomeButton';
 import FlashcardViewer from '../components/FlashcardViewer';
+import GradientButton from '../components/ui/GradientButton';
+import GlassCard from '../components/ui/GlassCard';
 
 function ResourceLibraryPage() {
   const [resources, setResources] = useState([]);
@@ -196,27 +198,29 @@ function ResourceLibraryPage() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto p-6">
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50 p-6">
+      <div className="max-w-7xl mx-auto">
       {/* Header */}
       <div className="flex justify-between items-start mb-6">
         <div>
-          <h1 className="text-4xl font-bold mb-2">Resource Library</h1>
+          <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">Resource Library</h1>
           <p className="text-gray-600">Your personal knowledge base with AI-powered organization</p>
         </div>
 
         <div className="flex gap-2">
           <HomeButton />
-          <button
+          <GradientButton
+            variant="purple"
             onClick={() => setShowNoteModal(true)}
-            className="bg-blue-500 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-blue-600"
+            className="flex items-center gap-2"
           >
             <FileText size={18} />
             New Note
-          </button>
+          </GradientButton>
 
           <button
             onClick={() => setShowLinkModal(true)}
-            className="bg-green-500 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-green-600"
+            className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-blue-700 transition-all shadow-md hover:shadow-lg"
           >
             <LinkIcon size={18} />
             Save Link
@@ -224,7 +228,7 @@ function ResourceLibraryPage() {
 
           <button
             onClick={() => setShowUploadModal(true)}
-            className="bg-purple-500 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-purple-600"
+            className="border-2 border-purple-600 text-purple-600 px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-purple-50 transition-all"
           >
             <Upload size={18} />
             Upload File
@@ -241,16 +245,17 @@ function ResourceLibraryPage() {
             onChange={(e) => setSearchQuery(e.target.value)}
             onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
             placeholder="Search notes, files, and links..."
-            className="w-full border-2 rounded-lg px-4 py-3 pl-12 focus:border-purple-500 focus:outline-none"
+            className="w-full border-2 border-purple-200 rounded-lg px-4 py-3 pl-12 focus:border-purple-600 focus:ring-2 focus:ring-purple-600 focus:outline-none"
           />
-          <Search className="absolute left-4 top-3.5 text-gray-400" size={20} />
+          <Search className="absolute left-4 top-3.5 text-purple-400" size={20} />
         </div>
-        <button
+        <GradientButton
+          variant="purple"
           onClick={handleSearch}
-          className="bg-gray-800 text-white px-6 py-3 rounded-lg hover:bg-gray-700"
+          className="px-6 py-3"
         >
           Search
-        </button>
+        </GradientButton>
       </div>
 
       {/* Filters */}
@@ -272,8 +277,8 @@ function ResourceLibraryPage() {
             onClick={() => setFilter(filterOption.id)}
             className={`px-4 py-2 rounded-lg font-medium transition-all ${
               filter === filterOption.id
-                ? 'bg-purple-500 text-white scale-105'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                ? 'bg-purple-600 text-white scale-105 shadow-md shadow-purple-500/50'
+                : 'bg-white/80 text-gray-700 hover:bg-purple-50 hover:text-purple-600 border border-purple-100'
             }`}
           >
             <span className="mr-2">{filterOption.icon}</span>
@@ -312,50 +317,51 @@ function ResourceLibraryPage() {
       {showNoteModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-2xl p-8 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-            <h3 className="text-2xl font-bold mb-6">Create Note</h3>
+            <h3 className="text-2xl font-bold mb-6 bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">Create Note</h3>
 
             <div className="mb-4">
-              <label className="block text-sm font-medium mb-2">Title</label>
+              <label className="block text-sm font-medium mb-2 text-purple-700">Title</label>
               <input
                 type="text"
                 value={noteTitle}
                 onChange={(e) => setNoteTitle(e.target.value)}
                 placeholder="Note title..."
-                className="w-full border-2 border-gray-300 rounded-lg px-4 py-2 focus:border-blue-500 focus:outline-none"
+                className="w-full border-2 border-purple-200 rounded-lg px-4 py-2 focus:border-purple-600 focus:ring-2 focus:ring-purple-600 focus:outline-none"
               />
             </div>
 
             <div className="mb-4">
-              <label className="block text-sm font-medium mb-2">Content (Markdown supported)</label>
+              <label className="block text-sm font-medium mb-2 text-purple-700">Content (Markdown supported)</label>
               <textarea
                 value={noteContent}
                 onChange={(e) => setNoteContent(e.target.value)}
                 rows="10"
                 placeholder="Write your notes here..."
-                className="w-full border-2 border-gray-300 rounded-lg px-4 py-2 focus:border-blue-500 focus:outline-none font-mono"
+                className="w-full border-2 border-purple-200 rounded-lg px-4 py-2 focus:border-purple-600 focus:ring-2 focus:ring-purple-600 focus:outline-none font-mono"
               />
             </div>
 
             <div className="mb-6">
-              <label className="block text-sm font-medium mb-2">Tags (comma-separated)</label>
+              <label className="block text-sm font-medium mb-2 text-purple-700">Tags (comma-separated)</label>
               <input
                 type="text"
                 value={noteTags}
                 onChange={(e) => setNoteTags(e.target.value)}
                 placeholder="e.g., python, tutorial, important"
-                className="w-full border-2 border-gray-300 rounded-lg px-4 py-2 focus:border-blue-500 focus:outline-none"
+                className="w-full border-2 border-purple-200 rounded-lg px-4 py-2 focus:border-purple-600 focus:ring-2 focus:ring-purple-600 focus:outline-none"
               />
             </div>
 
             <div className="flex gap-3">
-              <button
+              <GradientButton
+                variant="purple"
                 onClick={createNote}
                 disabled={!noteTitle || !noteContent}
-                className="flex-1 bg-blue-500 text-white py-3 rounded-lg font-semibold hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                className="flex-1 py-3 flex items-center justify-center gap-2"
               >
                 <Sparkles size={18} />
                 Create Note (AI will analyze)
-              </button>
+              </GradientButton>
               <button
                 onClick={() => {
                   setShowNoteModal(false);
@@ -363,7 +369,7 @@ function ResourceLibraryPage() {
                   setNoteContent('');
                   setNoteTags('');
                 }}
-                className="px-6 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300"
+                className="px-6 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-all"
               >
                 Cancel
               </button>
@@ -376,49 +382,49 @@ function ResourceLibraryPage() {
       {showLinkModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-2xl p-8 max-w-md w-full mx-4">
-            <h3 className="text-2xl font-bold mb-6">Save Link</h3>
+            <h3 className="text-2xl font-bold mb-6 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Save Link</h3>
 
             <div className="mb-4">
-              <label className="block text-sm font-medium mb-2">Title</label>
+              <label className="block text-sm font-medium mb-2 text-purple-700">Title</label>
               <input
                 type="text"
                 value={linkTitle}
                 onChange={(e) => setLinkTitle(e.target.value)}
                 placeholder="Link title..."
-                className="w-full border-2 border-gray-300 rounded-lg px-4 py-2 focus:border-green-500 focus:outline-none"
+                className="w-full border-2 border-purple-200 rounded-lg px-4 py-2 focus:border-purple-600 focus:ring-2 focus:ring-purple-600 focus:outline-none"
               />
             </div>
 
             <div className="mb-4">
-              <label className="block text-sm font-medium mb-2">URL</label>
+              <label className="block text-sm font-medium mb-2 text-purple-700">URL</label>
               <input
                 type="url"
                 value={linkUrl}
                 onChange={(e) => setLinkUrl(e.target.value)}
                 placeholder="https://..."
-                className="w-full border-2 border-gray-300 rounded-lg px-4 py-2 focus:border-green-500 focus:outline-none"
+                className="w-full border-2 border-purple-200 rounded-lg px-4 py-2 focus:border-purple-600 focus:ring-2 focus:ring-purple-600 focus:outline-none"
               />
             </div>
 
             <div className="mb-4">
-              <label className="block text-sm font-medium mb-2">Description (Optional)</label>
+              <label className="block text-sm font-medium mb-2 text-purple-700">Description (Optional)</label>
               <textarea
                 value={linkDescription}
                 onChange={(e) => setLinkDescription(e.target.value)}
                 rows="3"
                 placeholder="What is this link about?"
-                className="w-full border-2 border-gray-300 rounded-lg px-4 py-2 focus:border-green-500 focus:outline-none"
+                className="w-full border-2 border-purple-200 rounded-lg px-4 py-2 focus:border-purple-600 focus:ring-2 focus:ring-purple-600 focus:outline-none"
               />
             </div>
 
             <div className="mb-6">
-              <label className="block text-sm font-medium mb-2">Tags (comma-separated)</label>
+              <label className="block text-sm font-medium mb-2 text-purple-700">Tags (comma-separated)</label>
               <input
                 type="text"
                 value={linkTags}
                 onChange={(e) => setLinkTags(e.target.value)}
                 placeholder="e.g., tutorial, documentation"
-                className="w-full border-2 border-gray-300 rounded-lg px-4 py-2 focus:border-green-500 focus:outline-none"
+                className="w-full border-2 border-purple-200 rounded-lg px-4 py-2 focus:border-purple-600 focus:ring-2 focus:ring-purple-600 focus:outline-none"
               />
             </div>
 
@@ -426,7 +432,7 @@ function ResourceLibraryPage() {
               <button
                 onClick={createLink}
                 disabled={!linkTitle || !linkUrl}
-                className="flex-1 bg-green-500 text-white py-3 rounded-lg font-semibold hover:bg-green-600 disabled:bg-gray-300 disabled:cursor-not-allowed"
+                className="flex-1 bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed shadow-md transition-all"
               >
                 Save Link
               </button>
@@ -438,7 +444,7 @@ function ResourceLibraryPage() {
                   setLinkDescription('');
                   setLinkTags('');
                 }}
-                className="px-6 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300"
+                className="px-6 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-all"
               >
                 Cancel
               </button>
@@ -451,26 +457,29 @@ function ResourceLibraryPage() {
       {showUploadModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-2xl p-8 max-w-md w-full mx-4">
-            <h3 className="text-2xl font-bold mb-6">Upload File</h3>
+            <h3 className="text-2xl font-bold mb-6 bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">Upload File</h3>
 
             <div className="mb-6">
-              <input
-                type="file"
-                onChange={(e) => {
-                  if (e.target.files && e.target.files[0]) {
-                    uploadFile(e.target.files[0]);
-                  }
-                }}
-                className="w-full"
-              />
-              <p className="text-sm text-gray-500 mt-2">
+              <div className="border-2 border-dashed border-purple-300 rounded-lg p-8 text-center hover:border-purple-500 transition-all bg-purple-50/50">
+                <Upload className="mx-auto mb-3 text-purple-500" size={32} />
+                <input
+                  type="file"
+                  onChange={(e) => {
+                    if (e.target.files && e.target.files[0]) {
+                      uploadFile(e.target.files[0]);
+                    }
+                  }}
+                  className="w-full text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-purple-600 file:text-white hover:file:bg-purple-700 file:cursor-pointer cursor-pointer"
+                />
+              </div>
+              <p className="text-sm text-purple-600 mt-3 text-center">
                 Supported: PDF, images, code files, documents
               </p>
             </div>
 
             <button
               onClick={() => setShowUploadModal(false)}
-              className="w-full bg-gray-200 text-gray-700 py-3 rounded-lg hover:bg-gray-300"
+              className="w-full bg-gray-200 text-gray-700 py-3 rounded-lg hover:bg-gray-300 transition-all"
             >
               Cancel
             </button>
@@ -480,12 +489,13 @@ function ResourceLibraryPage() {
 
       {/* Flashcard Viewer Modal */}
       {activeFlashcards && (
-        <FlashcardViewer 
-          flashcards={activeFlashcards} 
-          title={viewingTitle} 
-          onClose={() => setActiveFlashcards(null)} 
+        <FlashcardViewer
+          flashcards={activeFlashcards}
+          title={viewingTitle}
+          onClose={() => setActiveFlashcards(null)}
         />
       )}
+      </div>
     </div>
   );
 }
@@ -504,7 +514,7 @@ function ResourceCard({ resource, onToggleFavorite, onDelete, onGenerateFlashcar
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow p-4 border-2 border-transparent hover:border-purple-200">
+    <GlassCard borderColor="purple" className="p-4 hover:shadow-xl transition-all hover:scale-105">
       <div className="flex justify-between items-start mb-3">
         <div className="flex items-center gap-2 flex-1">
           <span className="text-2xl">{getIcon()}</span>
@@ -528,12 +538,12 @@ function ResourceCard({ resource, onToggleFavorite, onDelete, onGenerateFlashcar
       {resource.tags && resource.tags.length > 0 && (
         <div className="flex flex-wrap gap-1 mb-3">
           {resource.tags.slice(0, 3).map(tag => (
-            <span key={tag} className="bg-purple-100 text-purple-700 text-xs px-2 py-1 rounded">
+            <span key={tag} className="bg-purple-100 text-purple-700 text-xs px-2 py-1 rounded border border-purple-300">
               {tag}
             </span>
           ))}
           {resource.tags.length > 3 && (
-            <span className="text-xs text-gray-500">+{resource.tags.length - 3}</span>
+            <span className="text-xs text-purple-600 font-medium">+{resource.tags.length - 3}</span>
           )}
         </div>
       )}
@@ -542,7 +552,7 @@ function ResourceCard({ resource, onToggleFavorite, onDelete, onGenerateFlashcar
       <div className="flex gap-2">
         <button
           onClick={() => setShowDetails(!showDetails)}
-          className="flex-1 bg-gray-100 hover:bg-gray-200 text-sm py-2 rounded flex items-center justify-center gap-1"
+          className="flex-1 bg-purple-50 hover:bg-purple-100 text-purple-700 text-sm py-2 rounded flex items-center justify-center gap-1 transition-all"
         >
           <Eye size={14} />
           {showDetails ? 'Hide' : 'View'}
@@ -551,7 +561,7 @@ function ResourceCard({ resource, onToggleFavorite, onDelete, onGenerateFlashcar
         {resource.flashcards && resource.flashcards.length > 0 ? (
           <button
             onClick={() => onStudy(resource)}
-            className="bg-indigo-600 hover:bg-indigo-700 text-white text-sm px-3 py-2 rounded flex items-center gap-1 shadow-sm transition-colors"
+            className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white text-sm px-3 py-2 rounded flex items-center gap-1 shadow-md transition-all"
           >
             <GraduationCap size={14} />
             Study
@@ -560,7 +570,7 @@ function ResourceCard({ resource, onToggleFavorite, onDelete, onGenerateFlashcar
           (resource.type === 'note' || resource.type === 'text' || resource.type === 'pdf') && (
             <button
               onClick={() => onGenerateFlashcards(resource._id)}
-              className="bg-purple-100 hover:bg-purple-200 text-purple-700 text-sm px-3 py-2 rounded flex items-center gap-1"
+              className="bg-purple-100 hover:bg-purple-200 text-purple-700 text-sm px-3 py-2 rounded flex items-center gap-1 border border-purple-300 transition-all"
             >
               <Sparkles size={14} />
               Flashcards
@@ -570,7 +580,7 @@ function ResourceCard({ resource, onToggleFavorite, onDelete, onGenerateFlashcar
 
         <button
           onClick={() => onDelete(resource._id)}
-          className="bg-red-100 hover:bg-red-200 text-red-700 text-sm px-3 py-2 rounded"
+          className="bg-red-50 hover:bg-red-100 text-red-700 text-sm px-3 py-2 rounded border border-red-300 transition-all"
         >
           <Trash2 size={14} />
         </button>
@@ -592,10 +602,10 @@ function ResourceCard({ resource, onToggleFavorite, onDelete, onGenerateFlashcar
 
           {resource.flashcards && resource.flashcards.length > 0 && (
             <div className="mb-3">
-              <h4 className="font-semibold text-sm mb-2">Flashcards ({resource.flashcards.length}):</h4>
-              <button 
+              <h4 className="font-semibold text-sm mb-2 text-purple-700">Flashcards ({resource.flashcards.length}):</h4>
+              <button
                 onClick={() => onStudy(resource)}
-                className="w-full bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-300 p-2 rounded text-xs border border-purple-100 dark:border-purple-800 hover:bg-purple-100 transition-colors flex items-center justify-center gap-2"
+                className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white p-2 rounded text-xs shadow-md transition-all flex items-center justify-center gap-2"
               >
                 <GraduationCap size={14} />
                 Start Study Session
@@ -609,7 +619,7 @@ function ResourceCard({ resource, onToggleFavorite, onDelete, onGenerateFlashcar
                 href={resource.file_url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-sm text-blue-500 hover:underline"
+                className="text-sm text-purple-600 hover:text-purple-700 hover:underline font-medium"
               >
                 Open Link →
               </a>

@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
+import { Send } from 'lucide-react';
 import { useWebSocket } from '../hooks/useWebSocket';
 import { useAuth } from '../store/useStore';
 
@@ -190,11 +191,11 @@ const ChatPage = () => {
   }
 
   return (
-    <div className="flex h-screen bg-gray-100">
+    <div className="flex h-screen bg-gray-50">
       {/* Chat List Sidebar */}
-      <div className="w-80 bg-white border-r border-gray-200 flex flex-col">
-        <div className="p-4 border-b border-gray-200">
-          <h1 className="text-2xl font-bold">Messages</h1>
+      <div className="w-80 bg-white border-r border-purple-100 flex flex-col">
+        <div className="p-4 border-b border-purple-100 bg-gradient-to-r from-purple-50 to-blue-50">
+          <h1 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">Messages</h1>
         </div>
 
         <div className="flex-1 overflow-y-auto">
@@ -207,8 +208,8 @@ const ChatPage = () => {
               <div
                 key={chat.id}
                 onClick={() => setActiveChat(chat)}
-                className={`p-4 border-b border-gray-100 cursor-pointer hover:bg-gray-50 transition ${
-                  activeChat?.id === chat.id ? 'bg-blue-50 border-l-4 border-l-blue-500' : ''
+                className={`p-4 border-b border-gray-100 cursor-pointer hover:bg-purple-50 transition ${
+                  activeChat?.id === chat.id ? 'bg-purple-50 border-l-4 border-l-purple-600' : ''
                 }`}
               >
                 <div className="flex items-center justify-between">
@@ -218,7 +219,7 @@ const ChatPage = () => {
                         {chat.name}
                       </h3>
                       {chat.unread_count > 0 && (
-                        <span className="bg-blue-500 text-white text-xs rounded-full px-2 py-1">
+                        <span className="bg-purple-600 text-white text-xs rounded-full px-2 py-1 animate-pulse">
                           {chat.unread_count}
                         </span>
                       )}
@@ -244,12 +245,12 @@ const ChatPage = () => {
         {activeChat ? (
           <>
             {/* Chat Header */}
-            <div className="bg-white border-b border-gray-200 p-4">
+            <div className="bg-gradient-to-r from-purple-50 to-blue-50 border-b border-purple-100 p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <h2 className="text-xl font-semibold">{activeChat.name}</h2>
+                  <h2 className="text-xl font-semibold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">{activeChat.name}</h2>
                   {activeChat.type === 'group' && (
-                    <p className="text-sm text-gray-500">
+                    <p className="text-sm text-purple-600">
                       {activeChat.members_count} members
                     </p>
                   )}
@@ -272,22 +273,22 @@ const ChatPage = () => {
                         <p className="text-xs text-gray-500 mb-1">{msg.sender_name}</p>
                       )}
                       <div
-                        className={`rounded-lg p-3 ${
+                        className={`rounded-2xl p-3 shadow-md ${
                           isOwnMessage
-                            ? 'bg-blue-500 text-white'
-                            : 'bg-white text-gray-900 border border-gray-200'
+                            ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white'
+                            : 'bg-white text-gray-900 border border-purple-100'
                         }`}
                       >
                         <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
                         <div className="flex items-center justify-between mt-1 gap-2">
-                          <p className={`text-xs ${isOwnMessage ? 'text-blue-100' : 'text-gray-400'}`}>
+                          <p className={`text-xs ${isOwnMessage ? 'text-white/80' : 'text-gray-400'}`}>
                             {new Date(msg.timestamp).toLocaleTimeString([], {
                               hour: '2-digit',
                               minute: '2-digit'
                             })}
                           </p>
                           {msg.edited && (
-                            <span className={`text-xs ${isOwnMessage ? 'text-blue-100' : 'text-gray-400'}`}>
+                            <span className={`text-xs ${isOwnMessage ? 'text-white/80' : 'text-gray-400'}`}>
                               (edited)
                             </span>
                           )}
@@ -299,8 +300,15 @@ const ChatPage = () => {
               })}
 
               {typingUsers.size > 0 && (
-                <div className="text-sm text-gray-500 italic">
-                  {Array.from(typingUsers).join(', ')} {typingUsers.size === 1 ? 'is' : 'are'} typing...
+                <div className="flex items-center gap-2">
+                  <div className="flex gap-1">
+                    <div className="w-2 h-2 bg-purple-600 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                    <div className="w-2 h-2 bg-purple-600 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                    <div className="w-2 h-2 bg-purple-600 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                  </div>
+                  <span className="text-sm text-purple-600 italic">
+                    {Array.from(typingUsers).join(', ')} {typingUsers.size === 1 ? 'is' : 'are'} typing...
+                  </span>
                 </div>
               )}
 
@@ -308,7 +316,7 @@ const ChatPage = () => {
             </div>
 
             {/* Message Input */}
-            <div className="bg-white border-t border-gray-200 p-4">
+            <div className="bg-white border-t border-purple-100 p-4">
               <form onSubmit={handleSendMessage} className="flex gap-2">
                 <input
                   type="text"
@@ -318,14 +326,15 @@ const ChatPage = () => {
                     handleTyping();
                   }}
                   placeholder="Type a message..."
-                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="flex-1 px-4 py-2 border border-purple-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600 focus:border-purple-600"
                 />
                 <button
                   type="submit"
                   disabled={!newMessage.trim()}
-                  className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition"
+                  className="px-6 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-full hover:from-purple-700 hover:to-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-all shadow-md hover:shadow-lg flex items-center gap-2"
                 >
-                  Send
+                  <Send size={18} />
+                  <span>Send</span>
                 </button>
               </form>
             </div>
