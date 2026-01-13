@@ -7,6 +7,8 @@ import { useAuthStore } from '../../store/useStore';
 import { authService } from '../../services/auth.service';
 import MetricCard from '../../components/ui/MetricCard';
 
+import { classService } from '../../services/class.service';
+
 function ClassDashboard() {
   const [analytics, setAnalytics] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -21,11 +23,8 @@ function ClassDashboard() {
   const fetchAnalytics = async () => {
     setLoading(true);
     try {
-      const token = localStorage.getItem('token');
-      const response = await axios.get('http://localhost:8000/api/class/analytics', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      setAnalytics(response.data);
+      const data = await classService.getAnalytics();
+      setAnalytics(data);
     } catch (error) {
       console.error('Error fetching analytics:', error);
     } finally {
@@ -223,347 +222,342 @@ function ClassDashboard() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50 p-6">
       <div className="max-w-7xl mx-auto">
-      {/* Header */}
-      <div className="mb-8">
-        <div className="flex justify-between items-start">
-          <div>
-            <h1 className="text-4xl font-bold mb-2 flex items-center gap-3 bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
-              <Users className="text-purple-600" size={40} />
-              Class Performance Dashboard
-            </h1>
-            <p className="text-gray-600">Welcome back, {user?.full_name || 'Teacher'}! 👋</p>
-          </div>
-          <div className="flex items-center gap-4">
-            <HomeButton />
-            <button
-              onClick={handleLogout}
-              className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors shadow-md hover:shadow-lg"
-              title="Logout"
-            >
-              <LogOut size={20} />
-              <span className="font-medium">Logout</span>
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Class Metrics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <MetricCard
-          icon={Users}
-          label="Total Students"
-          value={class_metrics.total_students}
-          gradient="purple-blue"
-        />
-        <MetricCard
-          icon={CheckCircle}
-          label="Completion Rate"
-          value={`${class_metrics.class_completion_rate}%`}
-          gradient="green"
-        />
-        <MetricCard
-          icon={Award}
-          label="Class Average"
-          value={class_metrics.class_average_grade ? `${class_metrics.class_average_grade}%` : 'N/A'}
-          gradient="purple-indigo"
-        />
-        <MetricCard
-          icon={AlertTriangle}
-          label="At-Risk Students"
-          value={class_metrics.at_risk_count}
-          gradient="orange"
-        />
-      </div>
-
-      {/* View Selector */}
-      <div className="flex gap-2 mb-6 flex-wrap">
-        <button
-          onClick={() => setSelectedView('overview')}
-          className={`px-6 py-2 rounded-lg font-semibold transition-all ${
-            selectedView === 'overview'
-              ? 'bg-purple-600 text-white shadow-md'
-              : 'bg-white/80 text-gray-700 hover:bg-purple-50 hover:text-purple-600 border border-purple-100'
-          }`}
-        >
-          Overview
-        </button>
-        <button
-          onClick={() => setSelectedView('at-risk')}
-          className={`px-6 py-2 rounded-lg font-semibold transition-all ${
-            selectedView === 'at-risk'
-              ? 'bg-orange-600 text-white shadow-md'
-              : 'bg-white/80 text-gray-700 hover:bg-orange-50 hover:text-orange-600 border border-purple-100'
-          }`}
-        >
-          At-Risk ({at_risk_students.length})
-        </button>
-        <button
-          onClick={() => setSelectedView('top-performers')}
-          className={`px-6 py-2 rounded-lg font-semibold transition-all ${
-            selectedView === 'top-performers'
-              ? 'bg-green-600 text-white shadow-md'
-              : 'bg-white/80 text-gray-700 hover:bg-green-50 hover:text-green-600 border border-purple-100'
-          }`}
-        >
-          Top Performers ({top_performers.length})
-        </button>
-        <button
-          onClick={() => setSelectedView('all-students')}
-          className={`px-6 py-2 rounded-lg font-semibold transition-all ${
-            selectedView === 'all-students'
-              ? 'bg-purple-600 text-white shadow-md'
-              : 'bg-white/80 text-gray-700 hover:bg-purple-50 hover:text-purple-600 border border-purple-100'
-          }`}
-        >
-          All Students ({all_students.length})
-        </button>
-      </div>
-
-      {/* Overview View */}
-      {selectedView === 'overview' && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Grade Distribution */}
-          <div className="bg-white rounded-xl shadow-lg p-6 border-l-4 border-purple-600">
-            <h3 className="text-xl font-bold mb-4 flex items-center gap-2 text-purple-700">
-              <Activity size={24} />
-              Grade Distribution
-            </h3>
-            <div className="space-y-3">
-              {Object.entries(grade_distribution).map(([grade, count]) => (
-                <div key={grade}>
-                  <div className="flex justify-between text-sm mb-1">
-                    <span className="font-medium">{grade}</span>
-                    <span className="text-gray-600">{count} students</span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div
-                      className={`h-2 rounded-full ${
-                        grade.startsWith('A') ? 'bg-green-500' :
-                        grade.startsWith('B') ? 'bg-purple-500' :
-                        grade.startsWith('C') ? 'bg-yellow-500' :
-                        grade.startsWith('D') ? 'bg-orange-500' :
-                        grade.startsWith('F') ? 'bg-red-500' :
-                        'bg-gray-400'
-                      }`}
-                      style={{ width: `${(count / class_metrics.total_students * 100)}%` }}
-                    />
-                  </div>
-                </div>
-              ))}
+        {/* Header */}
+        <div className="mb-8">
+          <div className="flex justify-between items-start">
+            <div>
+              <h1 className="text-4xl font-bold mb-2 flex items-center gap-3 bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+                <Users className="text-purple-600" size={40} />
+                Class Performance Dashboard
+              </h1>
+              <p className="text-gray-600">Welcome back, {user?.full_name || 'Teacher'}! 👋</p>
+            </div>
+            <div className="flex items-center gap-4">
+              <HomeButton />
+              <button
+                onClick={handleLogout}
+                className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors shadow-md hover:shadow-lg"
+                title="Logout"
+              >
+                <LogOut size={20} />
+                <span className="font-medium">Logout</span>
+              </button>
             </div>
           </div>
+        </div>
 
-          {/* Struggle Areas */}
+        {/* Class Metrics Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <MetricCard
+            icon={Users}
+            label="Total Students"
+            value={class_metrics.total_students}
+            gradient="purple-blue"
+          />
+          <MetricCard
+            icon={CheckCircle}
+            label="Completion Rate"
+            value={`${class_metrics.class_completion_rate}%`}
+            gradient="green"
+          />
+          <MetricCard
+            icon={Award}
+            label="Class Average"
+            value={class_metrics.class_average_grade ? `${class_metrics.class_average_grade}%` : 'N/A'}
+            gradient="purple-indigo"
+          />
+          <MetricCard
+            icon={AlertTriangle}
+            label="At-Risk Students"
+            value={class_metrics.at_risk_count}
+            gradient="orange"
+          />
+        </div>
+
+        {/* View Selector */}
+        <div className="flex gap-2 mb-6 flex-wrap">
+          <button
+            onClick={() => setSelectedView('overview')}
+            className={`px-6 py-2 rounded-lg font-semibold transition-all ${selectedView === 'overview'
+                ? 'bg-purple-600 text-white shadow-md'
+                : 'bg-white/80 text-gray-700 hover:bg-purple-50 hover:text-purple-600 border border-purple-100'
+              }`}
+          >
+            Overview
+          </button>
+          <button
+            onClick={() => setSelectedView('at-risk')}
+            className={`px-6 py-2 rounded-lg font-semibold transition-all ${selectedView === 'at-risk'
+                ? 'bg-orange-600 text-white shadow-md'
+                : 'bg-white/80 text-gray-700 hover:bg-orange-50 hover:text-orange-600 border border-purple-100'
+              }`}
+          >
+            At-Risk ({at_risk_students.length})
+          </button>
+          <button
+            onClick={() => setSelectedView('top-performers')}
+            className={`px-6 py-2 rounded-lg font-semibold transition-all ${selectedView === 'top-performers'
+                ? 'bg-green-600 text-white shadow-md'
+                : 'bg-white/80 text-gray-700 hover:bg-green-50 hover:text-green-600 border border-purple-100'
+              }`}
+          >
+            Top Performers ({top_performers.length})
+          </button>
+          <button
+            onClick={() => setSelectedView('all-students')}
+            className={`px-6 py-2 rounded-lg font-semibold transition-all ${selectedView === 'all-students'
+                ? 'bg-purple-600 text-white shadow-md'
+                : 'bg-white/80 text-gray-700 hover:bg-purple-50 hover:text-purple-600 border border-purple-100'
+              }`}
+          >
+            All Students ({all_students.length})
+          </button>
+        </div>
+
+        {/* Overview View */}
+        {selectedView === 'overview' && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Grade Distribution */}
+            <div className="bg-white rounded-xl shadow-lg p-6 border-l-4 border-purple-600">
+              <h3 className="text-xl font-bold mb-4 flex items-center gap-2 text-purple-700">
+                <Activity size={24} />
+                Grade Distribution
+              </h3>
+              <div className="space-y-3">
+                {Object.entries(grade_distribution).map(([grade, count]) => (
+                  <div key={grade}>
+                    <div className="flex justify-between text-sm mb-1">
+                      <span className="font-medium">{grade}</span>
+                      <span className="text-gray-600">{count} students</span>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div
+                        className={`h-2 rounded-full ${grade.startsWith('A') ? 'bg-green-500' :
+                            grade.startsWith('B') ? 'bg-purple-500' :
+                              grade.startsWith('C') ? 'bg-yellow-500' :
+                                grade.startsWith('D') ? 'bg-orange-500' :
+                                  grade.startsWith('F') ? 'bg-red-500' :
+                                    'bg-gray-400'
+                          }`}
+                        style={{ width: `${(count / class_metrics.total_students * 100)}%` }}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Struggle Areas */}
+            <div className="bg-white rounded-xl shadow-lg p-6">
+              <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
+                <AlertTriangle className="text-orange-600" size={24} />
+                Common Struggle Areas
+              </h3>
+              {struggle_areas.length === 0 ? (
+                <p className="text-gray-600 text-center py-8">No struggling tasks identified!</p>
+              ) : (
+                <div className="space-y-4">
+                  {struggle_areas.map((area, idx) => (
+                    <div key={idx} className="border-l-4 border-orange-500 bg-orange-50 p-4 rounded">
+                      <div className="font-semibold mb-1">{area.task_title}</div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-orange-700">
+                          {area.students_struggling} students struggling
+                        </span>
+                        <span className="text-orange-900 font-bold">
+                          {area.completion_rate}% completion
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* At-Risk Students View */}
+        {selectedView === 'at-risk' && (
           <div className="bg-white rounded-xl shadow-lg p-6">
             <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
-              <AlertTriangle className="text-orange-600" size={24} />
-              Common Struggle Areas
+              <AlertTriangle className="text-red-600" size={24} />
+              At-Risk Students
             </h3>
-            {struggle_areas.length === 0 ? (
-              <p className="text-gray-600 text-center py-8">No struggling tasks identified!</p>
+            {at_risk_students.length === 0 ? (
+              <div className="text-center py-12">
+                <CheckCircle className="mx-auto mb-4 text-green-500" size={64} />
+                <h3 className="text-xl font-semibold mb-2">Great News!</h3>
+                <p className="text-gray-600">No students are currently at risk.</p>
+              </div>
             ) : (
               <div className="space-y-4">
-                {struggle_areas.map((area, idx) => (
-                  <div key={idx} className="border-l-4 border-orange-500 bg-orange-50 p-4 rounded">
-                    <div className="font-semibold mb-1">{area.task_title}</div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-orange-700">
-                        {area.students_struggling} students struggling
-                      </span>
-                      <span className="text-orange-900 font-bold">
-                        {area.completion_rate}% completion
-                      </span>
+                {at_risk_students.map(student => (
+                  <div
+                    key={student.student_id}
+                    className={`border-2 rounded-lg p-4 ${getRiskColor(student.risk_score)}`}
+                  >
+                    <div className="flex justify-between items-start mb-3">
+                      <div>
+                        <h4 className="font-bold text-lg">{student.student_name}</h4>
+                        <p className="text-sm opacity-75">{student.email}</p>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-2xl font-bold">Risk: {student.risk_score}</div>
+                        <div className="text-xs">out of 10</div>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3 text-sm">
+                      <div>
+                        <div className="opacity-75">Completion</div>
+                        <div className="font-bold">{student.completion_rate}%</div>
+                      </div>
+                      <div>
+                        <div className="opacity-75">Avg Grade</div>
+                        <div className="font-bold">
+                          {student.average_grade ? `${student.average_grade}%` : 'N/A'}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="opacity-75">Overdue</div>
+                        <div className="font-bold">{student.overdue_tasks}</div>
+                      </div>
+                      <div>
+                        <div className="opacity-75">Stress</div>
+                        <div className="font-bold">{student.stress_level}/10</div>
+                      </div>
+                    </div>
+
+                    <div>
+                      <div className="font-semibold mb-1">Risk Factors:</div>
+                      <ul className="list-disc list-inside text-sm">
+                        {student.risk_factors.map((factor, idx) => (
+                          <li key={idx}>{factor}</li>
+                        ))}
+                      </ul>
                     </div>
                   </div>
                 ))}
               </div>
             )}
           </div>
-        </div>
-      )}
+        )}
 
-      {/* At-Risk Students View */}
-      {selectedView === 'at-risk' && (
-        <div className="bg-white rounded-xl shadow-lg p-6">
-          <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
-            <AlertTriangle className="text-red-600" size={24} />
-            At-Risk Students
-          </h3>
-          {at_risk_students.length === 0 ? (
-            <div className="text-center py-12">
-              <CheckCircle className="mx-auto mb-4 text-green-500" size={64} />
-              <h3 className="text-xl font-semibold mb-2">Great News!</h3>
-              <p className="text-gray-600">No students are currently at risk.</p>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {at_risk_students.map(student => (
-                <div
-                  key={student.student_id}
-                  className={`border-2 rounded-lg p-4 ${getRiskColor(student.risk_score)}`}
-                >
-                  <div className="flex justify-between items-start mb-3">
-                    <div>
-                      <h4 className="font-bold text-lg">{student.student_name}</h4>
-                      <p className="text-sm opacity-75">{student.email}</p>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-2xl font-bold">Risk: {student.risk_score}</div>
-                      <div className="text-xs">out of 10</div>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3 text-sm">
-                    <div>
-                      <div className="opacity-75">Completion</div>
-                      <div className="font-bold">{student.completion_rate}%</div>
-                    </div>
-                    <div>
-                      <div className="opacity-75">Avg Grade</div>
-                      <div className="font-bold">
-                        {student.average_grade ? `${student.average_grade}%` : 'N/A'}
+        {/* Top Performers View */}
+        {selectedView === 'top-performers' && (
+          <div className="bg-white rounded-xl shadow-lg p-6">
+            <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
+              <Award className="text-green-600" size={24} />
+              Top Performers
+            </h3>
+            {top_performers.length === 0 ? (
+              <p className="text-center text-gray-600 py-12">No top performers identified yet.</p>
+            ) : (
+              <div className="space-y-4">
+                {top_performers.map((student, idx) => (
+                  <div key={student.student_id} className="border-2 border-green-200 bg-green-50 rounded-lg p-4">
+                    <div className="flex justify-between items-start mb-3">
+                      <div className="flex items-center gap-3">
+                        <div className="text-3xl font-bold text-green-600">#{idx + 1}</div>
+                        <div>
+                          <h4 className="font-bold text-lg">{student.student_name}</h4>
+                          <p className="text-sm text-gray-600">{student.email}</p>
+                        </div>
                       </div>
-                    </div>
-                    <div>
-                      <div className="opacity-75">Overdue</div>
-                      <div className="font-bold">{student.overdue_tasks}</div>
-                    </div>
-                    <div>
-                      <div className="opacity-75">Stress</div>
-                      <div className="font-bold">{student.stress_level}/10</div>
-                    </div>
-                  </div>
-
-                  <div>
-                    <div className="font-semibold mb-1">Risk Factors:</div>
-                    <ul className="list-disc list-inside text-sm">
-                      {student.risk_factors.map((factor, idx) => (
-                        <li key={idx}>{factor}</li>
-                      ))}
-                    </ul>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Top Performers View */}
-      {selectedView === 'top-performers' && (
-        <div className="bg-white rounded-xl shadow-lg p-6">
-          <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
-            <Award className="text-green-600" size={24} />
-            Top Performers
-          </h3>
-          {top_performers.length === 0 ? (
-            <p className="text-center text-gray-600 py-12">No top performers identified yet.</p>
-          ) : (
-            <div className="space-y-4">
-              {top_performers.map((student, idx) => (
-                <div key={student.student_id} className="border-2 border-green-200 bg-green-50 rounded-lg p-4">
-                  <div className="flex justify-between items-start mb-3">
-                    <div className="flex items-center gap-3">
-                      <div className="text-3xl font-bold text-green-600">#{idx + 1}</div>
-                      <div>
-                        <h4 className="font-bold text-lg">{student.student_name}</h4>
-                        <p className="text-sm text-gray-600">{student.email}</p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-3xl font-bold text-green-700">
-                        {student.average_grade}%
-                      </div>
-                      <div className="text-sm text-green-600">Average Grade</div>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-3 gap-4 text-sm">
-                    <div>
-                      <div className="text-gray-600">Completion Rate</div>
-                      <div className="font-bold text-green-700">{student.completion_rate}%</div>
-                    </div>
-                    <div>
-                      <div className="text-gray-600">Tasks Completed</div>
-                      <div className="font-bold">{student.completed_tasks}/{student.total_tasks}</div>
-                    </div>
-                    <div>
-                      <div className="text-gray-600">Extensions</div>
-                      <div className="font-bold">{student.extension_requests}</div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* All Students View */}
-      {selectedView === 'all-students' && (
-        <div className="bg-white rounded-xl shadow-lg p-6">
-          <h3 className="text-xl font-bold mb-4">All Students</h3>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b-2">
-                  <th className="text-left p-3">Student</th>
-                  <th className="text-center p-3">Tasks</th>
-                  <th className="text-center p-3">Completion</th>
-                  <th className="text-center p-3">Avg Grade</th>
-                  <th className="text-center p-3">Overdue</th>
-                  <th className="text-center p-3">Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {all_students.map(student => (
-                  <tr key={student.student_id} className="border-b hover:bg-gray-50">
-                    <td className="p-3">
-                      <div className="font-semibold">{student.student_name}</div>
-                      <div className="text-sm text-gray-600">{student.email}</div>
-                    </td>
-                    <td className="text-center p-3">
-                      {student.completed_tasks}/{student.total_tasks}
-                    </td>
-                    <td className="text-center p-3">
-                      <span className={`font-bold ${getCompletionColor(student.completion_rate)}`}>
-                        {student.completion_rate}%
-                      </span>
-                    </td>
-                    <td className="text-center p-3">
-                      {student.average_grade ? (
-                        <span className={`font-bold ${getGradeColor(student.average_grade)}`}>
+                      <div className="text-right">
+                        <div className="text-3xl font-bold text-green-700">
                           {student.average_grade}%
-                        </span>
-                      ) : (
-                        <span className="text-gray-400">N/A</span>
-                      )}
-                    </td>
-                    <td className="text-center p-3">
-                      {student.overdue_tasks > 0 ? (
-                        <span className="text-red-600 font-bold">{student.overdue_tasks}</span>
-                      ) : (
-                        <span className="text-green-600">0</span>
-                      )}
-                    </td>
-                    <td className="text-center p-3">
-                      {student.is_at_risk ? (
-                        <span className="bg-red-100 text-red-700 px-3 py-1 rounded-full text-xs font-semibold">
-                          At Risk
-                        </span>
-                      ) : (
-                        <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-semibold">
-                          On Track
-                        </span>
-                      )}
-                    </td>
-                  </tr>
+                        </div>
+                        <div className="text-sm text-green-600">Average Grade</div>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-4 text-sm">
+                      <div>
+                        <div className="text-gray-600">Completion Rate</div>
+                        <div className="font-bold text-green-700">{student.completion_rate}%</div>
+                      </div>
+                      <div>
+                        <div className="text-gray-600">Tasks Completed</div>
+                        <div className="font-bold">{student.completed_tasks}/{student.total_tasks}</div>
+                      </div>
+                      <div>
+                        <div className="text-gray-600">Extensions</div>
+                        <div className="font-bold">{student.extension_requests}</div>
+                      </div>
+                    </div>
+                  </div>
                 ))}
-              </tbody>
-            </table>
+              </div>
+            )}
           </div>
-        </div>
-      )}
+        )}
+
+        {/* All Students View */}
+        {selectedView === 'all-students' && (
+          <div className="bg-white rounded-xl shadow-lg p-6">
+            <h3 className="text-xl font-bold mb-4">All Students</h3>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b-2">
+                    <th className="text-left p-3">Student</th>
+                    <th className="text-center p-3">Tasks</th>
+                    <th className="text-center p-3">Completion</th>
+                    <th className="text-center p-3">Avg Grade</th>
+                    <th className="text-center p-3">Overdue</th>
+                    <th className="text-center p-3">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {all_students.map(student => (
+                    <tr key={student.student_id} className="border-b hover:bg-gray-50">
+                      <td className="p-3">
+                        <div className="font-semibold">{student.student_name}</div>
+                        <div className="text-sm text-gray-600">{student.email}</div>
+                      </td>
+                      <td className="text-center p-3">
+                        {student.completed_tasks}/{student.total_tasks}
+                      </td>
+                      <td className="text-center p-3">
+                        <span className={`font-bold ${getCompletionColor(student.completion_rate)}`}>
+                          {student.completion_rate}%
+                        </span>
+                      </td>
+                      <td className="text-center p-3">
+                        {student.average_grade ? (
+                          <span className={`font-bold ${getGradeColor(student.average_grade)}`}>
+                            {student.average_grade}%
+                          </span>
+                        ) : (
+                          <span className="text-gray-400">N/A</span>
+                        )}
+                      </td>
+                      <td className="text-center p-3">
+                        {student.overdue_tasks > 0 ? (
+                          <span className="text-red-600 font-bold">{student.overdue_tasks}</span>
+                        ) : (
+                          <span className="text-green-600">0</span>
+                        )}
+                      </td>
+                      <td className="text-center p-3">
+                        {student.is_at_risk ? (
+                          <span className="bg-red-100 text-red-700 px-3 py-1 rounded-full text-xs font-semibold">
+                            At Risk
+                          </span>
+                        ) : (
+                          <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-semibold">
+                            On Track
+                          </span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

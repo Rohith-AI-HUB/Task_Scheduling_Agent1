@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Bell, X, Check } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 export default function NotificationBell() {
   const [notifications, setNotifications] = useState([]);
@@ -113,32 +114,35 @@ export default function NotificationBell() {
             className="fixed inset-0 z-10"
             onClick={() => setShowDropdown(false)}
           />
-          <div className="absolute right-0 mt-2 w-96 bg-white rounded-lg shadow-xl border border-gray-200 z-20 max-h-96 overflow-hidden flex flex-col">
-            <div className="p-4 border-b border-gray-200 flex justify-between items-center">
-              <h3 className="font-bold text-lg">Notifications</h3>
+          <motion.div
+            initial={{ opacity: 0, y: 10, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            className="absolute right-0 mt-3 w-80 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-[2rem] shadow-2xl border border-white/40 dark:border-white/10 z-20 max-h-[30rem] overflow-hidden flex flex-col"
+          >
+            <div className="p-6 border-b border-gray-100 dark:border-white/5 flex justify-between items-center bg-gradient-to-r from-indigo-500/5 to-purple-500/5">
+              <h3 className="font-extrabold text-xl bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">Notifications</h3>
               {unreadCount > 0 && (
                 <button
                   onClick={markAllAsRead}
                   disabled={loading}
-                  className="text-sm text-blue-600 hover:text-blue-800 flex items-center gap-1 disabled:opacity-50"
+                  className="text-xs font-black text-indigo-500 hover:text-indigo-700 uppercase tracking-widest disabled:opacity-50 transition-colors"
                 >
-                  <Check size={16} />
-                  Mark all read
+                  Clear All
                 </button>
               )}
             </div>
 
             <div className="overflow-y-auto flex-1">
               {notifications.length === 0 ? (
-                <div className="p-8 text-center text-gray-500">
-                  <Bell size={48} className="mx-auto mb-2 text-gray-300" />
-                  <p>No notifications yet</p>
+                <div className="p-12 text-center text-gray-500">
+                  <Bell size={48} className="mx-auto mb-4 text-gray-300 dark:text-gray-600" />
+                  <p className="font-bold italic">No notifications yet</p>
                 </div>
               ) : (
                 notifications.map(notif => (
                   <div
                     key={notif.id}
-                    className={`p-4 border-b border-gray-100 hover:bg-gray-50 transition-colors ${!notif.read ? 'bg-blue-50' : ''
+                    className={`p-5 border-b border-gray-50 dark:border-white/5 hover:bg-white/40 dark:hover:bg-white/5 transition-all ${!notif.read ? 'bg-indigo-50/50 dark:bg-indigo-900/20' : ''
                       }`}
                   >
                     <div className="flex items-start gap-3">
@@ -180,7 +184,7 @@ export default function NotificationBell() {
                 ))
               )}
             </div>
-          </div>
+          </motion.div>
         </>
       )}
     </div>

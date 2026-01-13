@@ -110,22 +110,36 @@ export default function DashboardPage() {
       title: 'Grading Assistant',
       icon: Award,
       path: '/teacher/grading',
-      color: 'bg-purple-100 text-purple-600',
-      desc: 'AI-powered grading analysis'
+      color: 'bg-indigo-50 text-indigo-600',
+      desc: 'AI-powered grading analysis and feedback'
     },
     {
       title: 'Class Analytics',
       icon: Activity,
       path: '/teacher/class',
-      color: 'bg-blue-100 text-blue-600',
+      color: 'bg-purple-50 text-purple-600',
       desc: 'Student performance tracking'
     },
     {
-      title: 'Bulk Tasks',
+      title: 'Bulk Assignment',
       icon: Send,
       path: '/teacher/bulk-tasks',
-      color: 'bg-emerald-100 text-emerald-600',
+      color: 'bg-blue-50 text-blue-600',
       desc: 'Assign tasks to multiple students'
+    },
+    {
+      title: 'Team Collaboration',
+      icon: MessageCircle,
+      path: '/chat',
+      color: 'bg-pink-50 text-pink-600',
+      desc: 'Connect with students and staff'
+    },
+    {
+      title: 'Group Management',
+      icon: Users,
+      path: '/groups',
+      color: 'bg-amber-50 text-amber-600',
+      desc: 'Manage student project teams'
     }
   ];
 

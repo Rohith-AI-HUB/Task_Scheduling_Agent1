@@ -35,94 +35,122 @@ export default function FlashcardViewer({ flashcards, onClose, title }) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[60] p-4">
-      <motion.div 
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1 }}
-        className="bg-white dark:bg-gray-800 rounded-3xl w-full max-w-2xl overflow-hidden shadow-2xl flex flex-col max-h-[90vh]"
+    <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-md flex items-center justify-center z-[100] p-4">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.9, y: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl border border-white/40 dark:border-white/10 rounded-[2.5rem] w-full max-w-2xl overflow-hidden shadow-2xl flex flex-col max-h-[90vh]"
       >
         {/* Header */}
-        <div className="p-6 border-b dark:border-gray-700 flex justify-between items-center bg-gradient-to-r from-purple-500 to-indigo-600 text-white">
+        <div className="px-8 py-6 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center bg-gradient-to-r from-indigo-500/10 to-purple-500/10">
           <div>
-            <h3 className="font-bold text-xl">{title || 'Flashcards'}</h3>
-            <p className="text-sm opacity-80">{currentIndex + 1} of {totalCards} cards</p>
+            <h3 className="font-extrabold text-2xl bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+              {title || 'Flashcards'}
+            </h3>
+            <p className="text-[10px] font-black text-indigo-500/60 uppercase tracking-widest mt-0.5">
+              CARD {currentIndex + 1} OF {totalCards}
+            </p>
           </div>
-          <button 
+          <button
             onClick={onClose}
-            className="p-2 hover:bg-white/20 rounded-full transition-colors"
+            className="p-3 hover:bg-white dark:hover:bg-gray-800 rounded-full transition-all shadow-sm group"
           >
-            <X size={24} />
+            <X size={24} className="text-gray-400 group-hover:text-rose-500" />
           </button>
         </div>
 
-        {/* Progress Bar */}
-        <div className="h-1.5 w-full bg-gray-100 dark:bg-gray-700">
-          <motion.div 
-            className="h-full bg-purple-500"
+        {/* Progress Bar Container */}
+        <div className="h-2 w-full bg-gray-100 dark:bg-gray-800">
+          <motion.div
+            className="h-full bg-gradient-to-r from-indigo-500 to-purple-500"
             initial={{ width: 0 }}
             animate={{ width: `${((currentIndex + 1) / totalCards) * 100}%` }}
+            transition={{ duration: 0.5, ease: "circOut" }}
           />
         </div>
 
         {/* Card Area */}
-        <div className="flex-1 p-8 flex items-center justify-center min-h-[350px]">
+        <div className="flex-1 p-12 flex items-center justify-center min-h-[400px]">
           <AnimatePresence mode="wait">
             {!showSummary ? (
               <motion.div
                 key={currentIndex}
-                initial={{ x: direction * 100, opacity: 0 }}
+                initial={{ x: direction * 50, opacity: 0 }}
                 animate={{ x: 0, opacity: 1 }}
-                exit={{ x: -direction * 100, opacity: 0 }}
-                transition={{ type: 'spring', damping: 20, stiffness: 100 }}
-                className="w-full h-full perspective-1000"
+                exit={{ x: -direction * 50, opacity: 0 }}
+                className="w-full h-full"
+                style={{ perspective: '1200px' }}
                 onClick={() => setIsFlipped(!isFlipped)}
               >
                 <motion.div
-                  className="w-full h-full relative cursor-pointer preserve-3d transition-transform duration-500"
+                  className="w-full h-full relative cursor-pointer"
                   animate={{ rotateY: isFlipped ? 180 : 0 }}
+                  transition={{ duration: 0.6, type: "spring", stiffness: 260, damping: 20 }}
                   style={{ transformStyle: 'preserve-3d' }}
                 >
                   {/* Front Side */}
-                  <div className="absolute inset-0 backface-hidden bg-white dark:bg-gray-700 rounded-2xl p-8 border-2 border-purple-100 dark:border-purple-900 shadow-xl flex flex-col items-center justify-center text-center">
-                    <span className="absolute top-4 left-4 text-purple-500 font-bold text-xs uppercase tracking-widest">Question</span>
-                    <HelpCircle className="text-purple-400 mb-6" size={40} />
-                    <h4 className="text-2xl font-bold text-gray-800 dark:text-gray-100">
+                  <div className="absolute inset-0 backface-hidden bg-white dark:bg-gray-800 rounded-3xl p-10 border border-indigo-100 dark:border-indigo-900/50 shadow-xl flex flex-col items-center justify-center text-center overflow-hidden">
+                    <div className="absolute top-0 right-0 p-8 opacity-5">
+                      <HelpCircle size={150} />
+                    </div>
+                    <span className="absolute top-6 left-1/2 -translate-x-1/2 text-[10px] font-black text-indigo-400/50 uppercase tracking-[0.2em]">QUESTION</span>
+
+                    <h4 className="text-2xl md:text-3xl font-bold text-gray-800 dark:text-gray-100 leading-tight">
                       {flashcards[currentIndex].question}
                     </h4>
-                    <p className="mt-8 text-gray-400 text-sm italic">Click to flip</p>
+
+                    <div className="mt-12 flex items-center gap-2 text-indigo-400 font-bold text-xs animate-pulse">
+                      <span>CLICK TO REVEAL</span>
+                      <ChevronRight size={14} className="rotate-90" />
+                    </div>
                   </div>
 
                   {/* Back Side */}
-                  <div className="absolute inset-0 backface-hidden bg-purple-50 dark:bg-gray-900 rounded-2xl p-8 border-2 border-purple-200 dark:border-purple-800 shadow-xl flex flex-col items-center justify-center text-center rotate-y-180" style={{ transform: 'rotateY(180deg)', backfaceVisibility: 'hidden' }}>
-                    <span className="absolute top-4 left-4 text-indigo-500 font-bold text-xs uppercase tracking-widest">Answer</span>
-                    <Check className="text-indigo-400 mb-6" size={40} />
-                    <p className="text-xl text-gray-700 dark:text-gray-200 leading-relaxed">
+                  <div className="absolute inset-0 backface-hidden bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-indigo-950/20 dark:to-purple-950/20 rounded-3xl p-10 border border-indigo-200 dark:border-indigo-800 shadow-xl flex flex-col items-center justify-center text-center rotate-y-180" style={{ transform: 'rotateY(180deg)', backfaceVisibility: 'hidden' }}>
+                    <div className="absolute top-0 right-0 p-8 opacity-5">
+                      <Check size={150} />
+                    </div>
+                    <span className="absolute top-6 left-1/2 -translate-x-1/2 text-[10px] font-black text-purple-400/50 uppercase tracking-[0.2em]">ANSWER</span>
+
+                    <p className="text-xl md:text-2xl text-gray-700 dark:text-gray-200 font-medium leading-relaxed">
                       {flashcards[currentIndex].answer}
                     </p>
-                    <p className="mt-8 text-indigo-400 text-sm italic">Click to flip back</p>
+
+                    <div className="mt-12 flex items-center gap-2 text-purple-400 font-bold text-xs">
+                      <span>CLICK TO HIDE</span>
+                    </div>
                   </div>
                 </motion.div>
               </motion.div>
             ) : (
-              <motion.div 
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
                 className="text-center"
               >
-                <div className="bg-green-100 dark:bg-green-900/30 p-6 rounded-full inline-block mb-6">
-                  <Check className="text-green-600 dark:text-green-400" size={48} />
+                <div className="w-24 h-24 bg-emerald-100 dark:bg-emerald-900/30 rounded-full flex items-center justify-center mx-auto mb-8 shadow-inner">
+                  <Check className="text-emerald-600 dark:text-emerald-400" size={48} strokeWidth={3} />
                 </div>
-                <h3 className="text-3xl font-bold mb-2">Session Complete!</h3>
-                <p className="text-gray-600 dark:text-gray-400 mb-8 text-lg">
-                  You've reviewed all {totalCards} flashcards for this resource.
+                <h3 className="text-4xl font-extrabold text-gray-900 dark:text-white mb-3 tracking-tighter">Session Complete!</h3>
+                <p className="text-gray-500 dark:text-gray-400 mb-10 text-lg font-medium">
+                  Outstanding! You've successfully finished all {totalCards} items in this set.
                 </p>
-                <button
-                  onClick={handleRestart}
-                  className="bg-purple-600 text-white px-8 py-3 rounded-xl font-bold hover:bg-purple-700 transition-colors flex items-center gap-2 mx-auto"
-                >
-                  <RotateCcw size={20} />
-                  Review Again
-                </button>
+
+                <div className="flex gap-4 justify-center">
+                  <button
+                    onClick={handleRestart}
+                    className="px-8 py-4 bg-white dark:bg-gray-800 border-2 border-indigo-500 text-indigo-600 dark:text-indigo-400 rounded-2xl font-black hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-all flex items-center gap-2"
+                  >
+                    <RotateCcw size={20} />
+                    REVIEW AGAIN
+                  </button>
+                  <button
+                    onClick={onClose}
+                    className="px-8 py-4 bg-indigo-600 text-white rounded-2xl font-black hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-200 dark:shadow-none"
+                  >
+                    DONE
+                  </button>
+                </div>
               </motion.div>
             )}
           </AnimatePresence>
@@ -130,21 +158,21 @@ export default function FlashcardViewer({ flashcards, onClose, title }) {
 
         {/* Controls */}
         {!showSummary && (
-          <div className="p-8 border-t dark:border-gray-700 flex justify-between items-center gap-4">
+          <div className="px-12 py-8 bg-gray-50/50 dark:bg-gray-950/20 border-t border-gray-100 dark:border-gray-800 flex justify-between items-center gap-6">
             <button
               onClick={handlePrev}
               disabled={currentIndex === 0}
-              className="flex-1 flex items-center justify-center gap-2 py-3 bg-gray-100 dark:bg-gray-700 rounded-xl font-semibold disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+              className="group flex-1 flex items-center justify-center gap-3 py-4 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl font-bold text-gray-600 dark:text-gray-400 disabled:opacity-30 disabled:cursor-not-allowed hover:border-indigo-400 hover:text-indigo-600 transition-all"
             >
-              <ChevronLeft size={20} />
-              Previous
+              <ChevronLeft size={20} className="group-hover:-translate-x-1 transition-transform" />
+              BACK
             </button>
             <button
               onClick={handleNext}
-              className="flex-1 flex items-center justify-center gap-2 py-3 bg-purple-600 text-white rounded-xl font-semibold hover:bg-purple-700 transition-colors shadow-lg"
+              className="group flex-1 flex items-center justify-center gap-3 py-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-2xl font-black hover:scale-[1.02] transition-all shadow-xl shadow-indigo-200 dark:shadow-none"
             >
-              {currentIndex === totalCards - 1 ? 'Finish' : 'Next'}
-              <ChevronRight size={20} />
+              {currentIndex === totalCards - 1 ? 'FINISH' : 'NEXT'}
+              <ChevronRight size={20} className="group-hover:translate-x-1 transition-transform" />
             </button>
           </div>
         )}

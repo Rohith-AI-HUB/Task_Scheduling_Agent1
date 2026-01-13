@@ -22,7 +22,7 @@ from bson import ObjectId
 from datetime import datetime
 from typing import Optional
 
-router = APIRouter(prefix="/api/grading", tags=["Grading"])
+router = APIRouter(prefix="/grading", tags=["Grading"])
 
 
 def get_current_user(authorization: str = Header(...)):
@@ -94,10 +94,10 @@ async def analyze_student_submission(
     days_late = max(0, (completion_date - deadline).days)
     completed_on_time = days_late == 0
 
-    # Count subtasks
+    # Count subtasks (Check both 'completed' boolean and 'status' string)
     subtasks = task.get('subtasks', [])
     total_subtasks = len(subtasks)
-    subtasks_completed = sum(1 for st in subtasks if st.get('completed', False))
+    subtasks_completed = sum(1 for st in subtasks if st.get('completed', False) or st.get('status') == 'completed')
 
     # Count extension requests for this task
     extension_count = extension_requests_collection.count_documents({

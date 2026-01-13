@@ -8,6 +8,8 @@ import { authService } from '../../services/auth.service';
 import GradientButton from '../../components/ui/GradientButton';
 import MetricCard from '../../components/ui/MetricCard';
 
+import { gradingService } from '../../services/grading.service';
+
 function GradingDashboard() {
   const navigate = useNavigate();
   const { logout, user } = useAuthStore();
@@ -28,11 +30,8 @@ function GradingDashboard() {
 
   const fetchPendingGrades = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await axios.get('http://localhost:8000/api/grading/pending', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      setPendingGrades(response.data.submissions);
+      const data = await gradingService.getPendingSubmissions();
+      setPendingGrades(data.submissions);
     } catch (error) {
       console.error('Error fetching pending grades:', error);
     }
@@ -40,12 +39,9 @@ function GradingDashboard() {
 
   const fetchGradingHistory = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await axios.get('http://localhost:8000/api/grading/history', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      setHistory(response.data.history);
-      setStats(response.data.stats);
+      const data = await gradingService.getHistory();
+      setHistory(data.history);
+      setStats(data.stats);
     } catch (error) {
       console.error('Error fetching history:', error);
     }
@@ -54,16 +50,10 @@ function GradingDashboard() {
   const analyzeSubmission = async (taskId, studentId) => {
     setLoading(true);
     try {
-      const token = localStorage.getItem('token');
-      const response = await axios.post(
-        'http://localhost:8000/api/grading/analyze-submission',
-        { task_id: taskId, student_id: studentId },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-
-      setAiAnalysis(response.data);
-      setSelectedSubmission({ taskId, studentId, suggestionId: response.data.suggestion_id });
-      setFinalGrade(response.data.suggested_grade.toString());
+      const data = await gradingService.analyzeSubmission(taskId, studentId);
+      setAiAnalysis(data);
+      setSelectedSubmission({ taskId, studentId, suggestionId: data.suggestion_id });
+      setFinalGrade(data.suggested_grade.toString());
     } catch (error) {
       console.error('Error analyzing submission:', error);
       alert(error.response?.data?.detail || 'Error analyzing submission');
@@ -91,16 +81,11 @@ function GradingDashboard() {
     }
 
     try {
-      const token = localStorage.getItem('token');
-      await axios.put(
-        `http://localhost:8000/api/grading/${selectedSubmission.suggestionId}/finalize`,
-        {
-          final_grade: gradeNum,
-          teacher_comments: teacherComments,
-          override_reason: gradeDiff > 5 ? overrideReason : null
-        },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      await gradingService.finalizeGrade(selectedSubmission.suggestionId, {
+        final_grade: gradeNum,
+        teacher_comments: teacherComments,
+        override_reason: gradeDiff > 5 ? overrideReason : null
+      });
 
       alert('Grade finalized and student notified!');
 
@@ -156,356 +141,356 @@ function GradingDashboard() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50 p-6">
       <div className="max-w-7xl mx-auto">
-      {/* Header */}
-      <div className="mb-8">
-        <div className="flex justify-between items-start">
+        {/* Header */}
+        <div className="mb-8">
+          <div className="flex justify-between items-start">
+            <div>
+              <h1 className="text-4xl font-bold mb-2 flex items-center gap-3 bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">
+                <Brain className="text-purple-600" size={40} />
+                AI Grading Assistant
+              </h1>
+              <p className="text-gray-600">Welcome back, {user?.full_name || 'Teacher'}! 👋</p>
+            </div>
+            <div className="flex items-center gap-4">
+              <HomeButton />
+              <button
+                onClick={handleLogout}
+                className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors shadow-md hover:shadow-lg"
+                title="Logout"
+              >
+                <LogOut size={20} />
+                <span className="font-medium">Logout</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Stats Cards */}
+        {stats && (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            <MetricCard
+              icon={Award}
+              label="Total Graded"
+              value={stats.total_graded}
+              gradient="purple-blue"
+            />
+            <MetricCard
+              icon={CheckCircle}
+              label="AI Agreement"
+              value={`${stats.agreement_rate}%`}
+              gradient="green"
+            />
+            <MetricCard
+              icon={Clock}
+              label="Pending Grades"
+              value={pendingGrades.length}
+              gradient="orange"
+            />
+          </div>
+        )}
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Left: Pending Submissions or AI Analysis */}
           <div>
-            <h1 className="text-4xl font-bold mb-2 flex items-center gap-3 bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">
-              <Brain className="text-purple-600" size={40} />
-              AI Grading Assistant
-            </h1>
-            <p className="text-gray-600">Welcome back, {user?.full_name || 'Teacher'}! 👋</p>
-          </div>
-          <div className="flex items-center gap-4">
-            <HomeButton />
-            <button
-              onClick={handleLogout}
-              className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors shadow-md hover:shadow-lg"
-              title="Logout"
-            >
-              <LogOut size={20} />
-              <span className="font-medium">Logout</span>
-            </button>
-          </div>
-        </div>
-      </div>
+            {!aiAnalysis ? (
+              // Pending Submissions List
+              <>
+                <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
+                  <Target size={24} />
+                  Pending Submissions ({pendingGrades.length})
+                </h2>
 
-      {/* Stats Cards */}
-      {stats && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-          <MetricCard
-            icon={Award}
-            label="Total Graded"
-            value={stats.total_graded}
-            gradient="purple-blue"
-          />
-          <MetricCard
-            icon={CheckCircle}
-            label="AI Agreement"
-            value={`${stats.agreement_rate}%`}
-            gradient="green"
-          />
-          <MetricCard
-            icon={Clock}
-            label="Pending Grades"
-            value={pendingGrades.length}
-            gradient="orange"
-          />
-        </div>
-      )}
+                {pendingGrades.length === 0 ? (
+                  <div className="bg-white rounded-xl shadow-lg p-12 text-center">
+                    <CheckCircle className="mx-auto mb-4 text-green-500" size={64} />
+                    <h3 className="text-xl font-semibold mb-2">All Caught Up!</h3>
+                    <p className="text-gray-600">No pending submissions to grade at the moment.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3 max-h-[600px] overflow-y-auto">
+                    {pendingGrades.map(submission => (
+                      <div
+                        key={submission.id}
+                        className="bg-white/80 backdrop-blur-sm rounded-lg shadow-md hover:shadow-xl transition-all p-4 cursor-pointer border-l-4 border-purple-600 hover:scale-105"
+                        onClick={() => analyzeSubmission(submission.task_id, submission.student_id)}
+                      >
+                        <div className="flex justify-between items-start">
+                          <div className="flex-1">
+                            <h3 className="font-bold text-lg text-purple-900">{submission.task_title}</h3>
+                            <p className="text-sm text-gray-600 flex items-center gap-1">
+                              <span className="font-medium">{submission.student_name}</span>
+                            </p>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Left: Pending Submissions or AI Analysis */}
-        <div>
-          {!aiAnalysis ? (
-            // Pending Submissions List
-            <>
-              <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
-                <Target size={24} />
-                Pending Submissions ({pendingGrades.length})
-              </h2>
+                            <div className="flex gap-4 mt-2 text-sm text-gray-500">
+                              <span className="flex items-center gap-1">
+                                <Clock size={14} />
+                                {submission.estimated_hours}h estimated
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <AlertCircle size={14} />
+                                Complexity: {submission.complexity}/10
+                              </span>
+                            </div>
+                          </div>
 
-              {pendingGrades.length === 0 ? (
-                <div className="bg-white rounded-xl shadow-lg p-12 text-center">
-                  <CheckCircle className="mx-auto mb-4 text-green-500" size={64} />
-                  <h3 className="text-xl font-semibold mb-2">All Caught Up!</h3>
-                  <p className="text-gray-600">No pending submissions to grade at the moment.</p>
+                          <button className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-4 py-2 rounded-lg hover:from-purple-700 hover:to-indigo-700 transition-all shadow-md flex items-center gap-2">
+                            <Brain size={16} />
+                            Analyze
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </>
+            ) : (
+              // AI Analysis Results
+              <div className="space-y-4">
+                <div className="flex items-center justify-between bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-lg p-4 shadow-md">
+                  <h2 className="text-2xl font-bold flex items-center gap-2">
+                    <Brain size={28} />
+                    AI Analysis
+                  </h2>
+                  <button
+                    onClick={cancelGrading}
+                    className="text-sm text-white hover:text-purple-100 transition-colors"
+                  >
+                    ← Back to List
+                  </button>
                 </div>
-              ) : (
-                <div className="space-y-3 max-h-[600px] overflow-y-auto">
-                  {pendingGrades.map(submission => (
-                    <div
-                      key={submission.id}
-                      className="bg-white/80 backdrop-blur-sm rounded-lg shadow-md hover:shadow-xl transition-all p-4 cursor-pointer border-l-4 border-purple-600 hover:scale-105"
-                      onClick={() => analyzeSubmission(submission.task_id, submission.student_id)}
-                    >
-                      <div className="flex justify-between items-start">
-                        <div className="flex-1">
-                          <h3 className="font-bold text-lg text-purple-900">{submission.task_title}</h3>
-                          <p className="text-sm text-gray-600 flex items-center gap-1">
-                            <span className="font-medium">{submission.student_name}</span>
-                          </p>
 
-                          <div className="flex gap-4 mt-2 text-sm text-gray-500">
-                            <span className="flex items-center gap-1">
-                              <Clock size={14} />
-                              {submission.estimated_hours}h estimated
-                            </span>
-                            <span className="flex items-center gap-1">
-                              <AlertCircle size={14} />
-                              Complexity: {submission.complexity}/10
-                            </span>
+                {loading ? (
+                  <div className="bg-white rounded-xl shadow-lg p-12 text-center">
+                    <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-purple-600 mx-auto mb-4"></div>
+                    <p className="text-gray-600">AI is analyzing the submission...</p>
+                  </div>
+                ) : (
+                  <>
+                    {/* Suggested Grade */}
+                    <div className="bg-gradient-to-br from-purple-600 to-indigo-600 rounded-xl p-6 shadow-lg">
+                      <div className="text-center mb-4">
+                        <div className="text-sm text-white/90 mb-1">AI Suggested Grade</div>
+                        <div className="text-6xl font-bold text-white">
+                          {aiAnalysis.suggested_grade}
+                          <span className="text-3xl text-white/70">/100</span>
+                        </div>
+                      </div>
+
+                      <div className="bg-white/20 backdrop-blur-sm rounded-lg p-4">
+                        <p className="text-sm text-white">{aiAnalysis.reasoning}</p>
+                      </div>
+                    </div>
+
+                    {/* Performance Summary */}
+                    <div className="bg-white rounded-xl shadow-lg p-6 border-l-4 border-purple-600">
+                      <h3 className="font-bold mb-3 flex items-center gap-2 text-purple-700">
+                        <TrendingUp size={20} />
+                        Performance Summary
+                      </h3>
+                      <div className="grid grid-cols-2 gap-3 text-sm">
+                        <div>
+                          <span className="text-gray-600">Time Efficiency:</span>
+                          <span className="ml-2 font-semibold text-purple-700">{aiAnalysis.performance_summary.time_efficiency}</span>
+                        </div>
+                        <div>
+                          <span className="text-gray-600">On Time:</span>
+                          <span className="ml-2 font-semibold">
+                            {aiAnalysis.performance_summary.on_time ? '✅ Yes' : '❌ Late'}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-gray-600">Completion:</span>
+                          <span className="ml-2 font-semibold text-purple-700">{aiAnalysis.performance_summary.completion_rate}</span>
+                        </div>
+                        <div>
+                          <span className="text-gray-600">Extensions:</span>
+                          <span className="ml-2 font-semibold text-purple-700">{aiAnalysis.performance_summary.extensions}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Strengths */}
+                    {aiAnalysis.strengths && aiAnalysis.strengths.length > 0 && (
+                      <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-6 border-l-4 border-green-500 shadow-md">
+                        <h3 className="font-bold mb-3 flex items-center gap-2 text-green-800">
+                          <Award size={20} />
+                          Strengths
+                        </h3>
+                        <ul className="space-y-2">
+                          {aiAnalysis.strengths.map((strength, idx) => (
+                            <li key={idx} className="text-sm text-green-800 flex items-start gap-2">
+                              <CheckCircle size={16} className="mt-0.5 flex-shrink-0 text-green-600" />
+                              <span>{strength}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    {/* Weaknesses */}
+                    {aiAnalysis.weaknesses && aiAnalysis.weaknesses.length > 0 && (
+                      <div className="bg-gradient-to-br from-orange-50 to-amber-50 rounded-xl p-6 border-l-4 border-orange-500 shadow-md">
+                        <h3 className="font-bold mb-3 flex items-center gap-2 text-orange-800">
+                          <AlertCircle size={20} />
+                          Areas for Improvement
+                        </h3>
+                        <ul className="space-y-2">
+                          {aiAnalysis.weaknesses.map((weakness, idx) => (
+                            <li key={idx} className="text-sm text-orange-800 flex items-start gap-2">
+                              <span className="text-orange-600 mt-0.5">•</span>
+                              <span>{weakness}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    {/* Improvement Suggestions */}
+                    {aiAnalysis.improvements && aiAnalysis.improvements.length > 0 && (
+                      <div className="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-xl p-6 border-l-4 border-blue-500 shadow-md">
+                        <h3 className="font-bold mb-3 flex items-center gap-2 text-blue-800">
+                          <Lightbulb size={20} />
+                          Suggestions for Future
+                        </h3>
+                        <ul className="space-y-2">
+                          {aiAnalysis.improvements.map((improvement, idx) => (
+                            <li key={idx} className="text-sm text-blue-800 flex items-start gap-2">
+                              <span className="text-blue-600 mt-0.5">→</span>
+                              <span>{improvement}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    {/* Encouragement */}
+                    {aiAnalysis.encouragement && (
+                      <div className="bg-gradient-to-r from-pink-50 to-purple-50 rounded-xl p-6 border-l-4 border-pink-500 shadow-md">
+                        <div className="flex items-start gap-3">
+                          <Heart className="text-pink-500 flex-shrink-0" size={24} />
+                          <p className="text-sm font-medium text-pink-800">{aiAnalysis.encouragement}</p>
+                        </div>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Right: Finalize Grade Form or History */}
+          <div>
+            {aiAnalysis && !loading ? (
+              // Grade Finalization Form
+              <div className="bg-white rounded-xl shadow-lg p-6 sticky top-6">
+                <h2 className="text-2xl font-bold mb-6">Finalize Grade</h2>
+
+                {/* Grade Input */}
+                <div className="mb-4">
+                  <label className="block text-sm font-medium mb-2 text-purple-700">Final Grade (0-100)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    step="0.1"
+                    value={finalGrade}
+                    onChange={(e) => setFinalGrade(e.target.value)}
+                    className="w-full border-2 border-purple-200 rounded-lg px-4 py-3 text-lg font-bold focus:border-purple-600 focus:ring-2 focus:ring-purple-600 focus:outline-none"
+                    placeholder="Enter grade"
+                  />
+                  {Math.abs(parseFloat(finalGrade) - aiAnalysis.suggested_grade) > 5 && (
+                    <p className="text-sm text-orange-600 mt-1">
+                      ⚠️ Different from AI suggestion ({aiAnalysis.suggested_grade})
+                    </p>
+                  )}
+                </div>
+
+                {/* Teacher Comments */}
+                <div className="mb-4">
+                  <label className="block text-sm font-medium mb-2 text-purple-700">Teacher Feedback</label>
+                  <textarea
+                    value={teacherComments}
+                    onChange={(e) => setTeacherComments(e.target.value)}
+                    rows="4"
+                    className="w-full border-2 border-purple-200 rounded-lg px-4 py-2 focus:border-purple-600 focus:ring-2 focus:ring-purple-600 focus:outline-none"
+                    placeholder="Provide constructive feedback for the student..."
+                  />
+                </div>
+
+                {/* Override Reason (if significantly different) */}
+                {Math.abs(parseFloat(finalGrade) - aiAnalysis.suggested_grade) > 10 && (
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium mb-2 text-orange-700">
+                      Override Reason (Required)
+                    </label>
+                    <textarea
+                      value={overrideReason}
+                      onChange={(e) => setOverrideReason(e.target.value)}
+                      rows="2"
+                      className="w-full border-2 border-orange-300 rounded-lg px-4 py-2 focus:border-orange-500 focus:ring-2 focus:ring-orange-500 focus:outline-none"
+                      placeholder="Why does your grade differ significantly from AI suggestion?"
+                    />
+                  </div>
+                )}
+
+                {/* Action Buttons */}
+                <div className="flex gap-3">
+                  <GradientButton
+                    variant="purple"
+                    onClick={finalizeGrade}
+                    className="flex-1 py-3"
+                  >
+                    Finalize & Notify Student
+                  </GradientButton>
+                  <button
+                    onClick={cancelGrading}
+                    className="px-6 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-all"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            ) : (
+              // Grading History
+              <div>
+                <h2 className="text-2xl font-bold mb-4 text-purple-700">Recent Grades</h2>
+                <div className="space-y-3 max-h-[600px] overflow-y-auto">
+                  {history.slice(0, 10).map(item => (
+                    <div
+                      key={item.id}
+                      className="bg-white rounded-lg shadow-md hover:shadow-lg transition-all p-4 border-l-4 border-purple-300"
+                    >
+                      <div className="flex justify-between items-start mb-2">
+                        <div>
+                          <h3 className="font-semibold text-purple-900">{item.task_title}</h3>
+                          <p className="text-sm text-gray-600">{item.student_name}</p>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-2xl font-bold text-purple-600">{item.final_grade}</div>
+                          <div className="text-xs text-gray-500">
+                            AI: {item.ai_suggested_grade}
                           </div>
                         </div>
+                      </div>
 
-                        <button className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-4 py-2 rounded-lg hover:from-purple-700 hover:to-indigo-700 transition-all shadow-md flex items-center gap-2">
-                          <Brain size={16} />
-                          Analyze
-                        </button>
+                      <div className="flex items-center gap-2 text-sm">
+                        {item.ai_agreement ? (
+                          <span className="bg-green-100 text-green-700 px-2 py-1 rounded text-xs border border-green-300">
+                            ✓ AI Agreement
+                          </span>
+                        ) : (
+                          <span className="bg-orange-100 text-orange-700 px-2 py-1 rounded text-xs border border-orange-300">
+                            Override ({Math.abs(item.grade_difference).toFixed(1)} pts)
+                          </span>
+                        )}
                       </div>
                     </div>
                   ))}
                 </div>
-              )}
-            </>
-          ) : (
-            // AI Analysis Results
-            <div className="space-y-4">
-              <div className="flex items-center justify-between bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-lg p-4 shadow-md">
-                <h2 className="text-2xl font-bold flex items-center gap-2">
-                  <Brain size={28} />
-                  AI Analysis
-                </h2>
-                <button
-                  onClick={cancelGrading}
-                  className="text-sm text-white hover:text-purple-100 transition-colors"
-                >
-                  ← Back to List
-                </button>
               </div>
-
-              {loading ? (
-                <div className="bg-white rounded-xl shadow-lg p-12 text-center">
-                  <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-purple-600 mx-auto mb-4"></div>
-                  <p className="text-gray-600">AI is analyzing the submission...</p>
-                </div>
-              ) : (
-                <>
-                  {/* Suggested Grade */}
-                  <div className="bg-gradient-to-br from-purple-600 to-indigo-600 rounded-xl p-6 shadow-lg">
-                    <div className="text-center mb-4">
-                      <div className="text-sm text-white/90 mb-1">AI Suggested Grade</div>
-                      <div className="text-6xl font-bold text-white">
-                        {aiAnalysis.suggested_grade}
-                        <span className="text-3xl text-white/70">/100</span>
-                      </div>
-                    </div>
-
-                    <div className="bg-white/20 backdrop-blur-sm rounded-lg p-4">
-                      <p className="text-sm text-white">{aiAnalysis.reasoning}</p>
-                    </div>
-                  </div>
-
-                  {/* Performance Summary */}
-                  <div className="bg-white rounded-xl shadow-lg p-6 border-l-4 border-purple-600">
-                    <h3 className="font-bold mb-3 flex items-center gap-2 text-purple-700">
-                      <TrendingUp size={20} />
-                      Performance Summary
-                    </h3>
-                    <div className="grid grid-cols-2 gap-3 text-sm">
-                      <div>
-                        <span className="text-gray-600">Time Efficiency:</span>
-                        <span className="ml-2 font-semibold text-purple-700">{aiAnalysis.performance_summary.time_efficiency}</span>
-                      </div>
-                      <div>
-                        <span className="text-gray-600">On Time:</span>
-                        <span className="ml-2 font-semibold">
-                          {aiAnalysis.performance_summary.on_time ? '✅ Yes' : '❌ Late'}
-                        </span>
-                      </div>
-                      <div>
-                        <span className="text-gray-600">Completion:</span>
-                        <span className="ml-2 font-semibold text-purple-700">{aiAnalysis.performance_summary.completion_rate}</span>
-                      </div>
-                      <div>
-                        <span className="text-gray-600">Extensions:</span>
-                        <span className="ml-2 font-semibold text-purple-700">{aiAnalysis.performance_summary.extensions}</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Strengths */}
-                  {aiAnalysis.strengths && aiAnalysis.strengths.length > 0 && (
-                    <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-6 border-l-4 border-green-500 shadow-md">
-                      <h3 className="font-bold mb-3 flex items-center gap-2 text-green-800">
-                        <Award size={20} />
-                        Strengths
-                      </h3>
-                      <ul className="space-y-2">
-                        {aiAnalysis.strengths.map((strength, idx) => (
-                          <li key={idx} className="text-sm text-green-800 flex items-start gap-2">
-                            <CheckCircle size={16} className="mt-0.5 flex-shrink-0 text-green-600" />
-                            <span>{strength}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-
-                  {/* Weaknesses */}
-                  {aiAnalysis.weaknesses && aiAnalysis.weaknesses.length > 0 && (
-                    <div className="bg-gradient-to-br from-orange-50 to-amber-50 rounded-xl p-6 border-l-4 border-orange-500 shadow-md">
-                      <h3 className="font-bold mb-3 flex items-center gap-2 text-orange-800">
-                        <AlertCircle size={20} />
-                        Areas for Improvement
-                      </h3>
-                      <ul className="space-y-2">
-                        {aiAnalysis.weaknesses.map((weakness, idx) => (
-                          <li key={idx} className="text-sm text-orange-800 flex items-start gap-2">
-                            <span className="text-orange-600 mt-0.5">•</span>
-                            <span>{weakness}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-
-                  {/* Improvement Suggestions */}
-                  {aiAnalysis.improvements && aiAnalysis.improvements.length > 0 && (
-                    <div className="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-xl p-6 border-l-4 border-blue-500 shadow-md">
-                      <h3 className="font-bold mb-3 flex items-center gap-2 text-blue-800">
-                        <Lightbulb size={20} />
-                        Suggestions for Future
-                      </h3>
-                      <ul className="space-y-2">
-                        {aiAnalysis.improvements.map((improvement, idx) => (
-                          <li key={idx} className="text-sm text-blue-800 flex items-start gap-2">
-                            <span className="text-blue-600 mt-0.5">→</span>
-                            <span>{improvement}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-
-                  {/* Encouragement */}
-                  {aiAnalysis.encouragement && (
-                    <div className="bg-gradient-to-r from-pink-50 to-purple-50 rounded-xl p-6 border-l-4 border-pink-500 shadow-md">
-                      <div className="flex items-start gap-3">
-                        <Heart className="text-pink-500 flex-shrink-0" size={24} />
-                        <p className="text-sm font-medium text-pink-800">{aiAnalysis.encouragement}</p>
-                      </div>
-                    </div>
-                  )}
-                </>
-              )}
-            </div>
-          )}
+            )}
+          </div>
         </div>
-
-        {/* Right: Finalize Grade Form or History */}
-        <div>
-          {aiAnalysis && !loading ? (
-            // Grade Finalization Form
-            <div className="bg-white rounded-xl shadow-lg p-6 sticky top-6">
-              <h2 className="text-2xl font-bold mb-6">Finalize Grade</h2>
-
-              {/* Grade Input */}
-              <div className="mb-4">
-                <label className="block text-sm font-medium mb-2 text-purple-700">Final Grade (0-100)</label>
-                <input
-                  type="number"
-                  min="0"
-                  max="100"
-                  step="0.1"
-                  value={finalGrade}
-                  onChange={(e) => setFinalGrade(e.target.value)}
-                  className="w-full border-2 border-purple-200 rounded-lg px-4 py-3 text-lg font-bold focus:border-purple-600 focus:ring-2 focus:ring-purple-600 focus:outline-none"
-                  placeholder="Enter grade"
-                />
-                {Math.abs(parseFloat(finalGrade) - aiAnalysis.suggested_grade) > 5 && (
-                  <p className="text-sm text-orange-600 mt-1">
-                    ⚠️ Different from AI suggestion ({aiAnalysis.suggested_grade})
-                  </p>
-                )}
-              </div>
-
-              {/* Teacher Comments */}
-              <div className="mb-4">
-                <label className="block text-sm font-medium mb-2 text-purple-700">Teacher Feedback</label>
-                <textarea
-                  value={teacherComments}
-                  onChange={(e) => setTeacherComments(e.target.value)}
-                  rows="4"
-                  className="w-full border-2 border-purple-200 rounded-lg px-4 py-2 focus:border-purple-600 focus:ring-2 focus:ring-purple-600 focus:outline-none"
-                  placeholder="Provide constructive feedback for the student..."
-                />
-              </div>
-
-              {/* Override Reason (if significantly different) */}
-              {Math.abs(parseFloat(finalGrade) - aiAnalysis.suggested_grade) > 10 && (
-                <div className="mb-4">
-                  <label className="block text-sm font-medium mb-2 text-orange-700">
-                    Override Reason (Required)
-                  </label>
-                  <textarea
-                    value={overrideReason}
-                    onChange={(e) => setOverrideReason(e.target.value)}
-                    rows="2"
-                    className="w-full border-2 border-orange-300 rounded-lg px-4 py-2 focus:border-orange-500 focus:ring-2 focus:ring-orange-500 focus:outline-none"
-                    placeholder="Why does your grade differ significantly from AI suggestion?"
-                  />
-                </div>
-              )}
-
-              {/* Action Buttons */}
-              <div className="flex gap-3">
-                <GradientButton
-                  variant="purple"
-                  onClick={finalizeGrade}
-                  className="flex-1 py-3"
-                >
-                  Finalize & Notify Student
-                </GradientButton>
-                <button
-                  onClick={cancelGrading}
-                  className="px-6 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-all"
-                >
-                  Cancel
-                </button>
-              </div>
-            </div>
-          ) : (
-            // Grading History
-            <div>
-              <h2 className="text-2xl font-bold mb-4 text-purple-700">Recent Grades</h2>
-              <div className="space-y-3 max-h-[600px] overflow-y-auto">
-                {history.slice(0, 10).map(item => (
-                  <div
-                    key={item.id}
-                    className="bg-white rounded-lg shadow-md hover:shadow-lg transition-all p-4 border-l-4 border-purple-300"
-                  >
-                    <div className="flex justify-between items-start mb-2">
-                      <div>
-                        <h3 className="font-semibold text-purple-900">{item.task_title}</h3>
-                        <p className="text-sm text-gray-600">{item.student_name}</p>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-2xl font-bold text-purple-600">{item.final_grade}</div>
-                        <div className="text-xs text-gray-500">
-                          AI: {item.ai_suggested_grade}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-2 text-sm">
-                      {item.ai_agreement ? (
-                        <span className="bg-green-100 text-green-700 px-2 py-1 rounded text-xs border border-green-300">
-                          ✓ AI Agreement
-                        </span>
-                      ) : (
-                        <span className="bg-orange-100 text-orange-700 px-2 py-1 rounded text-xs border border-orange-300">
-                          Override ({Math.abs(item.grade_difference).toFixed(1)} pts)
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
       </div>
     </div>
   );

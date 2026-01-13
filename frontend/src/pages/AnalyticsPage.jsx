@@ -1,13 +1,21 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import axios from 'axios';
-import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { TrendingUp, Clock, CheckCircle, AlertCircle } from 'lucide-react';
+import {
+  PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis,
+  Tooltip, Legend, ResponsiveContainer, CartesianGrid, AreaChart, Area
+} from 'recharts';
+import {
+  TrendingUp, Clock, CheckCircle, AlertCircle,
+  BarChart3, PieChart as PieIcon, Activity,
+  Zap, Brain, Calendar, ChevronRight, Award
+} from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import NotificationBell from '../components/NotificationBell';
 import HomeButton from '../components/HomeButton';
 import { useAuth } from '../store/useStore';
 import MetricCard from '../components/ui/MetricCard';
-import GlassCard from '../components/ui/GlassCard';
+import { analyticsService } from '../services/analytics.service';
+import './AnalyticsPage.css';
 
 export default function AnalyticsPage() {
   const [stats, setStats] = useState(null);
@@ -15,7 +23,7 @@ export default function AnalyticsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const navigate = useNavigate();
-  const { isTeacher, isStudent } = useAuth();
+  const { isTeacher } = useAuth();
 
   useEffect(() => {
     loadAnalytics();
@@ -24,16 +32,13 @@ export default function AnalyticsPage() {
   const loadAnalytics = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem('token');
-      const headers = { Authorization: `Bearer ${token}` };
-
-      const [statsRes, workloadRes] = await Promise.all([
-        axios.get('http://localhost:8000/api/analytics/dashboard', { headers }),
-        axios.get('http://localhost:8000/api/analytics/workload', { headers })
+      const [statsData, workloadData] = await Promise.all([
+        analyticsService.getDashboardStats(),
+        analyticsService.getWorkload()
       ]);
 
-      setStats(statsRes.data);
-      setWorkload(workloadRes.data);
+      setStats(statsData);
+      setWorkload(workloadData);
       setError('');
     } catch (err) {
       setError('Failed to load analytics: ' + (err.response?.data?.detail || err.message));
@@ -44,9 +49,16 @@ export default function AnalyticsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-gray-50 p-6">
-        <div className="flex items-center justify-center h-64">
-          <div className="text-xl text-purple-600">Loading analytics...</div>
+      <div className="analytics-container flex items-center justify-center">
+        <div className="text-center">
+          <motion.div
+            animate={{ rotate: 360 }}
+            transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+            className="mb-4 inline-block"
+          >
+            <Zap className="w-12 h-12 text-indigo-500" />
+          </motion.div>
+          <p className="text-gray-500 font-bold animate-pulse">Processing your big data...</p>
         </div>
       </div>
     );
@@ -54,8 +66,14 @@ export default function AnalyticsPage() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-gray-50 p-6">
-        <div className="bg-red-100 text-red-700 p-4 rounded">{error}</div>
+      <div className="analytics-container">
+        <div className="bg-rose-100/80 backdrop-blur-md border border-rose-200 text-rose-700 p-6 rounded-2xl shadow-xl max-w-2xl mx-auto flex items-center gap-4">
+          <AlertCircle size={32} />
+          <div>
+            <h3 className="font-bold text-lg">Analysis Interrupted</h3>
+            <p className="font-medium">{error}</p>
+          </div>
+        </div>
       </div>
     );
   }
@@ -65,8 +83,8 @@ export default function AnalyticsPage() {
   // Prepare data for charts
   const statusData = [
     { name: 'Completed', value: stats.completed, color: '#10b981' },
-    { name: 'In Progress', value: stats.in_progress, color: '#7C3AED' },
-    { name: 'Todo', value: stats.todo, color: '#3B82F6' }
+    { name: 'In Progress', value: stats.in_progress, color: '#8b5cf6' },
+    { name: 'Todo', value: stats.todo, color: '#3b82f6' }
   ].filter(item => item.value > 0);
 
   const priorityData = Object.entries(stats.priority_distribution).map(([name, value]) => ({
@@ -76,229 +94,354 @@ export default function AnalyticsPage() {
 
   const PRIORITY_COLORS = {
     'Low': '#10b981',
-    'Medium': '#f59e0b',
+    'Medium': '#8b5cf6',
     'High': '#f97316',
     'Urgent': '#ef4444'
   };
 
   const workloadData = workload?.workload_by_day.map(day => ({
-    date: new Date(day.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }),
+    date: new Date(day.date).toLocaleDateString('en-US', { weekday: 'short' }),
     hours: day.total_hours,
     tasks: day.task_count
   })) || [];
 
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: { staggerChildren: 0.1 }
+    }
+  };
+
+  const cardVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: { opacity: 1, y: 0 }
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-gray-50 p-6">
-      {/* Header */}
-      <div className="flex justify-between items-center mb-6">
-        <div className="flex items-center gap-4">
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
-            {isTeacher ? 'My Analytics & Class Overview' : 'My Analytics Dashboard'}
-          </h1>
-        </div>
-        <div className="flex items-center gap-4">
-          <NotificationBell />
-          <HomeButton />
-        </div>
-      </div>
-
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
-        <MetricCard
-          icon={TrendingUp}
-          label="Total Tasks"
-          value={stats.total_tasks}
-          gradient="purple-blue"
-        />
-        <MetricCard
-          icon={CheckCircle}
-          label="Completed"
-          value={stats.completed}
-          gradient="green"
-        />
-        <MetricCard
-          icon={AlertCircle}
-          label="In Progress"
-          value={stats.in_progress}
-          gradient="purple-indigo"
-        />
-        <MetricCard
-          icon={Clock}
-          label="Todo"
-          value={stats.todo}
-          gradient="blue"
-        />
-        <MetricCard
-          icon={Clock}
-          label="Hours Left"
-          value={stats.total_hours_remaining.toFixed(1)}
-          gradient="orange"
-        />
-      </div>
-
-      {/* Performance Metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-        <GlassCard borderColor="purple" className="p-6">
-          <h2 className="text-xl font-bold mb-2 text-purple-600">Completion Rate</h2>
-          <div className="flex items-center gap-4">
-            <div className="text-5xl font-bold text-green-600">{stats.completion_rate}%</div>
-            <div className="flex-1">
-              <div className="w-full bg-gray-200 rounded-full h-4">
-                <div
-                  className="bg-gradient-to-r from-green-500 to-emerald-500 h-4 rounded-full transition-all"
-                  style={{ width: `${stats.completion_rate}%` }}
-                ></div>
-              </div>
-            </div>
+    <div className="analytics-container">
+      <motion.div
+        className="max-w-7xl mx-auto"
+        initial="hidden"
+        animate="visible"
+        variants={containerVariants}
+      >
+        {/* Header */}
+        <div className="analytics-header">
+          <div className="analytics-title">
+            <h1 className="flex items-center gap-3">
+              <BarChart3 className="w-10 h-10 text-indigo-600 dark:text-indigo-400" />
+              {isTeacher ? 'Class Intelligence' : 'Personal Analytics'}
+            </h1>
+            <p className="text-gray-500 dark:text-gray-400 mt-1 font-medium italic">
+              Unlocking productivity insights with AI-driven analysis
+            </p>
           </div>
-        </GlassCard>
-
-        <GlassCard borderColor="blue" className="p-6">
-          <h2 className="text-xl font-bold mb-2 text-blue-600">Average Complexity</h2>
           <div className="flex items-center gap-4">
-            <div className="text-5xl font-bold text-purple-600">{stats.average_complexity}/10</div>
-            <div className="flex-1">
-              <div className="w-full bg-gray-200 rounded-full h-4">
-                <div
-                  className="bg-gradient-to-r from-purple-600 to-blue-600 h-4 rounded-full transition-all"
-                  style={{ width: `${stats.average_complexity * 10}%` }}
-                ></div>
-              </div>
-            </div>
+            <NotificationBell />
+            <HomeButton />
           </div>
-        </GlassCard>
-      </div>
+        </div>
 
-      {/* Charts Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-        {/* Task Status Distribution */}
-        <GlassCard borderColor="purple" className="p-6">
-          <h2 className="font-bold text-xl mb-4 text-purple-600">Task Status Distribution</h2>
-          {statusData.length > 0 ? (
-            <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie
-                  data={statusData}
-                  dataKey="value"
-                  nameKey="name"
-                  cx="50%"
-                  cy="50%"
-                  outerRadius={100}
-                  label={(entry) => `${entry.name}: ${entry.value}`}
-                >
-                  {statusData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip />
-                <Legend />
-              </PieChart>
-            </ResponsiveContainer>
-          ) : (
-            <p className="text-gray-500 text-center py-8">No tasks available</p>
-          )}
-        </GlassCard>
+        {/* Summary Metrics Grid */}
+        <div className="summary-grid">
+          <MetricCard
+            icon={Activity}
+            label="Volume"
+            value={stats.total_tasks}
+            gradient="purple-blue"
+          />
+          <MetricCard
+            icon={CheckCircle}
+            label="Finished"
+            value={stats.completed}
+            gradient="green"
+          />
+          <MetricCard
+            icon={TrendingUp}
+            label="In Flow"
+            value={stats.in_progress}
+            gradient="purple-indigo"
+          />
+          <MetricCard
+            icon={Clock}
+            label="Backlog"
+            value={stats.todo}
+            gradient="blue"
+          />
+          <MetricCard
+            icon={Zap}
+            label="Hrs Reamining"
+            value={stats.total_hours_remaining.toFixed(1)}
+            gradient="orange"
+          />
+        </div>
 
-        {/* Priority Distribution */}
-        <GlassCard borderColor="blue" className="p-6">
-          <h2 className="font-bold text-xl mb-4 text-blue-600">Priority Distribution</h2>
-          {priorityData.length > 0 ? (
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={priorityData}>
-                <XAxis dataKey="name" />
-                <YAxis />
-                <Tooltip />
-                <Legend />
-                <Bar dataKey="value" fill="#3b82f6" radius={[8, 8, 0, 0]}>
-                  {priorityData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={PRIORITY_COLORS[entry.name] || '#3b82f6'} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          ) : (
-            <p className="text-gray-500 text-center py-8">No priority data available</p>
-          )}
-        </GlassCard>
-      </div>
-
-      {/* Workload Analysis */}
-      <GlassCard borderColor="purple" className="p-6 mb-6">
-        <h2 className="font-bold text-xl mb-4 text-purple-600">7-Day Workload Forecast</h2>
-        {workloadData.length > 0 ? (
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={workloadData}>
-              <XAxis dataKey="date" />
-              <YAxis yAxisId="left" label={{ value: 'Hours', angle: -90, position: 'insideLeft' }} />
-              <YAxis yAxisId="right" orientation="right" label={{ value: 'Tasks', angle: 90, position: 'insideRight' }} />
-              <Tooltip />
-              <Legend />
-              <Bar yAxisId="left" dataKey="hours" fill="#7C3AED" name="Total Hours" radius={[8, 8, 0, 0]} />
-              <Bar yAxisId="right" dataKey="tasks" fill="#3B82F6" name="Task Count" radius={[8, 8, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
-        ) : (
-          <p className="text-gray-500 text-center py-8">No workload data available</p>
-        )}
-        {workload?.peak_day && (
-          <p className="text-sm text-gray-600 mt-4">
-            Peak workload day: <strong>{new Date(workload.peak_day).toLocaleDateString()}</strong>
-          </p>
-        )}
-      </GlassCard>
-
-      {/* Upcoming Deadlines */}
-      <GlassCard borderColor="purple" className="p-6">
-        <h2 className="font-bold text-xl mb-4 text-purple-600">Upcoming Deadlines</h2>
-        {stats.upcoming_deadlines.length > 0 ? (
-          <div className="space-y-3">
-            {stats.upcoming_deadlines.map(task => {
-              const priorityColors = {
-                low: 'bg-green-100 text-green-800',
-                medium: 'bg-purple-100 text-purple-800',
-                high: 'bg-blue-100 text-blue-800',
-                urgent: 'bg-red-100 text-red-800'
-              };
-
-              return (
-                <div key={task.id} className="flex justify-between items-center border-b pb-3 hover:bg-gray-50 px-2 rounded transition">
-                  <div className="flex items-center gap-3">
-                    <span className={`px-2 py-1 rounded text-xs font-semibold ${priorityColors[task.priority]}`}>
-                      {task.priority.toUpperCase()}
-                    </span>
-                    <span className="font-medium">{task.title}</span>
-                  </div>
-                  <span className="text-sm text-gray-600">
-                    {new Date(task.deadline).toLocaleDateString('en-US', {
-                      month: 'short',
-                      day: 'numeric',
-                      year: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit'
-                    })}
-                  </span>
+        {/* Highlight Metrics */}
+        <div className="performance-grid">
+          <motion.div variants={cardVariants} className="analytics-glass-card p-8">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="analytics-card-title">
+                <div className="p-2 bg-green-100 dark:bg-green-950/30 rounded-lg">
+                  <Award className="text-green-600" size={20} />
                 </div>
-              );
-            })}
-          </div>
-        ) : (
-          <p className="text-gray-500 text-center py-4">No upcoming deadlines</p>
-        )}
-      </GlassCard>
+                Execution Velocity
+              </h2>
+              <span className="text-xs font-black text-gray-400 uppercase tracking-widest">Efficiency</span>
+            </div>
+            <div className="performance-value text-green-600">{stats.completion_rate}%</div>
+            <div className="progress-bar-bg">
+              <motion.div
+                initial={{ width: 0 }}
+                animate={{ width: `${stats.completion_rate}%` }}
+                transition={{ duration: 1, ease: "circOut" }}
+                className="progress-bar-fill bg-gradient-to-r from-green-400 to-emerald-500"
+              />
+            </div>
+            <p className="mt-4 text-sm text-gray-500 font-medium italic">
+              {stats.completion_rate > 80 ? "Outstanding performance this week!" : "Push a bit more to hit your targets."}
+            </p>
+          </motion.div>
 
-      {/* Teacher-Specific Section */}
-      {isTeacher && (
-        <GlassCard borderColor="purple" className="mt-6 p-6">
-          <h2 className="text-xl font-bold mb-4 bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">Class Overview</h2>
-          <p className="text-gray-600">
-            For detailed class performance analytics, student progress tracking, and at-risk student identification,
-            visit the{' '}
-            <Link to="/teacher/class" className="text-purple-600 hover:underline font-semibold">
-              Class Dashboard
-            </Link>.
-          </p>
-        </GlassCard>
-      )}
+          <motion.div variants={cardVariants} className="analytics-glass-card p-8">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="analytics-card-title">
+                <div className="p-2 bg-indigo-100 dark:bg-indigo-950/30 rounded-lg">
+                  <Brain className="text-indigo-600" size={20} />
+                </div>
+                Cognitive Load
+              </h2>
+              <span className="text-xs font-black text-gray-400 uppercase tracking-widest">Complexity</span>
+            </div>
+            <div className="performance-value text-indigo-600">{stats.average_complexity}/10</div>
+            <div className="progress-bar-bg">
+              <motion.div
+                initial={{ width: 0 }}
+                animate={{ width: `${stats.average_complexity * 10}%` }}
+                transition={{ duration: 1, ease: "circOut" }}
+                className="progress-bar-fill bg-gradient-to-r from-indigo-400 to-purple-600"
+              />
+            </div>
+            <p className="mt-4 text-sm text-gray-500 font-medium italic">
+              Average task weight across your current workload.
+            </p>
+          </motion.div>
+        </div>
+
+        {/* Visual Charts Row */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+          <motion.div variants={cardVariants} className="analytics-glass-card p-8">
+            <h3 className="analytics-card-title mb-8">
+              <PieIcon className="text-purple-500" size={20} />
+              Status Breakdown
+            </h3>
+            {statusData.length > 0 ? (
+              <ResponsiveContainer width="100%" height={300}>
+                <PieChart>
+                  <Pie
+                    data={statusData}
+                    dataKey="value"
+                    nameKey="name"
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={60}
+                    outerRadius={100}
+                    paddingAngle={5}
+                  >
+                    {statusData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} stroke="none" />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    contentStyle={{
+                      borderRadius: '1rem',
+                      border: 'none',
+                      boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)',
+                      fontWeight: 'bold'
+                    }}
+                  />
+                  <Legend verticalAlign="bottom" height={36} />
+                </PieChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="h-[300px] flex items-center justify-center text-gray-400 italic">No task data to visualize</div>
+            )}
+          </motion.div>
+
+          <motion.div variants={cardVariants} className="analytics-glass-card p-8">
+            <h3 className="analytics-card-title mb-8">
+              <BarChart3 className="text-blue-500" size={20} />
+              Priority Spectrum
+            </h3>
+            {priorityData.length > 0 ? (
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={priorityData}>
+                  <XAxis
+                    dataKey="name"
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fill: '#94a3b8', fontSize: 12, fontWeight: 700 }}
+                  />
+                  <YAxis hide />
+                  <Tooltip cursor={{ fill: 'transparent' }} />
+                  <Bar dataKey="value" radius={[10, 10, 10, 10]} barSize={40}>
+                    {priorityData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={PRIORITY_COLORS[entry.name] || '#3b82f6'} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="h-[300px] flex items-center justify-center text-gray-400 italic">No priority data available</div>
+            )}
+          </motion.div>
+        </div>
+
+        {/* Workload Forecast */}
+        <motion.div variants={cardVariants} className="analytics-glass-card p-8 mb-8">
+          <div className="flex items-center justify-between mb-8">
+            <h3 className="analytics-card-title">
+              <Activity className="text-indigo-500" size={20} />
+              Energy & Workload Forecast
+            </h3>
+            {workload?.peak_day && (
+              <div className="px-3 py-1 bg-rose-50 dark:bg-rose-950/20 text-rose-600 dark:text-rose-400 text-[10px] font-black rounded-lg border border-rose-100 dark:border-rose-900/50 uppercase tracking-widest">
+                Critical Peak: {new Date(workload.peak_day).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+              </div>
+            )}
+          </div>
+
+          <div className="h-[300px] w-full">
+            {workloadData.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={workloadData}>
+                  <defs>
+                    <linearGradient id="colorHours" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.1} />
+                      <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0} />
+                    </linearGradient>
+                    <linearGradient id="colorTasks" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.1} />
+                      <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                  <XAxis
+                    dataKey="date"
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fill: '#94a3b8', fontSize: 11, fontWeight: 700 }}
+                  />
+                  <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 11 }} />
+                  <Tooltip />
+                  <Legend />
+                  <Area
+                    type="monotone"
+                    dataKey="hours"
+                    stroke="#8b5cf6"
+                    strokeWidth={4}
+                    fillOpacity={1}
+                    fill="url(#colorHours)"
+                    name="Estimated Hours"
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="tasks"
+                    stroke="#3b82f6"
+                    strokeWidth={4}
+                    fillOpacity={1}
+                    fill="url(#colorTasks)"
+                    name="Task Count"
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="h-full flex items-center justify-center text-gray-400 italic">Predictive data is still being processed...</div>
+            )}
+          </div>
+        </motion.div>
+
+        {/* Deadlines Section */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+          <motion.div variants={cardVariants} className="lg:col-span-2 analytics-glass-card p-8">
+            <h3 className="analytics-card-title mb-6">
+              <Calendar className="text-rose-500" size={20} />
+              Upcoming Critical Deadlines
+            </h3>
+            <div className="space-y-3">
+              {stats.upcoming_deadlines.length > 0 ? (
+                stats.upcoming_deadlines.map(task => (
+                  <div key={task.id} className="deadline-item group">
+                    <div className="flex items-center gap-4">
+                      <span className={`priority-tag ${task.priority === 'urgent' ? 'bg-rose-100 text-rose-600 border border-rose-200' :
+                          task.priority === 'high' ? 'bg-orange-100 text-orange-600 border border-orange-200' :
+                            'bg-slate-100 text-slate-600 border border-slate-200'
+                        }`}>
+                        {task.priority}
+                      </span>
+                      <span className="font-bold text-gray-700 dark:text-gray-200 leading-tight truncate max-w-[200px] md:max-w-md">
+                        {task.title}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-3 text-gray-400">
+                      <span className="text-[10px] font-black uppercase tracking-tighter">
+                        {new Date(task.deadline).toLocaleDateString()}
+                      </span>
+                      <ChevronRight size={16} className="text-indigo-300 group-hover:text-indigo-600 transition-colors" />
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="text-center py-8 text-gray-400 italic">Your schedule is currently clear of urgent deadlines.</div>
+              )}
+            </div>
+          </motion.div>
+
+          <motion.div variants={cardVariants} className="analytics-glass-card p-8 bg-gradient-to-br from-indigo-600/5 to-purple-600/5">
+            <h3 className="text-xl font-extrabold text-gray-900 dark:text-white mb-4">Strategic Insights</h3>
+            <div className="space-y-6">
+              <div className="flex gap-4">
+                <div className="w-10 h-10 rounded-xl bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center flex-shrink-0">
+                  <Zap size={20} className="text-amber-600" />
+                </div>
+                <div>
+                  <h4 className="text-sm font-black text-gray-700 dark:text-gray-200 uppercase tracking-widest mb-1">Peak Productivity</h4>
+                  <p className="text-xs text-gray-500 font-medium leading-relaxed">Your most effective hours are consistently observed between 9 AM and 11 AM.</p>
+                </div>
+              </div>
+
+              <div className="flex gap-4">
+                <div className="w-10 h-10 rounded-xl bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center flex-shrink-0">
+                  <Brain size={20} className="text-purple-600" />
+                </div>
+                <div>
+                  <h4 className="text-sm font-black text-gray-700 dark:text-gray-200 uppercase tracking-widest mb-1">Complexity Alert</h4>
+                  <p className="text-xs text-gray-500 font-medium leading-relaxed">High complexity tasks are taking 15% longer than average. Consider breaking them down.</p>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+
+        {/* Teacher Overview Link */}
+        {isTeacher && (
+          <motion.div variants={cardVariants} className="analytics-glass-card p-8 bg-gradient-to-r from-indigo-600/10 to-blue-600/10 border-indigo-200 dark:border-indigo-900">
+            <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+              <div>
+                <h2 className="text-2xl font-black text-indigo-900 dark:text-indigo-100 mb-2">Advanced Class Insights Available</h2>
+                <p className="text-indigo-700/70 dark:text-indigo-300/60 font-medium">Identify at-risk students and track group performance in real-time.</p>
+              </div>
+              <Link
+                to="/teacher/class"
+                className="px-8 py-3 bg-indigo-600 text-white rounded-2xl font-black hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-200 dark:shadow-none flex items-center gap-2"
+              >
+                Access Teacher Portal
+                <ChevronRight size={20} />
+              </Link>
+            </div>
+          </motion.div>
+        )}
+      </motion.div>
     </div>
   );
 }

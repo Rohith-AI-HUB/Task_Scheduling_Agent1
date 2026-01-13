@@ -1,0 +1,185 @@
+/* GroupsPage.css - Premium Glassmorphism Theme */
+
+:root {
+    --groups-primary: #8b5cf6;
+    --groups-secondary: #3b82f6;
+    --groups-bg: #f8fafc;
+    --groups-glass-bg: rgba(255, 255, 255, 0.7);
+    --groups-glass-border: 1px solid rgba(255, 255, 255, 0.4);
+    --groups-card-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+}
+
+.groups-container {
+    min-height: 100vh;
+    background:
+        radial-gradient(at 0% 0%, rgba(139, 92, 246, 0.1) 0px, transparent 50%),
+        radial-gradient(at 100% 0%, rgba(59, 130, 246, 0.1) 0px, transparent 50%),
+        radial-gradient(at 100% 100%, rgba(139, 92, 246, 0.05) 0px, transparent 50%),
+        radial-gradient(at 0% 100%, rgba(59, 130, 246, 0.05) 0px, transparent 50%),
+        var(--groups-bg);
+    padding: 2.5rem;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+/* Header Styles */
+.groups-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 3rem;
+}
+
+.groups-title h1 {
+    font-size: 2.75rem;
+    font-weight: 800;
+    letter-spacing: -0.025em;
+    background: linear-gradient(135deg, #8b5cf6 0%, #3b82f6 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.groups-title p {
+    color: #64748b;
+    font-weight: 500;
+    margin-top: 0.5rem;
+    font-style: italic;
+}
+
+/* Glass Card */
+.groups-glass-card {
+    background: var(--groups-glass-bg);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: var(--groups-glass-border);
+    border-radius: 1.5rem;
+    box-shadow: var(--groups-card-shadow);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.groups-glass-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 40px 0 rgba(31, 38, 135, 0.1);
+}
+
+/* Form Styles */
+.groups-form input,
+.groups-form select {
+    width: 100%;
+    background: rgba(255, 255, 255, 0.5);
+    border: 1px solid rgba(139, 92, 246, 0.2);
+    border-radius: 1rem;
+    padding: 1rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+
+.groups-form input:focus,
+.groups-form select:focus {
+    background: white;
+    border-color: var(--groups-primary);
+    box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.1);
+    outline: none;
+}
+
+.groups-form label {
+    display: block;
+    font-size: 0.75rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #64748b;
+    margin-bottom: 0.5rem;
+    padding-left: 0.5rem;
+}
+
+/* Member Items */
+.member-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    background: rgba(255, 255, 255, 0.3);
+    border: 1px solid rgba(139, 92, 246, 0.1);
+    border-radius: 1.25rem;
+    transition: all 0.2s;
+}
+
+.member-item:hover {
+    background: rgba(255, 255, 255, 0.6);
+    transform: scale(1.01);
+}
+
+.member-avatar {
+    width: 3rem;
+    height: 3rem;
+    border-radius: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 1.25rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+/* Success/Error Alerts */
+.groups-alert {
+    padding: 1.25rem 2rem;
+    border-radius: 1.25rem;
+    font-weight: 600;
+    margin-bottom: 2rem;
+    backdrop-filter: blur(8px);
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+}
+
+.groups-alert.success {
+    background: rgba(16, 185, 129, 0.1);
+    border: 1px solid rgba(16, 185, 129, 0.2);
+    color: #065f46;
+}
+
+.groups-alert.error {
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.2);
+    color: #991b1b;
+}
+
+/* Dark Mode Support */
+.dark .groups-container {
+    background:
+        radial-gradient(at 0% 0%, rgba(139, 92, 246, 0.1) 0px, transparent 50%),
+        radial-gradient(at 100% 0%, rgba(59, 130, 246, 0.1) 0px, transparent 50%),
+        #0f172a;
+    --groups-bg: #0f172a;
+    --groups-glass-bg: rgba(30, 41, 59, 0.7);
+    --groups-glass-border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.dark .groups-title p {
+    color: #94a3b8;
+}
+
+.dark .groups-form input,
+.dark .groups-form select {
+    background: rgba(15, 23, 42, 0.5);
+    color: white;
+    border-color: rgba(255, 255, 255, 0.05);
+}
+
+.dark .member-item {
+    background: rgba(30, 41, 59, 0.4);
+    border-color: rgba(255, 255, 255, 0.05);
+}
+
+.dark .member-item:hover {
+    background: rgba(30, 41, 59, 0.6);
+}
+
+.dark .member-avatar {
+    background: #1e293b;
+    color: var(--groups-primary);
+}
