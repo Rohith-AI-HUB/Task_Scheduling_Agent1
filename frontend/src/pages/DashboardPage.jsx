@@ -2,8 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   CheckSquare, Calendar, BarChart3, Users, Brain, Zap, BookOpen,
-  GraduationCap, Award, Activity, Send, Sparkles, Link as LinkIcon,
-  LogOut, MessageCircle, LayoutDashboard, Clock, Settings, Search
+  Sparkles, LogOut, MessageCircle, LayoutDashboard, Clock, Activity
 } from 'lucide-react';
 import NotificationBell from '../components/NotificationBell';
 import ActivityFeed from '../components/ActivityFeed';
@@ -105,43 +104,6 @@ export default function DashboardPage() {
     }
   ];
 
-  const teacherTools = [
-    {
-      title: 'Grading Assistant',
-      icon: Award,
-      path: '/teacher/grading',
-      color: 'bg-indigo-50 text-indigo-600',
-      desc: 'AI-powered grading analysis and feedback'
-    },
-    {
-      title: 'Class Analytics',
-      icon: Activity,
-      path: '/teacher/class',
-      color: 'bg-purple-50 text-purple-600',
-      desc: 'Student performance tracking'
-    },
-    {
-      title: 'Bulk Assignment',
-      icon: Send,
-      path: '/teacher/bulk-tasks',
-      color: 'bg-blue-50 text-blue-600',
-      desc: 'Assign tasks to multiple students'
-    },
-    {
-      title: 'Team Collaboration',
-      icon: MessageCircle,
-      path: '/chat',
-      color: 'bg-pink-50 text-pink-600',
-      desc: 'Connect with students and staff'
-    },
-    {
-      title: 'Group Management',
-      icon: Users,
-      path: '/groups',
-      color: 'bg-amber-50 text-amber-600',
-      desc: 'Manage student project teams'
-    }
-  ];
 
   return (
     <div className="dashboard-container">
@@ -246,26 +208,6 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {/* Teacher Tools Section (Conditionally Rendered) */}
-          {isTeacher && (
-            <div className="feature-section">
-              <div className="section-header">
-                <GraduationCap className="text-emerald-600" size={20} />
-                <h2>Classroom Management</h2>
-              </div>
-              <div className="feature-cards-grid">
-                {teacherTools.map((tool) => (
-                  <div key={tool.title} className="premium-card" onClick={() => navigate(tool.path)}>
-                    <div className={`card-icon-wrapper ${tool.color}`}>
-                      <tool.icon size={24} />
-                    </div>
-                    <h3>{tool.title}</h3>
-                    <p>{tool.desc}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
 
         </main>
 

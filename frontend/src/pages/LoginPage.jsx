@@ -29,7 +29,7 @@ export default function LoginPage() {
 
       // Role-based routing
       if (userData?.role === 'teacher') {
-        navigate('/teacher/class'); // Navigate to teacher dashboard
+        navigate('/teacher/dashboard'); // Navigate to teacher dashboard
       } else {
         navigate('/dashboard'); // Navigate to student dashboard
       }

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Brain, TrendingUp, Award, AlertCircle, CheckCircle, Clock, Target, Lightbulb, Heart, LogOut } from 'lucide-react';
+import { Brain, TrendingUp, Award, AlertCircle, CheckCircle, Clock, Target, Lightbulb, Heart, LogOut, LayoutDashboard } from 'lucide-react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import HomeButton from '../../components/HomeButton';
@@ -152,7 +152,14 @@ function GradingDashboard() {
               <p className="text-gray-600">Welcome back, {user?.full_name || 'Teacher'}! 👋</p>
             </div>
             <div className="flex items-center gap-4">
-              <HomeButton />
+              <button
+                onClick={() => navigate('/teacher/dashboard')}
+                className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors shadow-md hover:shadow-lg"
+                title="Teacher Dashboard"
+              >
+                <LayoutDashboard size={20} />
+                <span className="font-medium">Dashboard</span>
+              </button>
               <button
                 onClick={handleLogout}
                 className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors shadow-md hover:shadow-lg"

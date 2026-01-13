@@ -36,7 +36,7 @@ export default function RegisterPage() {
 
       // Role-based routing
       if (userData?.role === 'teacher') {
-        navigate('/teacher/class');
+        navigate('/teacher/dashboard');
       } else {
         navigate('/dashboard');
       }

@@ -432,7 +432,7 @@ export default function AnalyticsPage() {
                 <p className="text-indigo-700/70 dark:text-indigo-300/60 font-medium">Identify at-risk students and track group performance in real-time.</p>
               </div>
               <Link
-                to="/teacher/class"
+                to="/teacher/dashboard"
                 className="px-8 py-3 bg-indigo-600 text-white rounded-2xl font-black hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-200 dark:shadow-none flex items-center gap-2"
               >
                 Access Teacher Portal

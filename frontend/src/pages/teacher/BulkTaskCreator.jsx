@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Users, Plus, Trash2, Save, Send, FileText, CheckSquare, LogOut } from 'lucide-react';
+import { Users, Plus, Trash2, Save, Send, FileText, CheckSquare, LogOut, LayoutDashboard } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import HomeButton from '../../components/HomeButton';
 import { useAuthStore } from '../../store/useStore';
@@ -199,7 +199,14 @@ function BulkTaskCreator() {
               <p className="text-gray-600">Welcome back, {user?.full_name || 'Teacher'}! 👋</p>
             </div>
             <div className="flex items-center gap-4">
-              <HomeButton />
+              <button
+                onClick={() => navigate('/teacher/dashboard')}
+                className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors shadow-md hover:shadow-lg"
+                title="Teacher Dashboard"
+              >
+                <LayoutDashboard size={20} />
+                <span className="font-medium">Dashboard</span>
+              </button>
               <button
                 onClick={handleLogout}
                 className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors shadow-md hover:shadow-lg"

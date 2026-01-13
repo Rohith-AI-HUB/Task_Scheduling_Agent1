@@ -1,52 +1,56 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Users, Plus, Trash2, Send, ChevronRight,
-  Search, User, ClipboardList, Info, AlertCircle,
-  CheckCircle2, X
+  Users, Plus, Trash2, Send, Info, AlertCircle, CheckCircle,
+  LogOut, MessageCircle, LayoutDashboard, Calendar, CheckSquare, BookOpen,
+  Sparkles, BarChart3, Clock, GraduationCap, Activity
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
 import NotificationBell from '../components/NotificationBell';
-import HomeButton from '../components/HomeButton';
-import { useAuth } from '../store/useStore';
+import ActivityFeed from '../components/ActivityFeed';
+import { useAuth, useAuthStore } from '../store/useStore';
 import { groupService } from '../services/group.service';
 import { taskService } from '../services/task.service';
-import GradientButton from '../components/ui/GradientButton';
-import './GroupsPage.css';
+import { authService } from '../services/auth.service';
+import './DashboardPage.css';
 
 export default function GroupsPage() {
+  const navigate = useNavigate();
+  const { logout, user } = useAuthStore();
+  const { isTeacher, isStudent } = useAuth();
+
   const [groups, setGroups] = useState([]);
   const [tasks, setTasks] = useState([]);
-  const [showCreateForm, setShowCreateForm] = useState(false);
-  const [showAssignForm, setShowAssignForm] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  const [formData, setFormData] = useState({
-    name: '',
-    member_ids: []
-  });
-  const [assignData, setAssignData] = useState({
-    task_id: ''
-  });
 
-  const navigate = useNavigate();
-  const { isTeacher, isStudent } = useAuth();
+  // Form states
+  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [groupName, setGroupName] = useState('');
+  const [memberIds, setMemberIds] = useState('');
+  const [selectedGroupForTask, setSelectedGroupForTask] = useState(null);
+  const [selectedTaskId, setSelectedTaskId] = useState('');
+
+  const today = new Date().toLocaleDateString('en-US', {
+    weekday: 'long',
+    month: 'long',
+    day: 'numeric'
+  });
 
   useEffect(() => {
-    loadInitialData();
+    loadData();
   }, []);
 
-  const loadInitialData = async () => {
+  const loadData = async () => {
     try {
       setLoading(true);
       const [coordinatorGroups, memberGroups, tasksData] = await Promise.all([
         groupService.getGroups(),
         groupService.getMyGroups(),
-        taskService.getTasks()
+        isTeacher ? taskService.getTasks() : Promise.resolve([])
       ]);
 
-      // Combine both types of groups, avoiding duplicates (though they should be distinct)
+      // Combine groups (coordinator and member)
       const allGroups = [...coordinatorGroups];
       memberGroups.forEach(mg => {
         if (!allGroups.find(ag => ag.id === mg.id)) {
@@ -57,7 +61,8 @@ export default function GroupsPage() {
       setGroups(allGroups);
       setTasks(tasksData);
     } catch (err) {
-      setError('System connection interrupted. Please refresh.');
+      console.error('Error loading data:', err);
+      setError('Failed to load groups. Please refresh the page.');
     } finally {
       setLoading(false);
     }
@@ -65,309 +70,413 @@ export default function GroupsPage() {
 
   const handleCreateGroup = async (e) => {
     e.preventDefault();
+    if (!groupName.trim() || !memberIds.trim()) {
+      setError('Please fill in all fields');
+      setTimeout(() => setError(''), 3000);
+      return;
+    }
+
     try {
-      await groupService.createGroup(formData);
-      setSuccess('Project team assembled successfully!');
+      const ids = memberIds.split(',').map(id => id.trim()).filter(id => id.length > 0);
+      await groupService.createGroup({
+        name: groupName.trim(),
+        member_ids: ids
+      });
+
+      setSuccess('Group created successfully!');
       setShowCreateForm(false);
-      setFormData({ name: '', member_ids: [] });
-      await loadInitialData();
-      setTimeout(() => setSuccess(''), 4000);
+      setGroupName('');
+      setMemberIds('');
+      await loadData();
+
+      setTimeout(() => setSuccess(''), 3000);
     } catch (err) {
-      setError(err.response?.data?.detail || 'Operation failed. Check member IDs.');
+      console.error('Error creating group:', err);
+      setError(err.response?.data?.detail || 'Failed to create group. Check member IDs.');
       setTimeout(() => setError(''), 4000);
     }
   };
 
   const handleDeleteGroup = async (groupId) => {
-    if (!confirm('Dissolve this group? This action cannot be undone.')) return;
+    if (!confirm('Are you sure you want to delete this group?')) return;
+
     try {
       await groupService.deleteGroup(groupId);
-      setSuccess('Group dissolved.');
-      await loadInitialData();
+      setSuccess('Group deleted successfully!');
+      await loadData();
       setTimeout(() => setSuccess(''), 3000);
     } catch (err) {
-      setError('Could not delete group.');
+      console.error('Error deleting group:', err);
+      setError('Failed to delete group.');
+      setTimeout(() => setError(''), 3000);
     }
   };
 
   const handleAssignTask = async (groupId) => {
+    if (!selectedTaskId) {
+      setError('Please select a task');
+      setTimeout(() => setError(''), 3000);
+      return;
+    }
+
     try {
-      await groupService.assignTask(groupId, assignData.task_id);
-      setSuccess('Task broadcasted to all group members!');
-      setShowAssignForm(null);
-      setAssignData({ task_id: '' });
-      setTimeout(() => setSuccess(''), 4000);
+      await groupService.assignTask(groupId, selectedTaskId);
+      setSuccess('Task assigned to all group members!');
+      setSelectedGroupForTask(null);
+      setSelectedTaskId('');
+      setTimeout(() => setSuccess(''), 3000);
     } catch (err) {
-      setError('Failed to broadcast task.');
+      console.error('Error assigning task:', err);
+      setError('Failed to assign task to group.');
+      setTimeout(() => setError(''), 3000);
     }
   };
 
-  const handleMemberIdChange = (e) => {
-    const value = e.target.value;
-    const ids = value.split(',').map(id => id.trim()).filter(id => id.length > 0);
-    setFormData({ ...formData, member_ids: ids });
-  };
-
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: { staggerChildren: 0.1 }
+  const handleLogout = async () => {
+    if (confirm('Are you sure you want to logout?')) {
+      try {
+        await authService.logout();
+        logout();
+        navigate('/login', { replace: true });
+        window.location.reload();
+      } catch (error) {
+        logout();
+        navigate('/login', { replace: true });
+      }
     }
   };
 
-  const itemVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: { opacity: 1, y: 0 }
+  // Navigation items based on role
+  const getNavItems = () => {
+    if (isTeacher) {
+      return [
+        { title: 'Dashboard', icon: LayoutDashboard, path: '/teacher/dashboard' },
+        { title: 'Grading', icon: CheckCircle, path: '/teacher/grading' },
+        { title: 'Bulk Tasks', icon: Send, path: '/teacher/bulk-tasks' },
+        { title: 'My Tasks', icon: CheckSquare, path: '/tasks' },
+        { title: 'Schedule', icon: Calendar, path: '/calendar-settings' },
+        { title: 'Chat', icon: MessageCircle, path: '/chat' },
+        { title: 'Group Management', icon: Users, path: '/groups', active: true },
+      ];
+    } else {
+      return [
+        { title: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
+        { title: 'My Tasks', icon: CheckSquare, path: '/tasks' },
+        { title: 'Schedule', icon: Calendar, path: '/calendar-settings' },
+        { title: 'Study Plan', icon: Sparkles, path: '/study-planner' },
+        { title: 'Resources', icon: BookOpen, path: '/resources' },
+        { title: 'Analytics', icon: BarChart3, path: '/analytics' },
+        { title: 'Chat', icon: MessageCircle, path: '/chat' },
+        { title: 'Communities', icon: Users, path: '/groups', active: true },
+      ];
+    }
   };
+
+  const navItems = getNavItems();
 
   if (loading) {
     return (
-      <div className="groups-container flex items-center justify-center">
-        <motion.div
-          animate={{ scale: [1, 1.1, 1], opacity: [0.5, 1, 0.5] }}
-          transition={{ duration: 2, repeat: Infinity }}
-          className="text-center"
-        >
-          <div className="w-16 h-16 bg-indigo-500 rounded-2xl mx-auto mb-4 flex items-center justify-center">
-            <Users className="text-white" size={32} />
-          </div>
-          <p className="font-bold text-gray-500 italic">Syncing group data...</p>
-        </motion.div>
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-purple-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading groups...</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="groups-container">
-      <motion.div
-        className="max-w-6xl mx-auto"
-        initial="hidden"
-        animate="visible"
-        variants={containerVariants}
-      >
-        {/* Header Section */}
-        <div className="groups-header">
-          <div className="groups-title">
-            <h1 className="flex items-center gap-4">
-              <Users className="w-12 h-12 text-indigo-600 dark:text-indigo-400" />
-              Project Coordinator
-            </h1>
-            <p>Orchestrate teams and broadcast collective assignments</p>
-          </div>
-          <div className="flex items-center gap-4">
-            <NotificationBell />
-            <HomeButton />
-          </div>
-        </div>
+    <div className="dashboard-container">
+      <div className="dashboard-grid">
 
-        {/* Messaging Area */}
-        <AnimatePresence>
+        {/* Left Sidebar Navigation */}
+        <aside className="dashboard-nav">
+          <div className="flex items-center gap-3 px-4 mb-8">
+            <div className={`w-8 h-8 ${isTeacher ? 'bg-purple-600' : 'bg-indigo-600'} rounded-lg flex items-center justify-center text-white font-bold`}>
+              {isTeacher ? <GraduationCap size={20} /> : 'TS'}
+            </div>
+            <span className="font-bold text-xl text-gray-800">
+              {isTeacher ? 'Teacher Portal' : 'TaskFlow'}
+            </span>
+          </div>
+
+          <div className="nav-section">
+            <div className="nav-section-title">Main Menu</div>
+            {navItems.map((item) => (
+              <div
+                key={item.title}
+                className={`nav-item ${item.active ? (isTeacher ? 'bg-purple-50 text-purple-600' : 'bg-indigo-50 text-indigo-600') : ''}`}
+                onClick={() => !item.active && navigate(item.path)}
+              >
+                <item.icon size={20} />
+                <span>{item.title}</span>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-auto pt-8 border-t border-gray-100">
+            <button onClick={handleLogout} className="logout-btn w-full">
+              <LogOut size={18} />
+              <span>Sign Out</span>
+            </button>
+          </div>
+        </aside>
+
+        {/* Main Content */}
+        <main className="dashboard-main">
+          {/* Header */}
+          <header className="dashboard-header">
+            <div className="welcome-text">
+              <h1>
+                {isTeacher ? 'Group Management' : 'My Communities'}
+              </h1>
+              <p>{today} • Manage and collaborate with teams</p>
+            </div>
+            <div className="header-actions">
+              <NotificationBell />
+            </div>
+          </header>
+
+          {/* Success/Error Messages */}
           {success && (
-            <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: 'auto', opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              className="groups-alert success"
-            >
-              <CheckCircle2 size={24} />
+            <div className="bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-lg mb-6 flex items-center gap-2">
+              <CheckCircle size={20} />
               {success}
-            </motion.div>
+            </div>
           )}
           {error && (
-            <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: 'auto', opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              className="groups-alert error"
-            >
-              <AlertCircle size={24} />
+            <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg mb-6 flex items-center gap-2">
+              <AlertCircle size={20} />
               {error}
-            </motion.div>
+            </div>
           )}
-        </AnimatePresence>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          {/* Left Column: Management & Stats */}
-          <div className="lg:col-span-4 space-y-6">
-            {(isTeacher || isStudent) && (
-              <motion.div variants={itemVariants} className="groups-glass-card p-8">
-                <h3 className="text-xl font-extrabold text-gray-900 dark:text-white mb-6">Create New Squad</h3>
-                <form onSubmit={handleCreateGroup} className="groups-form space-y-5">
+          {/* Create Group Button */}
+          <div className="mb-8">
+            <button
+              onClick={() => setShowCreateForm(!showCreateForm)}
+              className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl font-semibold hover:shadow-lg transition-all"
+            >
+              <Plus size={20} />
+              Create New Group
+            </button>
+
+            {/* Create Group Form */}
+            {showCreateForm && (
+              <div className="mt-6 bg-white rounded-xl shadow-lg p-6 border border-purple-100">
+                <h3 className="text-xl font-bold mb-4 text-gray-800">Create Group</h3>
+                <form onSubmit={handleCreateGroup} className="space-y-4">
                   <div>
-                    <label>Team Identity</label>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Group Name
+                    </label>
                     <input
                       type="text"
-                      value={formData.name}
-                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                      placeholder="e.g. Senior Project Alpha"
+                      value={groupName}
+                      onChange={(e) => setGroupName(e.target.value)}
+                      placeholder="e.g., Senior Project Team"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none"
                       required
                     />
                   </div>
                   <div>
-                    <label>Member Manifest (USNs)</label>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Member USNs (comma-separated)
+                    </label>
                     <textarea
-                      onChange={handleMemberIdChange}
+                      value={memberIds}
+                      onChange={(e) => setMemberIds(e.target.value)}
+                      placeholder="e.g., 1MS22SCS001, 1MS22SCS002, 1MS22SCS003"
                       rows="3"
-                      className="w-full bg-white/50 dark:bg-slate-900/50 border border-indigo-100 dark:border-white/5 rounded-2xl p-4 focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-sm"
-                      placeholder="Enter USNs separated by commas"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none"
                       required
                     />
-                    <p className="mt-2 text-[10px] font-black uppercase text-gray-400 tracking-wider">
-                      Separated by commas (e.g. 1MS22SCS001, 1MS22SCS002)
+                    <p className="text-xs text-gray-500 mt-1">
+                      Enter USNs separated by commas
                     </p>
                   </div>
-                  <GradientButton variant="purple" type="submit" className="w-full py-4 rounded-2xl font-black">
-                    Deploy Team
-                  </GradientButton>
+                  <div className="flex gap-3">
+                    <button
+                      type="submit"
+                      className="flex-1 px-6 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-lg font-semibold hover:shadow-lg transition-all"
+                    >
+                      Create Group
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowCreateForm(false);
+                        setGroupName('');
+                        setMemberIds('');
+                      }}
+                      className="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg font-semibold hover:bg-gray-300 transition-all"
+                    >
+                      Cancel
+                    </button>
+                  </div>
                 </form>
-              </motion.div>
-            )}
-
-            <motion.div variants={itemVariants} className="groups-glass-card p-8 bg-indigo-600 text-white border-none shadow-indigo-100 dark:shadow-none">
-              <div className="flex items-center gap-4 mb-6">
-                <div className="p-3 bg-white/20 rounded-xl">
-                  <Info size={24} />
-                </div>
-                <h3 className="text-xl font-bold">Coordinator Guide</h3>
               </div>
-              <ul className="space-y-4 text-indigo-50">
-                <li className="flex gap-3 text-sm font-medium">
-                  <div className="w-1.5 h-1.5 rounded-full bg-white mt-2 flex-shrink-0" />
-                  Broadcast assignments to entire groups instantly.
-                </li>
-                <li className="flex gap-3 text-sm font-medium">
-                  <div className="w-1.5 h-1.5 rounded-full bg-white mt-2 flex-shrink-0" />
-                  Members get automated notifications for new group tasks.
-                </li>
-                <li className="flex gap-3 text-sm font-medium">
-                  <div className="w-1.5 h-1.5 rounded-full bg-white mt-2 flex-shrink-0" />
-                  View real-time participation in the Class Dashboard.
-                </li>
-              </ul>
-            </motion.div>
+            )}
           </div>
 
-          {/* Right Column: Groups Grid */}
-          <div className="lg:col-span-8 space-y-6">
+          {/* Groups List */}
+          <div>
+            <h2 className="text-2xl font-bold text-gray-800 mb-6">
+              {isTeacher ? 'All Groups' : 'My Groups'} ({groups.length})
+            </h2>
+
             {groups.length === 0 ? (
-              <motion.div variants={itemVariants} className="groups-glass-card p-16 text-center">
-                <div className="w-24 h-24 bg-slate-50 dark:bg-white/5 rounded-[2rem] flex items-center justify-center mx-auto mb-8">
-                  <Users size={48} className="text-slate-300 dark:text-white/20" />
-                </div>
-                <h3 className="text-2xl font-black text-gray-900 dark:text-white mb-2">No active groups</h3>
-                <p className="text-gray-500 font-medium italic">Begin by forming your first collaborative unit.</p>
-              </motion.div>
+              <div className="bg-white rounded-xl shadow-lg p-12 text-center border border-gray-100">
+                <Users className="mx-auto mb-4 text-gray-300" size={64} />
+                <h3 className="text-xl font-bold text-gray-800 mb-2">No groups yet</h3>
+                <p className="text-gray-600">Create your first group to get started!</p>
+              </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {groups.map((group, idx) => (
-                  <motion.div
+                {groups.map((group) => (
+                  <div
                     key={group.id}
-                    variants={itemVariants}
-                    className="groups-glass-card p-6 flex flex-col h-full"
+                    className="bg-white rounded-xl shadow-lg p-6 border border-purple-100 hover:shadow-xl transition-all"
                   >
-                    <div className="flex justify-between items-start mb-6">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <h3 className="text-xl font-extrabold text-gray-900 dark:text-white truncate">
-                            {group.name}
-                          </h3>
-                        </div>
-                        <span className="text-[10px] font-black text-indigo-500 uppercase tracking-widest bg-indigo-50 dark:bg-indigo-950/30 px-2 py-0.5 rounded">
-                          {new Date(group.created_at).toLocaleDateString()}
-                        </span>
+                    {/* Group Header */}
+                    <div className="flex justify-between items-start mb-4">
+                      <div>
+                        <h3 className="text-xl font-bold text-gray-800 mb-1">
+                          {group.name}
+                        </h3>
+                        <p className="text-sm text-gray-500">
+                          Created {new Date(group.created_at).toLocaleDateString()}
+                        </p>
                       </div>
                       {isTeacher && (
                         <button
                           onClick={() => handleDeleteGroup(group.id)}
-                          className="p-2 text-rose-300 hover:text-rose-500 transition-colors"
+                          className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                          title="Delete Group"
                         >
                           <Trash2 size={18} />
                         </button>
                       )}
                     </div>
 
-                    <div className="flex-1 space-y-3 mb-6">
-                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">
-                        Active Members ({group.member_details?.length || 0})
+                    {/* Members */}
+                    <div className="mb-4">
+                      <p className="text-sm font-semibold text-gray-600 mb-3">
+                        Members ({group.member_details?.length || 0})
                       </p>
-                      <div className="flex flex-wrap gap-2">
-                        {group.member_details?.map((member, mIdx) => (
+                      <div className="space-y-2">
+                        {group.member_details?.slice(0, 3).map((member, idx) => (
                           <div
                             key={member.id}
-                            className="member-item p-2 pr-4"
-                            title={member.email}
+                            className="flex items-center gap-3 p-2 bg-purple-50 rounded-lg"
                           >
-                            <div className={`member-avatar w-8 h-8 ${mIdx % 2 === 0 ? 'bg-indigo-100 text-indigo-600' : 'bg-purple-100 text-purple-600'}`}>
+                            <div className="w-10 h-10 bg-purple-200 rounded-lg flex items-center justify-center font-bold text-purple-700">
                               {member.full_name.charAt(0)}
                             </div>
-                            <div className="min-w-0">
-                              <p className="text-xs font-bold text-gray-700 dark:text-gray-200 truncate max-w-[80px]">
-                                {member.full_name.split(' ')[0]}
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-semibold text-gray-800 truncate">
+                                {member.full_name}
                               </p>
-                              {member.usn && <p className="text-[8px] font-black text-indigo-400 uppercase tracking-widest">{member.usn}</p>}
+                              {member.usn && (
+                                <p className="text-xs text-gray-500">{member.usn}</p>
+                              )}
                             </div>
                           </div>
                         ))}
+                        {group.member_details?.length > 3 && (
+                          <p className="text-xs text-gray-500 text-center py-1">
+                            +{group.member_details.length - 3} more members
+                          </p>
+                        )}
                       </div>
                     </div>
 
+                    {/* Task Assignment (Teacher Only) */}
                     {isTeacher && (
-                      <div className="mt-auto pt-6 border-t border-gray-100 dark:border-white/5">
-                        {showAssignForm === group.id ? (
-                          <motion.div
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            className="space-y-4"
-                          >
-                            <div className="groups-form">
-                              <label>Select Mission</label>
-                              <select
-                                value={assignData.task_id}
-                                onChange={(e) => setAssignData({ task_id: e.target.value })}
-                              >
-                                <option value="">Choose task...</option>
-                                {tasks.map(task => (
-                                  <option key={task.id} value={task.id}>{task.title}</option>
-                                ))}
-                              </select>
-                            </div>
+                      <div className="pt-4 border-t border-gray-200">
+                        {selectedGroupForTask === group.id ? (
+                          <div className="space-y-3">
+                            <select
+                              value={selectedTaskId}
+                              onChange={(e) => setSelectedTaskId(e.target.value)}
+                              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none"
+                            >
+                              <option value="">Select a task...</option>
+                              {tasks.map(task => (
+                                <option key={task.id} value={task.id}>
+                                  {task.title}
+                                </option>
+                              ))}
+                            </select>
                             <div className="flex gap-2">
-                              <GradientButton
-                                variant="green"
-                                className="flex-1 py-3 rounded-xl font-bold text-sm"
-                                onClick={() => handleAssignTask(group.id)}
-                                disabled={!assignData.task_id}
-                              >
-                                Broadcast
-                              </GradientButton>
                               <button
-                                onClick={() => setShowAssignForm(null)}
-                                className="w-12 h-12 flex items-center justify-center bg-gray-100 dark:bg-white/5 rounded-xl text-gray-400 hover:bg-gray-200 transition-colors"
+                                onClick={() => handleAssignTask(group.id)}
+                                disabled={!selectedTaskId}
+                                className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-all"
                               >
-                                <X size={20} />
+                                Assign Task
+                              </button>
+                              <button
+                                onClick={() => {
+                                  setSelectedGroupForTask(null);
+                                  setSelectedTaskId('');
+                                }}
+                                className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg font-semibold hover:bg-gray-300 transition-all"
+                              >
+                                Cancel
                               </button>
                             </div>
-                          </motion.div>
+                          </div>
                         ) : (
-                          <GradientButton
-                            variant="blue"
-                            className="w-full py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2"
-                            onClick={() => setShowAssignForm(group.id)}
+                          <button
+                            onClick={() => setSelectedGroupForTask(group.id)}
+                            className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg font-semibold hover:shadow-lg transition-all"
                           >
-                            <ClipboardList size={18} />
-                            Deploy Task
-                          </GradientButton>
+                            <Send size={18} />
+                            Assign Task to Group
+                          </button>
                         )}
                       </div>
                     )}
-                  </motion.div>
+                  </div>
                 ))}
               </div>
             )}
           </div>
-        </div>
-      </motion.div>
+
+          {/* Info Box for Teachers */}
+          {isTeacher && (
+            <div className="mt-8 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl shadow-lg p-6">
+              <div className="flex items-start gap-4">
+                <div className="p-3 bg-white/20 rounded-lg">
+                  <Info size={24} />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold mb-2">Teacher Guide</h3>
+                  <ul className="space-y-2 text-sm">
+                    <li>• Create groups and add students using their USNs</li>
+                    <li>• Assign tasks to entire groups at once</li>
+                    <li>• All group members receive notifications automatically</li>
+                    <li>• Monitor group progress in Class Analytics</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          )}
+        </main>
+
+        {/* Right Sidebar - Activity Feed */}
+        <aside className="dashboard-right-sidebar">
+          <div className="activity-widget">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="font-bold text-gray-800">Recent Activity</h3>
+              <div className="text-xs text-purple-600 font-medium cursor-pointer">View All</div>
+            </div>
+            <ActivityFeed />
+          </div>
+        </aside>
+
+      </div>
     </div>
   );
 }

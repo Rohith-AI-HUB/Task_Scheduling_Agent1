@@ -14,7 +14,7 @@ export default function HomeButton() {
   const handleHomeClick = () => {
     // Navigate to appropriate dashboard based on role
     if (user?.role === 'teacher') {
-      navigate('/teacher/class');
+      navigate('/teacher/dashboard');
     } else {
       navigate('/dashboard');
     }

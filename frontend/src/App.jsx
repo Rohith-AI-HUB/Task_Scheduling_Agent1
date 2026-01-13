@@ -22,8 +22,8 @@ import FocusModePage from './pages/FocusModePage';
 import ResourceLibraryPage from './pages/ResourceLibraryPage';
 
 // Week 2 Teacher Feature Pages
+import TeacherDashboardPage from './pages/teacher/TeacherDashboardPage';
 import GradingDashboard from './pages/teacher/GradingDashboard';
-import ClassDashboard from './pages/teacher/ClassDashboard';
 import BulkTaskCreator from './pages/teacher/BulkTaskCreator';
 
 // Week 3 Smart Study Planner
@@ -62,8 +62,8 @@ function AppContent() {
         <Route path="/resources" element={<RoleProtectedRoute allowedRoles={['student']}><ResourceLibraryPage /></RoleProtectedRoute>} />
 
         {/* Week 2 Teacher Feature Routes - Teacher Only */}
+        <Route path="/teacher/dashboard" element={<RoleProtectedRoute allowedRoles={['teacher']}><TeacherDashboardPage /></RoleProtectedRoute>} />
         <Route path="/teacher/grading" element={<RoleProtectedRoute allowedRoles={['teacher']}><GradingDashboard /></RoleProtectedRoute>} />
-        <Route path="/teacher/class" element={<RoleProtectedRoute allowedRoles={['teacher']}><ClassDashboard /></RoleProtectedRoute>} />
         <Route path="/teacher/bulk-tasks" element={<RoleProtectedRoute allowedRoles={['teacher']}><BulkTaskCreator /></RoleProtectedRoute>} />
 
         {/* Week 3 Smart Study Planner - Student Only */}
