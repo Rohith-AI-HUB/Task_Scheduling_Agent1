@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import {
-  CheckSquare, Calendar, BarChart3, Users, Brain, Award, Activity, Send,
-  LogOut, MessageCircle, LayoutDashboard, Clock, Settings, GraduationCap,
-  BookOpen, FileText, TrendingUp
+  CheckSquare, Calendar, Users, Award, Activity, Send,
+  LogOut, MessageCircle, LayoutDashboard, Clock, GraduationCap,
+  FileText, TrendingUp
 } from 'lucide-react';
 import NotificationBell from '../../components/NotificationBell';
 import ActivityFeed from '../../components/ActivityFeed';
@@ -19,7 +20,12 @@ export default function TeacherDashboardPage() {
     totalStudents: 0,
     completionRate: 0,
     atRiskCount: 0,
-    pendingGrades: 0
+    pendingGrades: 0,
+    pendingExtensionRequests: 0
+  });
+
+  const getAuthHeader = () => ({
+    headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
   });
 
   const today = new Date().toLocaleDateString('en-US', {
@@ -31,14 +37,28 @@ export default function TeacherDashboardPage() {
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
-        const analytics = await classService.getClassAnalytics();
+        const [analyticsResult, pendingExtensionsResult] = await Promise.allSettled([
+          classService.getClassAnalytics(),
+          axios.get('http://localhost:8000/api/extensions/pending', getAuthHeader())
+        ]);
+
+        const analytics =
+          analyticsResult.status === 'fulfilled' ? analyticsResult.value : null;
+        const pendingExtensionRequests =
+          pendingExtensionsResult.status === 'fulfilled'
+            ? (pendingExtensionsResult.value?.data || []).length
+            : 0;
+
         if (analytics && analytics.class_metrics) {
           setStats({
             totalStudents: analytics.class_metrics.total_students || 0,
             completionRate: Math.round(analytics.class_metrics.class_completion_rate || 0),
             atRiskCount: analytics.class_metrics.at_risk_count || 0,
-            pendingGrades: analytics.class_metrics.pending_grades || 0
+            pendingGrades: analytics.class_metrics.pending_grades || 0,
+            pendingExtensionRequests
           });
+        } else {
+          setStats((prev) => ({ ...prev, pendingExtensionRequests }));
         }
       } catch (error) {
         console.error('Error fetching dashboard stats:', error);
@@ -68,51 +88,10 @@ export default function TeacherDashboardPage() {
     { title: 'Grading', icon: Award, path: '/teacher/grading' },
     { title: 'Bulk Tasks', icon: Send, path: '/teacher/bulk-tasks' },
     { title: 'My Tasks', icon: CheckSquare, path: '/tasks' },
+    { title: 'Extensions', icon: Clock, path: '/extensions' },
     { title: 'Schedule', icon: Calendar, path: '/calendar-settings' },
     { title: 'Chat', icon: MessageCircle, path: '/chat' },
     { title: 'Group Management', icon: Users, path: '/groups' },
-  ];
-
-  // Teacher Feature Cards
-  const classroomTools = [
-    {
-      title: 'Grading Assistant',
-      icon: Award,
-      path: '/teacher/grading',
-      color: 'bg-indigo-100 text-indigo-600',
-      desc: 'AI-powered grading analysis and feedback'
-    },
-    {
-      title: 'Bulk Assignment',
-      icon: Send,
-      path: '/teacher/bulk-tasks',
-      color: 'bg-blue-100 text-blue-600',
-      desc: 'Assign tasks to multiple students at once'
-    }
-  ];
-
-  const collaborationTools = [
-    {
-      title: 'Team Chat',
-      icon: MessageCircle,
-      path: '/chat',
-      color: 'bg-pink-100 text-pink-600',
-      desc: 'Connect with students and colleagues'
-    },
-    {
-      title: 'Group Management',
-      icon: Users,
-      path: '/groups',
-      color: 'bg-amber-100 text-amber-600',
-      desc: 'Create and manage student project teams'
-    },
-    {
-      title: 'Extensions',
-      icon: Clock,
-      path: '/extensions',
-      color: 'bg-orange-100 text-orange-600',
-      desc: 'Review deadline extension requests'
-    }
   ];
 
   return (
@@ -204,43 +183,14 @@ export default function TeacherDashboardPage() {
               <div className="stat-value">{stats.pendingGrades}</div>
               <div className="stat-label">Pending Grades</div>
             </div>
-          </div>
-
-          {/* Classroom Management Section */}
-          <div className="feature-section">
-            <div className="section-header">
-              <GraduationCap className="text-purple-600" size={20} />
-              <h2>Classroom Management</h2>
-            </div>
-            <div className="feature-cards-grid">
-              {classroomTools.map((tool) => (
-                <div key={tool.title} className="premium-card" onClick={() => navigate(tool.path)}>
-                  <div className={`card-icon-wrapper ${tool.color}`}>
-                    <tool.icon size={24} />
-                  </div>
-                  <h3>{tool.title}</h3>
-                  <p>{tool.desc}</p>
+            <div className="stat-card">
+              <div className="stat-header">
+                <div className="stat-icon bg-indigo-100 text-indigo-600">
+                  <Clock size={20} />
                 </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Collaboration & Communication Section */}
-          <div className="feature-section">
-            <div className="section-header">
-              <MessageCircle className="text-pink-600" size={20} />
-              <h2>Collaboration & Communication</h2>
-            </div>
-            <div className="feature-cards-grid">
-              {collaborationTools.map((tool) => (
-                <div key={tool.title} className="premium-card" onClick={() => navigate(tool.path)}>
-                  <div className={`card-icon-wrapper ${tool.color}`}>
-                    <tool.icon size={24} />
-                  </div>
-                  <h3>{tool.title}</h3>
-                  <p>{tool.desc}</p>
-                </div>
-              ))}
+              </div>
+              <div className="stat-value">{stats.pendingExtensionRequests}</div>
+              <div className="stat-label">Extension Requests</div>
             </div>
           </div>
 

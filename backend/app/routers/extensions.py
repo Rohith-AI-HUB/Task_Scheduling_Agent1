@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
-from app.db_config import extension_requests_collection, tasks_collection, notifications_collection
+from app.db_config import extension_requests_collection, tasks_collection, notifications_collection, users_collection
 from app.services.ai_extension_service import analyze_extension_request
 from app.routers.tasks import get_current_user_id
 from app.models.schemas import ExtensionRequestCreate
@@ -158,6 +158,11 @@ async def get_pending_extensions(user_id: str = Depends(get_current_user_id)):
             if task:
                 req["task_title"] = task.get("title", "Unknown Task")
                 req["task_description"] = task.get("description", "")
+
+            student = users_collection.find_one({"_id": ObjectId(req.get("user_id"))}) if req.get("user_id") else None
+            if student:
+                req["student_name"] = student.get("full_name") or student.get("name") or "Unknown"
+                req["student_email"] = student.get("email") or ""
 
             # Convert datetime to ISO strings
             if "original_deadline" in req and isinstance(req["original_deadline"], datetime):

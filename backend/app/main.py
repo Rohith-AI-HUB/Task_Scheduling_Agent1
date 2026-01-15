@@ -35,7 +35,7 @@ fastapi_app.include_router(resources.router, prefix="/api")
 
 # Week 2 Teacher Feature routers
 fastapi_app.include_router(grading.router, prefix="/api")
-fastapi_app.include_router(class_analytics.router, prefix="/api")
+fastapi_app.include_router(class_analytics.router)
 fastapi_app.include_router(bulk_tasks.router)  # Already has /api/ in its prefix
 
 # Week 3 Smart Study Planner

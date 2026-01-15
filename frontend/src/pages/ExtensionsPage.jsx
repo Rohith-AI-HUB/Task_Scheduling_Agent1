@@ -1,19 +1,22 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Clock, AlertCircle, CheckCircle, XCircle, Calendar, FileText } from 'lucide-react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import NotificationBell from '../components/NotificationBell';
 import HomeButton from '../components/HomeButton';
+import { useAuthStore } from '../store/useStore';
 
 export default function ExtensionsPage() {
-  const navigate = useNavigate();
   const location = useLocation();
+  const { user } = useAuthStore();
+  const isTeacher = user?.role?.toLowerCase() === 'teacher';
   const [requests, setRequests] = useState([]);
   const [tasks, setTasks] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
+  const [reviewState, setReviewState] = useState({});
 
   const [formData, setFormData] = useState({
     task_id: '',
@@ -23,9 +26,10 @@ export default function ExtensionsPage() {
   });
 
   useEffect(() => {
+    if (!user?.role) return;
     loadRequests();
-    loadTasks();
-  }, []);
+    if (user.role?.toLowerCase() !== 'teacher') loadTasks();
+  }, [user?.role]);
 
   // Handle pre-selected task from navigation (e.g., from TaskDetailsSidebar)
   useEffect(() => {
@@ -47,7 +51,10 @@ export default function ExtensionsPage() {
 
   const loadRequests = async () => {
     try {
-      const res = await axios.get('http://localhost:8000/api/extensions', getAuthHeader());
+      const url = isTeacher
+        ? 'http://localhost:8000/api/extensions/pending'
+        : 'http://localhost:8000/api/extensions';
+      const res = await axios.get(url, getAuthHeader());
       setRequests(res.data);
     } catch (err) {
       console.error('Failed to load extension requests:', err);
@@ -255,6 +262,36 @@ export default function ExtensionsPage() {
     }
   };
 
+  const handleReview = async (requestId, status) => {
+    setLoading(true);
+    setError('');
+    setSuccessMessage('');
+    try {
+      const comment = (reviewState[requestId]?.comment || '').trim();
+      await axios.put(
+        `http://localhost:8000/api/extensions/${requestId}/review`,
+        {},
+        {
+          ...getAuthHeader(),
+          params: { status, comment }
+        }
+      );
+      setReviewState((prev) => {
+        const next = { ...prev };
+        delete next[requestId];
+        return next;
+      });
+      setSuccessMessage(`Request ${status} successfully`);
+      await loadRequests();
+      setTimeout(() => setSuccessMessage(''), 3000);
+    } catch (err) {
+      const errorMessage = parseErrorMessage(err);
+      setError(errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-100 p-6">
       <div className="max-w-7xl mx-auto">
@@ -268,17 +305,19 @@ export default function ExtensionsPage() {
           <div className="flex items-center gap-4">
             <NotificationBell />
             <HomeButton />
-            <button
-              onClick={() => {
-                setShowForm(!showForm);
-                setError('');
-                setSuccessMessage('');
-              }}
-              className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg flex items-center gap-2 transition-colors"
-            >
-              <Calendar size={20} />
-              {showForm ? 'Cancel' : 'Request Extension'}
-            </button>
+            {!isTeacher && (
+              <button
+                onClick={() => {
+                  setShowForm(!showForm);
+                  setError('');
+                  setSuccessMessage('');
+                }}
+                className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg flex items-center gap-2 transition-colors"
+              >
+                <Calendar size={20} />
+                {showForm ? 'Cancel' : 'Request Extension'}
+              </button>
+            )}
           </div>
         </div>
 
@@ -314,7 +353,7 @@ export default function ExtensionsPage() {
           </div>
         )}
 
-        {showForm && (
+        {!isTeacher && showForm && (
           <div className="bg-white p-6 rounded-lg shadow-md mb-6 border border-gray-200">
             <h2 className="text-xl font-semibold mb-4">New Extension Request</h2>
             <form onSubmit={handleSubmit}>
@@ -409,7 +448,11 @@ export default function ExtensionsPage() {
             <div className="bg-white p-12 rounded-lg shadow text-center">
               <FileText size={48} className="mx-auto text-gray-400 mb-4" />
               <h3 className="text-xl font-semibold text-gray-600 mb-2">No Extension Requests</h3>
-              <p className="text-gray-500">You haven't submitted any extension requests yet.</p>
+              <p className="text-gray-500">
+                {isTeacher
+                  ? 'No pending extension requests to review.'
+                  : "You haven't submitted any extension requests yet."}
+              </p>
             </div>
           ) : (
             requests.map(req => (
@@ -417,9 +460,16 @@ export default function ExtensionsPage() {
                 <div className="flex justify-between items-start mb-4">
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2">
-                      <h3 className="font-bold text-lg">Task ID: {req.task_id}</h3>
+                      <h3 className="font-bold text-lg">{req.task_title ? req.task_title : `Task ID: ${req.task_id}`}</h3>
                       {getStatusBadge(req.status)}
                     </div>
+                    {isTeacher && (
+                      <div className="text-sm text-gray-600">
+                        <span className="font-medium">Student:</span>{' '}
+                        {req.student_name || req.user_id || 'Unknown'}
+                        {req.student_email ? ` (${req.student_email})` : ''}
+                      </div>
+                    )}
                     <div className="flex items-center gap-2 text-sm text-gray-600">
                       <span className="bg-gray-100 px-2 py-1 rounded">
                         {getCategoryLabel(req.reason_category)}
@@ -460,6 +510,43 @@ export default function ExtensionsPage() {
                         />
                       </div>
                       <span className="font-semibold">{(req.ai_confidence_score * 100).toFixed(0)}%</span>
+                    </div>
+                  </div>
+                )}
+
+                {isTeacher && req.status === 'pending' && (
+                  <div className="mt-4 border-t border-gray-100 pt-4">
+                    <p className="text-sm font-semibold text-gray-700 mb-2">Review</p>
+                    <textarea
+                      value={reviewState[req.id]?.comment || ''}
+                      disabled={loading}
+                      onChange={(e) =>
+                        setReviewState((prev) => ({
+                          ...prev,
+                          [req.id]: { ...(prev[req.id] || {}), comment: e.target.value }
+                        }))
+                      }
+                      placeholder="Optional comment to the student…"
+                      rows="2"
+                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent disabled:opacity-60"
+                    />
+                    <div className="mt-3 flex gap-3">
+                      <button
+                        type="button"
+                        disabled={loading}
+                        onClick={() => handleReview(req.id, 'approved')}
+                        className="flex-1 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-semibold disabled:opacity-60"
+                      >
+                        Approve
+                      </button>
+                      <button
+                        type="button"
+                        disabled={loading}
+                        onClick={() => handleReview(req.id, 'denied')}
+                        className="flex-1 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-semibold disabled:opacity-60"
+                      >
+                        Reject
+                      </button>
                     </div>
                   </div>
                 )}
