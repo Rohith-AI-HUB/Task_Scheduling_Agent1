@@ -1,4 +1,6 @@
-from fastapi import APIRouter, HTTPException, Depends, Header, BackgroundTasks
+from fastapi import APIRouter, HTTPException, Depends, Header, BackgroundTasks, UploadFile, File
+from pydantic import BaseModel
+from typing import Optional
 from app.models.schemas import TaskCreate, TaskUpdate
 from app.db_config import tasks_collection, users_collection, calendar_event_mappings_collection
 from app.services.firebase_service import verify_firebase_token
@@ -7,6 +9,9 @@ from app.services.google_calendar_service import sync_task_to_calendar, is_sync_
 from app.websocket.broadcaster import broadcaster
 from datetime import datetime, timedelta
 from bson import ObjectId
+import os
+import uuid
+import shutil
 
 router = APIRouter(prefix="/tasks", tags=["Tasks"])
 
@@ -200,3 +205,302 @@ async def delete_task(task_id: str, background_tasks: BackgroundTasks, user_id: 
     )
 
     return {"message": "Task deleted"}
+
+
+# ============== Attachment Endpoints ==============
+
+# Directory for file uploads
+UPLOAD_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "uploads")
+os.makedirs(UPLOAD_DIR, exist_ok=True)
+
+# Allowed file extensions
+ALLOWED_EXTENSIONS = {'.pdf', '.doc', '.docx', '.txt', '.png', '.jpg', '.jpeg', '.gif', '.zip', '.py', '.js', '.html', '.css'}
+MAX_FILE_SIZE = 10 * 1024 * 1024  # 10 MB
+
+
+class NoteCreate(BaseModel):
+    content: str
+
+
+@router.post("/{task_id}/attachments")
+async def upload_attachment(
+    task_id: str,
+    file: UploadFile = File(...),
+    user_id: str = Depends(get_current_user_id)
+):
+    """
+    Upload a file attachment to a task
+
+    Students can upload documents, images, code files, etc.
+    """
+    # Validate task ID
+    if not ObjectId.is_valid(task_id):
+        raise HTTPException(status_code=400, detail="Invalid task ID")
+
+    # Get task
+    task = tasks_collection.find_one({"_id": ObjectId(task_id)})
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found")
+
+    # Authorization: only assignee can upload attachments
+    if task.get('assigned_to') != user_id:
+        raise HTTPException(status_code=403, detail="Only the assigned student can upload attachments")
+
+    # Validate file extension
+    file_ext = os.path.splitext(file.filename)[1].lower()
+    if file_ext not in ALLOWED_EXTENSIONS:
+        raise HTTPException(
+            status_code=400,
+            detail=f"File type not allowed. Allowed types: {', '.join(ALLOWED_EXTENSIONS)}"
+        )
+
+    # Check file size
+    file.file.seek(0, 2)  # Seek to end
+    file_size = file.file.tell()
+    file.file.seek(0)  # Reset to beginning
+
+    if file_size > MAX_FILE_SIZE:
+        raise HTTPException(status_code=400, detail="File too large. Maximum size is 10 MB")
+
+    # Generate unique filename
+    unique_id = str(uuid.uuid4())[:8]
+    safe_filename = f"{unique_id}_{file.filename}"
+    file_path = os.path.join(UPLOAD_DIR, safe_filename)
+
+    # Save file
+    try:
+        with open(file_path, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to save file: {str(e)}")
+
+    # Create attachment record
+    attachment = {
+        "id": unique_id,
+        "filename": file.filename,
+        "stored_filename": safe_filename,
+        "url": f"/api/tasks/attachments/{safe_filename}",
+        "type": file_ext[1:],  # Remove the dot
+        "size": file_size,
+        "uploaded_at": datetime.utcnow().isoformat(),
+        "uploaded_by": user_id
+    }
+
+    # Add to task attachments
+    tasks_collection.update_one(
+        {"_id": ObjectId(task_id)},
+        {
+            "$push": {"attachments": attachment},
+            "$set": {"updated_at": datetime.utcnow()}
+        }
+    )
+
+    return {
+        "message": "File uploaded successfully",
+        "attachment": attachment
+    }
+
+
+@router.delete("/{task_id}/attachments/{attachment_id}")
+async def delete_attachment(
+    task_id: str,
+    attachment_id: str,
+    user_id: str = Depends(get_current_user_id)
+):
+    """
+    Delete a file attachment from a task
+    """
+    # Validate task ID
+    if not ObjectId.is_valid(task_id):
+        raise HTTPException(status_code=400, detail="Invalid task ID")
+
+    # Get task
+    task = tasks_collection.find_one({"_id": ObjectId(task_id)})
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found")
+
+    # Authorization: only assignee can delete attachments
+    if task.get('assigned_to') != user_id:
+        raise HTTPException(status_code=403, detail="Only the assigned student can delete attachments")
+
+    # Find the attachment
+    attachments = task.get('attachments', [])
+    attachment_to_delete = None
+    for att in attachments:
+        if isinstance(att, dict) and att.get('id') == attachment_id:
+            attachment_to_delete = att
+            break
+
+    if not attachment_to_delete:
+        raise HTTPException(status_code=404, detail="Attachment not found")
+
+    # Delete file from disk
+    stored_filename = attachment_to_delete.get('stored_filename')
+    if stored_filename:
+        file_path = os.path.join(UPLOAD_DIR, stored_filename)
+        if os.path.exists(file_path):
+            try:
+                os.remove(file_path)
+            except Exception:
+                pass  # File might already be deleted
+
+    # Remove from task
+    tasks_collection.update_one(
+        {"_id": ObjectId(task_id)},
+        {
+            "$pull": {"attachments": {"id": attachment_id}},
+            "$set": {"updated_at": datetime.utcnow()}
+        }
+    )
+
+    return {"message": "Attachment deleted successfully"}
+
+
+@router.get("/attachments/{filename}")
+async def get_attachment(filename: str):
+    """
+    Serve an uploaded attachment file
+    """
+    from fastapi.responses import FileResponse
+
+    file_path = os.path.join(UPLOAD_DIR, filename)
+
+    if not os.path.exists(file_path):
+        raise HTTPException(status_code=404, detail="File not found")
+
+    return FileResponse(file_path)
+
+
+# ============== Notes Endpoints ==============
+
+@router.post("/{task_id}/notes")
+async def add_note(
+    task_id: str,
+    note: NoteCreate,
+    user_id: str = Depends(get_current_user_id)
+):
+    """
+    Add a text note to a task
+
+    Students can add notes/comments to their tasks
+    """
+    # Validate task ID
+    if not ObjectId.is_valid(task_id):
+        raise HTTPException(status_code=400, detail="Invalid task ID")
+
+    # Get task
+    task = tasks_collection.find_one({"_id": ObjectId(task_id)})
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found")
+
+    # Authorization: only assignee can add notes
+    if task.get('assigned_to') != user_id:
+        raise HTTPException(status_code=403, detail="Only the assigned student can add notes")
+
+    # Validate note content
+    if not note.content or len(note.content.strip()) == 0:
+        raise HTTPException(status_code=400, detail="Note content cannot be empty")
+
+    if len(note.content) > 5000:
+        raise HTTPException(status_code=400, detail="Note too long. Maximum 5000 characters")
+
+    # Create note record
+    note_record = {
+        "id": str(uuid.uuid4())[:8],
+        "content": note.content.strip(),
+        "created_at": datetime.utcnow(),
+        "created_by": user_id
+    }
+
+    # Add to task notes
+    tasks_collection.update_one(
+        {"_id": ObjectId(task_id)},
+        {
+            "$push": {"student_notes": note_record},
+            "$set": {"updated_at": datetime.utcnow()}
+        }
+    )
+
+    # Format for response
+    note_record["created_at"] = note_record["created_at"].isoformat()
+
+    return {
+        "message": "Note added successfully",
+        "note": note_record
+    }
+
+
+@router.get("/{task_id}/notes")
+async def get_notes(
+    task_id: str,
+    user_id: str = Depends(get_current_user_id)
+):
+    """
+    Get all notes for a task
+    """
+    # Validate task ID
+    if not ObjectId.is_valid(task_id):
+        raise HTTPException(status_code=400, detail="Invalid task ID")
+
+    # Get task
+    task = tasks_collection.find_one({"_id": ObjectId(task_id)})
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found")
+
+    # Authorization: assignee or creator can view notes
+    if task.get('assigned_to') != user_id and task.get('created_by') != user_id:
+        raise HTTPException(status_code=403, detail="You don't have permission to view these notes")
+
+    # Get notes
+    notes = task.get('student_notes', [])
+    formatted_notes = []
+
+    for note in notes:
+        if isinstance(note, dict):
+            note_created = note.get('created_at')
+            if isinstance(note_created, datetime):
+                note_created = note_created.isoformat()
+            formatted_notes.append({
+                "id": note.get('id', ''),
+                "content": note.get('content', ''),
+                "created_at": note_created
+            })
+
+    return {
+        "notes": formatted_notes,
+        "total": len(formatted_notes)
+    }
+
+
+@router.delete("/{task_id}/notes/{note_id}")
+async def delete_note(
+    task_id: str,
+    note_id: str,
+    user_id: str = Depends(get_current_user_id)
+):
+    """
+    Delete a note from a task
+    """
+    # Validate task ID
+    if not ObjectId.is_valid(task_id):
+        raise HTTPException(status_code=400, detail="Invalid task ID")
+
+    # Get task
+    task = tasks_collection.find_one({"_id": ObjectId(task_id)})
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found")
+
+    # Authorization: only assignee can delete notes
+    if task.get('assigned_to') != user_id:
+        raise HTTPException(status_code=403, detail="Only the assigned student can delete notes")
+
+    # Remove note from task
+    result = tasks_collection.update_one(
+        {"_id": ObjectId(task_id)},
+        {
+            "$pull": {"student_notes": {"id": note_id}},
+            "$set": {"updated_at": datetime.utcnow()}
+        }
+    )
+
+    return {"message": "Note deleted successfully"}

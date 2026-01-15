@@ -1,141 +1,184 @@
 import React, { useState, useEffect } from 'react';
-import { Brain, TrendingUp, Award, AlertCircle, CheckCircle, Clock, Target, Lightbulb, Heart, LogOut, LayoutDashboard } from 'lucide-react';
-import axios from 'axios';
+import {
+  ClipboardList, Search, Filter, User, FileText, Calendar,
+  CheckCircle, Clock, AlertCircle, X, Download, MessageSquare,
+  LogOut, LayoutDashboard, ChevronDown, Paperclip, StickyNote,
+  Eye, Send
+} from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import HomeButton from '../../components/HomeButton';
 import { useAuthStore } from '../../store/useStore';
 import { authService } from '../../services/auth.service';
-import GradientButton from '../../components/ui/GradientButton';
-import MetricCard from '../../components/ui/MetricCard';
-
 import { gradingService } from '../../services/grading.service';
 
 function GradingDashboard() {
   const navigate = useNavigate();
   const { logout, user } = useAuthStore();
-  const [pendingGrades, setPendingGrades] = useState([]);
-  const [selectedSubmission, setSelectedSubmission] = useState(null);
-  const [aiAnalysis, setAiAnalysis] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [finalGrade, setFinalGrade] = useState('');
-  const [teacherComments, setTeacherComments] = useState('');
-  const [overrideReason, setOverrideReason] = useState('');
-  const [history, setHistory] = useState([]);
+
+  // State
+  const [tasks, setTasks] = useState([]);
+  const [subjects, setSubjects] = useState([]);
   const [stats, setStats] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [selectedTask, setSelectedTask] = useState(null);
+  const [taskDetails, setTaskDetails] = useState(null);
+  const [detailsLoading, setDetailsLoading] = useState(false);
+
+  // Filters
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
+  const [subjectFilter, setSubjectFilter] = useState('');
+
+  // Feedback form
+  const [feedbackText, setFeedbackText] = useState('');
+  const [gradeValue, setGradeValue] = useState('');
+  const [submittingFeedback, setSubmittingFeedback] = useState(false);
 
   useEffect(() => {
-    fetchPendingGrades();
-    fetchGradingHistory();
-  }, []);
+    fetchTasks();
+    fetchStats();
+  }, [statusFilter, subjectFilter]);
 
-  const fetchPendingGrades = async () => {
-    try {
-      const data = await gradingService.getPendingSubmissions();
-      setPendingGrades(data.submissions);
-    } catch (error) {
-      console.error('Error fetching pending grades:', error);
-    }
-  };
-
-  const fetchGradingHistory = async () => {
-    try {
-      const data = await gradingService.getHistory();
-      setHistory(data.history);
-      setStats(data.stats);
-    } catch (error) {
-      console.error('Error fetching history:', error);
-    }
-  };
-
-  const analyzeSubmission = async (taskId, studentId) => {
+  const fetchTasks = async () => {
     setLoading(true);
     try {
-      const data = await gradingService.analyzeSubmission(taskId, studentId);
-      setAiAnalysis(data);
-      setSelectedSubmission({ taskId, studentId, suggestionId: data.suggestion_id });
-      setFinalGrade(data.suggested_grade.toString());
+      const data = await gradingService.getAssignedTasks({
+        status: statusFilter || undefined,
+        subject: subjectFilter || undefined,
+        search: searchQuery || undefined
+      });
+      setTasks(data.tasks || []);
+      setSubjects(data.subjects || []);
     } catch (error) {
-      console.error('Error analyzing submission:', error);
-      alert(error.response?.data?.detail || 'Error analyzing submission');
+      console.error('Error fetching tasks:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  const finalizeGrade = async () => {
-    if (!selectedSubmission || !finalGrade || !teacherComments) {
-      alert('Please provide a grade and comments');
+  const fetchStats = async () => {
+    try {
+      const data = await gradingService.getStats();
+      setStats(data);
+    } catch (error) {
+      console.error('Error fetching stats:', error);
+    }
+  };
+
+  const handleSearch = (e) => {
+    e.preventDefault();
+    fetchTasks();
+  };
+
+  const openTaskDetails = async (task) => {
+    setSelectedTask(task);
+    setDetailsLoading(true);
+    setFeedbackText(task.teacher_feedback || '');
+    setGradeValue(task.grade !== null && task.grade !== undefined ? task.grade.toString() : '');
+
+    try {
+      const details = await gradingService.getTaskDetails(task.id);
+      setTaskDetails(details);
+    } catch (error) {
+      console.error('Error fetching task details:', error);
+    } finally {
+      setDetailsLoading(false);
+    }
+  };
+
+  const closeTaskDetails = () => {
+    setSelectedTask(null);
+    setTaskDetails(null);
+    setFeedbackText('');
+    setGradeValue('');
+  };
+
+  const submitFeedback = async () => {
+    if (!feedbackText.trim()) {
+      alert('Please enter feedback');
       return;
     }
 
-    const gradeNum = parseFloat(finalGrade);
-    if (isNaN(gradeNum) || gradeNum < 0 || gradeNum > 100) {
+    const grade = gradeValue ? parseFloat(gradeValue) : null;
+    if (gradeValue && (isNaN(grade) || grade < 0 || grade > 100)) {
       alert('Grade must be between 0 and 100');
       return;
     }
 
-    const gradeDiff = Math.abs(gradeNum - aiAnalysis.suggested_grade);
-    if (gradeDiff > 10 && !overrideReason) {
-      alert('Please provide a reason for significantly different grade');
-      return;
-    }
-
+    setSubmittingFeedback(true);
     try {
-      await gradingService.finalizeGrade(selectedSubmission.suggestionId, {
-        final_grade: gradeNum,
-        teacher_comments: teacherComments,
-        override_reason: gradeDiff > 5 ? overrideReason : null
+      await gradingService.addFeedback(selectedTask.id, {
+        feedback: feedbackText,
+        grade: grade
       });
 
-      alert('Grade finalized and student notified!');
+      alert('Feedback submitted successfully!');
 
-      // Reset state
-      setAiAnalysis(null);
-      setSelectedSubmission(null);
-      setFinalGrade('');
-      setTeacherComments('');
-      setOverrideReason('');
+      // Update local state
+      setTasks(tasks.map(t =>
+        t.id === selectedTask.id
+          ? { ...t, teacher_feedback: feedbackText, grade: grade }
+          : t
+      ));
 
-      // Refresh lists
-      fetchPendingGrades();
-      fetchGradingHistory();
+      // Close modal
+      closeTaskDetails();
+      fetchStats();
     } catch (error) {
-      console.error('Error finalizing grade:', error);
-      alert(error.response?.data?.detail || 'Error finalizing grade');
+      console.error('Error submitting feedback:', error);
+      alert(error.response?.data?.detail || 'Error submitting feedback');
+    } finally {
+      setSubmittingFeedback(false);
     }
-  };
-
-  const cancelGrading = () => {
-    setAiAnalysis(null);
-    setSelectedSubmission(null);
-    setFinalGrade('');
-    setTeacherComments('');
-    setOverrideReason('');
   };
 
   const handleLogout = async () => {
     if (confirm('Are you sure you want to logout?')) {
       try {
-        // Call Firebase logout
         await authService.logout();
-
-        // Clear Zustand store
         logout();
-
-        // Navigate to login
         navigate('/login', { replace: true });
-
-        // Force reload to clear any cached state
         window.location.reload();
       } catch (error) {
         console.error('Logout error:', error);
-        // Force logout even if there's an error
         logout();
         localStorage.clear();
         navigate('/login', { replace: true });
         window.location.reload();
       }
     }
+  };
+
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'completed': return 'bg-green-100 text-green-700 border-green-300';
+      case 'in_progress': return 'bg-blue-100 text-blue-700 border-blue-300';
+      case 'todo': return 'bg-gray-100 text-gray-700 border-gray-300';
+      default: return 'bg-gray-100 text-gray-700 border-gray-300';
+    }
+  };
+
+  const getStatusIcon = (status) => {
+    switch (status) {
+      case 'completed': return <CheckCircle size={14} />;
+      case 'in_progress': return <Clock size={14} />;
+      case 'todo': return <AlertCircle size={14} />;
+      default: return <AlertCircle size={14} />;
+    }
+  };
+
+  const formatDate = (dateStr) => {
+    if (!dateStr) return 'N/A';
+    return new Date(dateStr).toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
+    });
+  };
+
+  const formatFileSize = (bytes) => {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
   };
 
   return (
@@ -146,16 +189,15 @@ function GradingDashboard() {
           <div className="flex justify-between items-start">
             <div>
               <h1 className="text-4xl font-bold mb-2 flex items-center gap-3 bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">
-                <Brain className="text-purple-600" size={40} />
-                AI Grading Assistant
+                <ClipboardList className="text-purple-600" size={40} />
+                Task Review
               </h1>
-              <p className="text-gray-600">Welcome back, {user?.full_name || 'Teacher'}! 👋</p>
+              <p className="text-gray-600">Review student submissions and provide feedback</p>
             </div>
             <div className="flex items-center gap-4">
               <button
                 onClick={() => navigate('/teacher/dashboard')}
                 className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors shadow-md hover:shadow-lg"
-                title="Teacher Dashboard"
               >
                 <LayoutDashboard size={20} />
                 <span className="font-medium">Dashboard</span>
@@ -163,7 +205,6 @@ function GradingDashboard() {
               <button
                 onClick={handleLogout}
                 className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors shadow-md hover:shadow-lg"
-                title="Logout"
               >
                 <LogOut size={20} />
                 <span className="font-medium">Logout</span>
@@ -174,330 +215,417 @@ function GradingDashboard() {
 
         {/* Stats Cards */}
         {stats && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            <MetricCard
-              icon={Award}
-              label="Total Graded"
-              value={stats.total_graded}
-              gradient="purple-blue"
-            />
-            <MetricCard
-              icon={CheckCircle}
-              label="AI Agreement"
-              value={`${stats.agreement_rate}%`}
-              gradient="green"
-            />
-            <MetricCard
-              icon={Clock}
-              label="Pending Grades"
-              value={pendingGrades.length}
-              gradient="orange"
-            />
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            <div className="bg-white rounded-xl shadow-md p-4 border-l-4 border-purple-500">
+              <div className="text-3xl font-bold text-purple-600">{stats.total_tasks}</div>
+              <div className="text-sm text-gray-600">Total Tasks</div>
+            </div>
+            <div className="bg-white rounded-xl shadow-md p-4 border-l-4 border-green-500">
+              <div className="text-3xl font-bold text-green-600">{stats.by_status?.completed || 0}</div>
+              <div className="text-sm text-gray-600">Completed</div>
+            </div>
+            <div className="bg-white rounded-xl shadow-md p-4 border-l-4 border-blue-500">
+              <div className="text-3xl font-bold text-blue-600">{stats.by_status?.in_progress || 0}</div>
+              <div className="text-sm text-gray-600">In Progress</div>
+            </div>
+            <div className="bg-white rounded-xl shadow-md p-4 border-l-4 border-orange-500">
+              <div className="text-3xl font-bold text-orange-600">{stats.pending_review || 0}</div>
+              <div className="text-sm text-gray-600">Pending Review</div>
+            </div>
           </div>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Left: Pending Submissions or AI Analysis */}
-          <div>
-            {!aiAnalysis ? (
-              // Pending Submissions List
-              <>
-                <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
-                  <Target size={24} />
-                  Pending Submissions ({pendingGrades.length})
-                </h2>
+        {/* Filters */}
+        <div className="bg-white rounded-xl shadow-md p-4 mb-6">
+          <div className="flex flex-wrap gap-4 items-center">
+            {/* Search */}
+            <form onSubmit={handleSearch} className="flex-1 min-w-[250px]">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+                <input
+                  type="text"
+                  placeholder="Search by student name or USN..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none"
+                />
+              </div>
+            </form>
 
-                {pendingGrades.length === 0 ? (
-                  <div className="bg-white rounded-xl shadow-lg p-12 text-center">
-                    <CheckCircle className="mx-auto mb-4 text-green-500" size={64} />
-                    <h3 className="text-xl font-semibold mb-2">All Caught Up!</h3>
-                    <p className="text-gray-600">No pending submissions to grade at the moment.</p>
+            {/* Status Filter */}
+            <div className="relative">
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="appearance-none pl-4 pr-10 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none bg-white cursor-pointer"
+              >
+                <option value="">All Status</option>
+                <option value="todo">To Do</option>
+                <option value="in_progress">In Progress</option>
+                <option value="completed">Completed</option>
+              </select>
+              <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" size={16} />
+            </div>
+
+            {/* Subject Filter */}
+            <div className="relative">
+              <select
+                value={subjectFilter}
+                onChange={(e) => setSubjectFilter(e.target.value)}
+                className="appearance-none pl-4 pr-10 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none bg-white cursor-pointer"
+              >
+                <option value="">All Subjects</option>
+                {subjects.map((subject, idx) => (
+                  <option key={idx} value={subject}>{subject}</option>
+                ))}
+              </select>
+              <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" size={16} />
+            </div>
+          </div>
+        </div>
+
+        {/* Task List */}
+        <div className="bg-white rounded-xl shadow-md overflow-hidden">
+          {loading ? (
+            <div className="p-12 text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
+              <p className="text-gray-600">Loading tasks...</p>
+            </div>
+          ) : tasks.length === 0 ? (
+            <div className="p-12 text-center">
+              <ClipboardList className="mx-auto mb-4 text-gray-300" size={64} />
+              <h3 className="text-xl font-semibold mb-2 text-gray-700">No Tasks Found</h3>
+              <p className="text-gray-500">No tasks match your current filters.</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white">
+                  <tr>
+                    <th className="px-4 py-3 text-left font-semibold">Student</th>
+                    <th className="px-4 py-3 text-left font-semibold">Task</th>
+                    <th className="px-4 py-3 text-left font-semibold">Subject</th>
+                    <th className="px-4 py-3 text-center font-semibold">Progress</th>
+                    <th className="px-4 py-3 text-center font-semibold">Status</th>
+                    <th className="px-4 py-3 text-center font-semibold">Deadline</th>
+                    <th className="px-4 py-3 text-center font-semibold">Attachments</th>
+                    <th className="px-4 py-3 text-center font-semibold">Grade</th>
+                    <th className="px-4 py-3 text-center font-semibold">Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {tasks.map((task, idx) => (
+                    <tr
+                      key={task.id}
+                      className={`border-b border-gray-100 hover:bg-purple-50 transition-colors ${idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}
+                    >
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-2">
+                          <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
+                            <User size={16} className="text-purple-600" />
+                          </div>
+                          <div>
+                            <div className="font-medium text-gray-800">{task.student_name}</div>
+                            <div className="text-xs text-gray-500">{task.student_usn}</div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="font-medium text-gray-800 max-w-[200px] truncate">{task.title}</div>
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className="text-sm text-gray-600">{task.subject || '-'}</span>
+                      </td>
+                      <td className="px-4 py-3 text-center">
+                        <div className="flex items-center justify-center gap-2">
+                          <div className="w-16 h-2 bg-gray-200 rounded-full overflow-hidden">
+                            <div
+                              className="h-full bg-gradient-to-r from-purple-500 to-indigo-500 rounded-full"
+                              style={{ width: `${task.progress}%` }}
+                            />
+                          </div>
+                          <span className="text-xs text-gray-600">{task.progress}%</span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 text-center">
+                        <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium border ${getStatusColor(task.status)}`}>
+                          {getStatusIcon(task.status)}
+                          {task.status === 'in_progress' ? 'In Progress' : task.status === 'completed' ? 'Completed' : 'To Do'}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-center">
+                        <span className="text-sm text-gray-600">{formatDate(task.deadline)}</span>
+                      </td>
+                      <td className="px-4 py-3 text-center">
+                        <div className="flex items-center justify-center gap-2">
+                          {task.has_attachments && (
+                            <span className="flex items-center gap-1 text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded">
+                              <Paperclip size={12} />
+                              {task.attachment_count}
+                            </span>
+                          )}
+                          {task.has_notes && (
+                            <span className="flex items-center gap-1 text-xs text-amber-600 bg-amber-50 px-2 py-1 rounded">
+                              <StickyNote size={12} />
+                              {task.note_count}
+                            </span>
+                          )}
+                          {!task.has_attachments && !task.has_notes && (
+                            <span className="text-xs text-gray-400">-</span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 text-center">
+                        {task.grade !== null && task.grade !== undefined ? (
+                          <span className="font-bold text-purple-600">{task.grade}/100</span>
+                        ) : (
+                          <span className="text-gray-400">-</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-center">
+                        <button
+                          onClick={() => openTaskDetails(task)}
+                          className="inline-flex items-center gap-1 px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm font-medium transition-colors"
+                        >
+                          <Eye size={14} />
+                          View
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+
+        {/* Task Details Modal */}
+        {selectedTask && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+              {/* Modal Header */}
+              <div className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white p-6">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h2 className="text-2xl font-bold mb-1">{selectedTask.title}</h2>
+                    <p className="text-purple-100 text-sm">
+                      Assigned to {selectedTask.student_name} ({selectedTask.student_usn})
+                    </p>
                   </div>
-                ) : (
-                  <div className="space-y-3 max-h-[600px] overflow-y-auto">
-                    {pendingGrades.map(submission => (
-                      <div
-                        key={submission.id}
-                        className="bg-white/80 backdrop-blur-sm rounded-lg shadow-md hover:shadow-xl transition-all p-4 cursor-pointer border-l-4 border-purple-600 hover:scale-105"
-                        onClick={() => analyzeSubmission(submission.task_id, submission.student_id)}
-                      >
-                        <div className="flex justify-between items-start">
-                          <div className="flex-1">
-                            <h3 className="font-bold text-lg text-purple-900">{submission.task_title}</h3>
-                            <p className="text-sm text-gray-600 flex items-center gap-1">
-                              <span className="font-medium">{submission.student_name}</span>
-                            </p>
+                  <button
+                    onClick={closeTaskDetails}
+                    className="p-2 hover:bg-white/20 rounded-lg transition-colors"
+                  >
+                    <X size={24} />
+                  </button>
+                </div>
+              </div>
 
-                            <div className="flex gap-4 mt-2 text-sm text-gray-500">
-                              <span className="flex items-center gap-1">
-                                <Clock size={14} />
-                                {submission.estimated_hours}h estimated
-                              </span>
-                              <span className="flex items-center gap-1">
-                                <AlertCircle size={14} />
-                                Complexity: {submission.complexity}/10
-                              </span>
+              {/* Modal Content */}
+              <div className="flex-1 overflow-y-auto p-6">
+                {detailsLoading ? (
+                  <div className="flex items-center justify-center py-12">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
+                  </div>
+                ) : taskDetails ? (
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    {/* Left Column - Task Info */}
+                    <div className="space-y-6">
+                      {/* Student Info */}
+                      <div className="bg-purple-50 rounded-xl p-4">
+                        <h3 className="font-semibold text-purple-800 mb-3 flex items-center gap-2">
+                          <User size={18} />
+                          Student Information
+                        </h3>
+                        <div className="space-y-2 text-sm">
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">Name:</span>
+                            <span className="font-medium">{taskDetails.student.name}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">USN:</span>
+                            <span className="font-medium">{taskDetails.student.usn || '-'}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">Email:</span>
+                            <span className="font-medium">{taskDetails.student.email}</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Task Details */}
+                      <div className="bg-gray-50 rounded-xl p-4">
+                        <h3 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                          <FileText size={18} />
+                          Task Details
+                        </h3>
+                        <div className="space-y-3 text-sm">
+                          <div>
+                            <span className="text-gray-600">Description:</span>
+                            <p className="mt-1 text-gray-800">{taskDetails.task.description || 'No description'}</p>
+                          </div>
+                          <div className="grid grid-cols-2 gap-2">
+                            <div>
+                              <span className="text-gray-600">Subject:</span>
+                              <p className="font-medium">{taskDetails.task.subject || '-'}</p>
+                            </div>
+                            <div>
+                              <span className="text-gray-600">Priority:</span>
+                              <p className="font-medium capitalize">{taskDetails.task.priority}</p>
+                            </div>
+                            <div>
+                              <span className="text-gray-600">Deadline:</span>
+                              <p className="font-medium">{formatDate(taskDetails.task.deadline)}</p>
+                            </div>
+                            <div>
+                              <span className="text-gray-600">Status:</span>
+                              <p className="font-medium capitalize">{taskDetails.task.status.replace('_', ' ')}</p>
                             </div>
                           </div>
+                        </div>
+                      </div>
 
-                          <button className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-4 py-2 rounded-lg hover:from-purple-700 hover:to-indigo-700 transition-all shadow-md flex items-center gap-2">
-                            <Brain size={16} />
-                            Analyze
+                      {/* Subtasks */}
+                      {taskDetails.subtasks && taskDetails.subtasks.length > 0 && (
+                        <div className="bg-blue-50 rounded-xl p-4">
+                          <h3 className="font-semibold text-blue-800 mb-3 flex items-center gap-2">
+                            <CheckCircle size={18} />
+                            Subtasks ({taskDetails.subtasks.filter(s => s.completed).length}/{taskDetails.subtasks.length})
+                          </h3>
+                          <ul className="space-y-2">
+                            {taskDetails.subtasks.map((subtask, idx) => (
+                              <li key={idx} className="flex items-start gap-2 text-sm">
+                                <span className={`mt-0.5 ${subtask.completed ? 'text-green-600' : 'text-gray-400'}`}>
+                                  {subtask.completed ? <CheckCircle size={16} /> : <Clock size={16} />}
+                                </span>
+                                <span className={subtask.completed ? 'line-through text-gray-500' : 'text-gray-800'}>
+                                  {subtask.title}
+                                </span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Right Column - Attachments, Notes, Feedback */}
+                    <div className="space-y-6">
+                      {/* Attachments */}
+                      <div className="bg-indigo-50 rounded-xl p-4">
+                        <h3 className="font-semibold text-indigo-800 mb-3 flex items-center gap-2">
+                          <Paperclip size={18} />
+                          Attachments ({taskDetails.attachments?.length || 0})
+                        </h3>
+                        {taskDetails.attachments && taskDetails.attachments.length > 0 ? (
+                          <ul className="space-y-2">
+                            {taskDetails.attachments.map((att, idx) => (
+                              <li key={idx} className="flex items-center justify-between bg-white rounded-lg p-3 shadow-sm">
+                                <div className="flex items-center gap-2">
+                                  <FileText size={16} className="text-indigo-600" />
+                                  <div>
+                                    <p className="text-sm font-medium text-gray-800">{att.filename}</p>
+                                    <p className="text-xs text-gray-500">{formatFileSize(att.size)}</p>
+                                  </div>
+                                </div>
+                                <a
+                                  href={`http://localhost:8000${att.url}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="p-2 hover:bg-indigo-100 rounded-lg transition-colors"
+                                >
+                                  <Download size={16} className="text-indigo-600" />
+                                </a>
+                              </li>
+                            ))}
+                          </ul>
+                        ) : (
+                          <p className="text-sm text-gray-500 italic">No attachments uploaded</p>
+                        )}
+                      </div>
+
+                      {/* Notes */}
+                      <div className="bg-amber-50 rounded-xl p-4">
+                        <h3 className="font-semibold text-amber-800 mb-3 flex items-center gap-2">
+                          <StickyNote size={18} />
+                          Student Notes ({taskDetails.notes?.length || 0})
+                        </h3>
+                        {taskDetails.notes && taskDetails.notes.length > 0 ? (
+                          <ul className="space-y-2 max-h-[200px] overflow-y-auto">
+                            {taskDetails.notes.map((note, idx) => (
+                              <li key={idx} className="bg-white rounded-lg p-3 shadow-sm">
+                                <p className="text-sm text-gray-800 whitespace-pre-wrap">{note.content}</p>
+                                {note.created_at && (
+                                  <p className="text-xs text-gray-500 mt-2">{formatDate(note.created_at)}</p>
+                                )}
+                              </li>
+                            ))}
+                          </ul>
+                        ) : (
+                          <p className="text-sm text-gray-500 italic">No notes added</p>
+                        )}
+                      </div>
+
+                      {/* Feedback Form */}
+                      <div className="bg-green-50 rounded-xl p-4">
+                        <h3 className="font-semibold text-green-800 mb-3 flex items-center gap-2">
+                          <MessageSquare size={18} />
+                          Teacher Feedback
+                        </h3>
+                        <div className="space-y-3">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              Grade (0-100) - Optional
+                            </label>
+                            <input
+                              type="number"
+                              min="0"
+                              max="100"
+                              value={gradeValue}
+                              onChange={(e) => setGradeValue(e.target.value)}
+                              placeholder="Enter grade"
+                              className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              Feedback Comments
+                            </label>
+                            <textarea
+                              value={feedbackText}
+                              onChange={(e) => setFeedbackText(e.target.value)}
+                              rows={4}
+                              placeholder="Enter your feedback for the student..."
+                              className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none resize-none"
+                            />
+                          </div>
+                          <button
+                            onClick={submitFeedback}
+                            disabled={submittingFeedback || !feedbackText.trim()}
+                            className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-300 text-white rounded-lg font-medium transition-colors"
+                          >
+                            {submittingFeedback ? (
+                              <>
+                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                                Submitting...
+                              </>
+                            ) : (
+                              <>
+                                <Send size={16} />
+                                Submit Feedback
+                              </>
+                            )}
                           </button>
                         </div>
                       </div>
-                    ))}
-                  </div>
-                )}
-              </>
-            ) : (
-              // AI Analysis Results
-              <div className="space-y-4">
-                <div className="flex items-center justify-between bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-lg p-4 shadow-md">
-                  <h2 className="text-2xl font-bold flex items-center gap-2">
-                    <Brain size={28} />
-                    AI Analysis
-                  </h2>
-                  <button
-                    onClick={cancelGrading}
-                    className="text-sm text-white hover:text-purple-100 transition-colors"
-                  >
-                    ← Back to List
-                  </button>
-                </div>
-
-                {loading ? (
-                  <div className="bg-white rounded-xl shadow-lg p-12 text-center">
-                    <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-purple-600 mx-auto mb-4"></div>
-                    <p className="text-gray-600">AI is analyzing the submission...</p>
+                    </div>
                   </div>
                 ) : (
-                  <>
-                    {/* Suggested Grade */}
-                    <div className="bg-gradient-to-br from-purple-600 to-indigo-600 rounded-xl p-6 shadow-lg">
-                      <div className="text-center mb-4">
-                        <div className="text-sm text-white/90 mb-1">AI Suggested Grade</div>
-                        <div className="text-6xl font-bold text-white">
-                          {aiAnalysis.suggested_grade}
-                          <span className="text-3xl text-white/70">/100</span>
-                        </div>
-                      </div>
-
-                      <div className="bg-white/20 backdrop-blur-sm rounded-lg p-4">
-                        <p className="text-sm text-white">{aiAnalysis.reasoning}</p>
-                      </div>
-                    </div>
-
-                    {/* Performance Summary */}
-                    <div className="bg-white rounded-xl shadow-lg p-6 border-l-4 border-purple-600">
-                      <h3 className="font-bold mb-3 flex items-center gap-2 text-purple-700">
-                        <TrendingUp size={20} />
-                        Performance Summary
-                      </h3>
-                      <div className="grid grid-cols-2 gap-3 text-sm">
-                        <div>
-                          <span className="text-gray-600">Time Efficiency:</span>
-                          <span className="ml-2 font-semibold text-purple-700">{aiAnalysis.performance_summary.time_efficiency}</span>
-                        </div>
-                        <div>
-                          <span className="text-gray-600">On Time:</span>
-                          <span className="ml-2 font-semibold">
-                            {aiAnalysis.performance_summary.on_time ? '✅ Yes' : '❌ Late'}
-                          </span>
-                        </div>
-                        <div>
-                          <span className="text-gray-600">Completion:</span>
-                          <span className="ml-2 font-semibold text-purple-700">{aiAnalysis.performance_summary.completion_rate}</span>
-                        </div>
-                        <div>
-                          <span className="text-gray-600">Extensions:</span>
-                          <span className="ml-2 font-semibold text-purple-700">{aiAnalysis.performance_summary.extensions}</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Strengths */}
-                    {aiAnalysis.strengths && aiAnalysis.strengths.length > 0 && (
-                      <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-6 border-l-4 border-green-500 shadow-md">
-                        <h3 className="font-bold mb-3 flex items-center gap-2 text-green-800">
-                          <Award size={20} />
-                          Strengths
-                        </h3>
-                        <ul className="space-y-2">
-                          {aiAnalysis.strengths.map((strength, idx) => (
-                            <li key={idx} className="text-sm text-green-800 flex items-start gap-2">
-                              <CheckCircle size={16} className="mt-0.5 flex-shrink-0 text-green-600" />
-                              <span>{strength}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-
-                    {/* Weaknesses */}
-                    {aiAnalysis.weaknesses && aiAnalysis.weaknesses.length > 0 && (
-                      <div className="bg-gradient-to-br from-orange-50 to-amber-50 rounded-xl p-6 border-l-4 border-orange-500 shadow-md">
-                        <h3 className="font-bold mb-3 flex items-center gap-2 text-orange-800">
-                          <AlertCircle size={20} />
-                          Areas for Improvement
-                        </h3>
-                        <ul className="space-y-2">
-                          {aiAnalysis.weaknesses.map((weakness, idx) => (
-                            <li key={idx} className="text-sm text-orange-800 flex items-start gap-2">
-                              <span className="text-orange-600 mt-0.5">•</span>
-                              <span>{weakness}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-
-                    {/* Improvement Suggestions */}
-                    {aiAnalysis.improvements && aiAnalysis.improvements.length > 0 && (
-                      <div className="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-xl p-6 border-l-4 border-blue-500 shadow-md">
-                        <h3 className="font-bold mb-3 flex items-center gap-2 text-blue-800">
-                          <Lightbulb size={20} />
-                          Suggestions for Future
-                        </h3>
-                        <ul className="space-y-2">
-                          {aiAnalysis.improvements.map((improvement, idx) => (
-                            <li key={idx} className="text-sm text-blue-800 flex items-start gap-2">
-                              <span className="text-blue-600 mt-0.5">→</span>
-                              <span>{improvement}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-
-                    {/* Encouragement */}
-                    {aiAnalysis.encouragement && (
-                      <div className="bg-gradient-to-r from-pink-50 to-purple-50 rounded-xl p-6 border-l-4 border-pink-500 shadow-md">
-                        <div className="flex items-start gap-3">
-                          <Heart className="text-pink-500 flex-shrink-0" size={24} />
-                          <p className="text-sm font-medium text-pink-800">{aiAnalysis.encouragement}</p>
-                        </div>
-                      </div>
-                    )}
-                  </>
+                  <p className="text-center text-gray-500">Failed to load task details</p>
                 )}
               </div>
-            )}
+            </div>
           </div>
-
-          {/* Right: Finalize Grade Form or History */}
-          <div>
-            {aiAnalysis && !loading ? (
-              // Grade Finalization Form
-              <div className="bg-white rounded-xl shadow-lg p-6 sticky top-6">
-                <h2 className="text-2xl font-bold mb-6">Finalize Grade</h2>
-
-                {/* Grade Input */}
-                <div className="mb-4">
-                  <label className="block text-sm font-medium mb-2 text-purple-700">Final Grade (0-100)</label>
-                  <input
-                    type="number"
-                    min="0"
-                    max="100"
-                    step="0.1"
-                    value={finalGrade}
-                    onChange={(e) => setFinalGrade(e.target.value)}
-                    className="w-full border-2 border-purple-200 rounded-lg px-4 py-3 text-lg font-bold focus:border-purple-600 focus:ring-2 focus:ring-purple-600 focus:outline-none"
-                    placeholder="Enter grade"
-                  />
-                  {Math.abs(parseFloat(finalGrade) - aiAnalysis.suggested_grade) > 5 && (
-                    <p className="text-sm text-orange-600 mt-1">
-                      ⚠️ Different from AI suggestion ({aiAnalysis.suggested_grade})
-                    </p>
-                  )}
-                </div>
-
-                {/* Teacher Comments */}
-                <div className="mb-4">
-                  <label className="block text-sm font-medium mb-2 text-purple-700">Teacher Feedback</label>
-                  <textarea
-                    value={teacherComments}
-                    onChange={(e) => setTeacherComments(e.target.value)}
-                    rows="4"
-                    className="w-full border-2 border-purple-200 rounded-lg px-4 py-2 focus:border-purple-600 focus:ring-2 focus:ring-purple-600 focus:outline-none"
-                    placeholder="Provide constructive feedback for the student..."
-                  />
-                </div>
-
-                {/* Override Reason (if significantly different) */}
-                {Math.abs(parseFloat(finalGrade) - aiAnalysis.suggested_grade) > 10 && (
-                  <div className="mb-4">
-                    <label className="block text-sm font-medium mb-2 text-orange-700">
-                      Override Reason (Required)
-                    </label>
-                    <textarea
-                      value={overrideReason}
-                      onChange={(e) => setOverrideReason(e.target.value)}
-                      rows="2"
-                      className="w-full border-2 border-orange-300 rounded-lg px-4 py-2 focus:border-orange-500 focus:ring-2 focus:ring-orange-500 focus:outline-none"
-                      placeholder="Why does your grade differ significantly from AI suggestion?"
-                    />
-                  </div>
-                )}
-
-                {/* Action Buttons */}
-                <div className="flex gap-3">
-                  <GradientButton
-                    variant="purple"
-                    onClick={finalizeGrade}
-                    className="flex-1 py-3"
-                  >
-                    Finalize & Notify Student
-                  </GradientButton>
-                  <button
-                    onClick={cancelGrading}
-                    className="px-6 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-all"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </div>
-            ) : (
-              // Grading History
-              <div>
-                <h2 className="text-2xl font-bold mb-4 text-purple-700">Recent Grades</h2>
-                <div className="space-y-3 max-h-[600px] overflow-y-auto">
-                  {history.slice(0, 10).map(item => (
-                    <div
-                      key={item.id}
-                      className="bg-white rounded-lg shadow-md hover:shadow-lg transition-all p-4 border-l-4 border-purple-300"
-                    >
-                      <div className="flex justify-between items-start mb-2">
-                        <div>
-                          <h3 className="font-semibold text-purple-900">{item.task_title}</h3>
-                          <p className="text-sm text-gray-600">{item.student_name}</p>
-                        </div>
-                        <div className="text-right">
-                          <div className="text-2xl font-bold text-purple-600">{item.final_grade}</div>
-                          <div className="text-xs text-gray-500">
-                            AI: {item.ai_suggested_grade}
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-2 text-sm">
-                        {item.ai_agreement ? (
-                          <span className="bg-green-100 text-green-700 px-2 py-1 rounded text-xs border border-green-300">
-                            ✓ AI Agreement
-                          </span>
-                        ) : (
-                          <span className="bg-orange-100 text-orange-700 px-2 py-1 rounded text-xs border border-orange-300">
-                            Override ({Math.abs(item.grade_difference).toFixed(1)} pts)
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
+        )}
       </div>
     </div>
   );

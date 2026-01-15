@@ -181,6 +181,36 @@
   text-overflow: ellipsis;
 }
 
+/* Unread Badge - WhatsApp style */
+.unread-badge {
+  min-width: 1.25rem;
+  height: 1.25rem;
+  padding: 0 0.375rem;
+  background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+  color: white;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  border-radius: 9999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 2px 6px rgba(34, 197, 94, 0.3);
+}
+
+.chat-item.has-unread .chat-name {
+  font-weight: 800;
+}
+
+.chat-item.has-unread .chat-preview {
+  color: #1e293b;
+  font-weight: 600;
+}
+
+.dark .chat-item.has-unread .chat-preview {
+  color: #f8fafc;
+}
+
 /* Main Chat Area */
 .chat-main-header {
   padding: 1.25rem 2rem;
@@ -246,6 +276,95 @@
   border: 1px solid rgba(139, 92, 246, 0.1);
 }
 
+/* File Attachment Styles */
+.file-attachment {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 0.75rem;
+  margin: 0.5rem 0;
+  text-decoration: none;
+  transition: all 0.2s;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.file-attachment:hover {
+  background: rgba(255, 255, 255, 0.25);
+  transform: translateY(-1px);
+}
+
+.sent .file-attachment {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.received .file-attachment {
+  background: rgba(139, 92, 246, 0.08);
+  border-color: rgba(139, 92, 246, 0.15);
+}
+
+.file-attachment-icon {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.sent .file-attachment-icon {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+}
+
+.received .file-attachment-icon {
+  background: rgba(139, 92, 246, 0.15);
+  color: var(--chat-primary);
+}
+
+.file-attachment-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+}
+
+.file-attachment-name {
+  font-weight: 600;
+  font-size: 0.875rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sent .file-attachment-name {
+  color: white;
+}
+
+.received .file-attachment-name {
+  color: #1e293b;
+}
+
+.file-attachment-action {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.75rem;
+  opacity: 0.8;
+  margin-top: 0.125rem;
+}
+
+.sent .file-attachment-action {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.received .file-attachment-action {
+  color: var(--chat-primary);
+}
+
 .message-meta {
   display: flex;
   align-items: center;
@@ -257,6 +376,20 @@
 
 .sent .message-meta {
   justify-content: flex-end;
+}
+
+/* WhatsApp-style tick indicators */
+.message-meta .text-blue-400 {
+  color: #34b7f1 !important; /* WhatsApp blue for read receipts */
+  opacity: 1;
+}
+
+.message-meta .text-indigo-200 {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.received .message-meta .text-indigo-200 {
+  color: #94a3b8;
 }
 
 /* Input Area */
@@ -294,7 +427,8 @@
   color: #1e293b;
   min-width: 0;
   resize: none;
-  overflow: hidden;
+  overflow-y: auto;
+  overflow-x: hidden;
   max-height: 120px;
   min-height: 24px;
   line-height: 1.5;

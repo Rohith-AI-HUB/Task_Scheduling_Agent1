@@ -111,5 +111,21 @@ export const chatService = {
     async searchUsers(query) {
         const response = await axios.get(`${API_URL}/users/search?query=${encodeURIComponent(query)}`, await getAuthHeader());
         return response.data;
+    },
+
+    // Mark a message as read (for read receipts)
+    async markMessageAsRead(messageId) {
+        const response = await axios.post(`${API_URL}/messages/${messageId}/mark-read`, {}, await getAuthHeader());
+        return response.data;
+    },
+
+    // Mark all messages in a chat as read (called when opening a conversation)
+    async markChatAsRead(chatType, chatId) {
+        const response = await axios.post(
+            `${API_URL}/messages/mark-read-bulk?chat_type=${chatType}&chat_id=${chatId}`,
+            {},
+            await getAuthHeader()
+        );
+        return response.data;
     }
 };

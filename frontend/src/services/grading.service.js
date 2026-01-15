@@ -7,26 +7,47 @@ const getAuthHeader = () => ({
 });
 
 export const gradingService = {
-    async getPendingSubmissions() {
-        const response = await axios.get(`${API_URL}/pending`, getAuthHeader());
+    /**
+     * Get all tasks assigned by this teacher with student details
+     * @param {Object} filters - Optional filters (status, subject, search)
+     */
+    async getAssignedTasks(filters = {}) {
+        const params = new URLSearchParams();
+        if (filters.status) params.append('status', filters.status);
+        if (filters.subject) params.append('subject', filters.subject);
+        if (filters.search) params.append('search', filters.search);
+
+        const queryString = params.toString();
+        const url = queryString ? `${API_URL}/assigned-tasks?${queryString}` : `${API_URL}/assigned-tasks`;
+
+        const response = await axios.get(url, getAuthHeader());
         return response.data;
     },
 
-    async getHistory() {
-        const response = await axios.get(`${API_URL}/history`, getAuthHeader());
+    /**
+     * Get full task details including attachments and notes
+     * @param {string} taskId - Task ID
+     */
+    async getTaskDetails(taskId) {
+        const response = await axios.get(`${API_URL}/task/${taskId}/details`, getAuthHeader());
         return response.data;
     },
 
-    async analyzeSubmission(taskId, studentId) {
-        const response = await axios.post(`${API_URL}/analyze-submission`, {
-            task_id: taskId,
-            student_id: studentId
-        }, getAuthHeader());
+    /**
+     * Add teacher feedback and optional grade to a task
+     * @param {string} taskId - Task ID
+     * @param {Object} data - Feedback data { feedback: string, grade?: number }
+     */
+    async addFeedback(taskId, data) {
+        const response = await axios.post(`${API_URL}/task/${taskId}/feedback`, data, getAuthHeader());
         return response.data;
     },
 
-    async finalizeGrade(suggestionId, data) {
-        const response = await axios.put(`${API_URL}/${suggestionId}/finalize`, data, getAuthHeader());
+    /**
+     * Get statistics for the task review dashboard
+     */
+    async getStats() {
+        const response = await axios.get(`${API_URL}/stats`, getAuthHeader());
         return response.data;
     }
 };

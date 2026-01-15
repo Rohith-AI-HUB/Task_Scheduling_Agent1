@@ -5,7 +5,7 @@ import {
   ArrowLeft, MessageSquarePlus, X, Check, CheckCheck,
   Bot, Users, User, Home, Sparkles, Smile, Image as ImageIcon,
   MoreHorizontal, ChevronRight, Hash, Phone, Video,
-  FileText, Command, Trash2, Loader2
+  FileText, Command, Trash2, Loader2, Download, File
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useWebSocket } from '../hooks/useWebSocket';
@@ -79,6 +79,69 @@ const ChatPage = () => {
     } catch {
       return '';
     }
+  };
+
+  // Render message content with file attachment support
+  const renderMessageContent = (content) => {
+    if (!content) return null;
+
+    // Check for file attachment pattern: 📎 [filename](url)
+    const filePattern = /📎\s*\[([^\]]+)\]\(([^)]+)\)/g;
+    const parts = [];
+    let lastIndex = 0;
+    let match;
+
+    while ((match = filePattern.exec(content)) !== null) {
+      // Add text before the match
+      if (match.index > lastIndex) {
+        parts.push(
+          <span key={`text-${lastIndex}`}>
+            {content.slice(lastIndex, match.index)}
+          </span>
+        );
+      }
+
+      const fileName = match[1];
+      const fileUrl = match[2];
+      const fullUrl = fileUrl.startsWith('http') ? fileUrl : `http://localhost:8000${fileUrl}`;
+
+      // Add file attachment component
+      parts.push(
+        <a
+          key={`file-${match.index}`}
+          href={fullUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          download={fileName}
+          className="file-attachment"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="file-attachment-icon">
+            <File size={18} />
+          </div>
+          <div className="file-attachment-info">
+            <span className="file-attachment-name">{fileName}</span>
+            <span className="file-attachment-action">
+              <Download size={12} /> Download
+            </span>
+          </div>
+        </a>
+      );
+
+      lastIndex = match.index + match[0].length;
+    }
+
+    // Add remaining text after last match
+    if (lastIndex < content.length) {
+      parts.push(
+        <span key={`text-${lastIndex}`}>
+          {content.slice(lastIndex)}
+        </span>
+      );
+    }
+
+    // If no file attachments found, return content as-is
+    return parts.length > 0 ? parts : content;
   };
 
   const fetchChats = async () => {
@@ -222,17 +285,22 @@ const ChatPage = () => {
       textareaRef.current.style.height = 'auto';
     }
 
+    // Generate temporary ID for optimistic update
+    const tempId = `temp-${Date.now()}`;
+    const userId = user?.id || user?.uid || user?._id;
+
     try {
       if (activeChat.type === 'ai') {
         // Add user message immediately for responsiveness
         const userMsg = {
-          id: Date.now().toString(),
-          sender_id: user?.uid || user?._id,
+          id: tempId,
+          sender_id: userId,
           sender_name: user?.full_name || 'You',
           content: fileToSend ? `${content}\n📎 ${fileToSend.name}` : content,
           timestamp: new Date().toISOString(),
           chat_type: 'ai',
-          has_document: !!fileToSend
+          has_document: !!fileToSend,
+          read_by: [userId]
         };
         setMessages(prev => [...prev, userMsg]);
         setTimeout(scrollToBottom, 50);
@@ -251,21 +319,48 @@ const ChatPage = () => {
           console.log('Command executed:', response.command_result);
         }
       } else {
-        await chatService.sendMessage(activeChat.type, activeChat.id, content);
+        // Optimistic update - add message immediately for instant feel
+        const optimisticMsg = {
+          id: tempId,
+          sender_id: userId,
+          sender_name: user?.full_name || 'You',
+          content: content,
+          timestamp: new Date().toISOString(),
+          chat_type: activeChat.type,
+          chat_id: activeChat.id,
+          read_by: [userId] // Only sender has read it (shows single/double tick, not blue)
+        };
+        setMessages(prev => [...prev, optimisticMsg]);
+        setTimeout(scrollToBottom, 50);
+
+        // Send to server in background
+        const response = await chatService.sendMessage(activeChat.type, activeChat.id, content);
+
+        // Replace temp message with server response (contains real ID)
+        if (response?.message) {
+          setMessages(prev => prev.map(msg =>
+            msg.id === tempId ? response.message : msg
+          ));
+        }
+
         sendMessage('typing_stop', { chat_type: activeChat.type, chat_id: activeChat.id });
         setIsTyping(false);
       }
     } catch (error) {
       console.error('Error sending message:', error);
       setIsProcessingAI(false);
+
+      // Remove failed optimistic message and show error
+      setMessages(prev => prev.filter(msg => msg.id !== tempId));
+
       // Show error message
       const errorMsg = {
         id: Date.now().toString(),
-        sender_id: 'ai_assistant',
-        sender_name: 'AI Assistant',
-        content: 'Sorry, I encountered an error processing your request. Please try again.',
+        sender_id: 'system',
+        sender_name: 'System',
+        content: 'Failed to send message. Please try again.',
         timestamp: new Date().toISOString(),
-        chat_type: 'ai'
+        chat_type: activeChat.type
       };
       setMessages(prev => [...prev, errorMsg]);
     }
@@ -332,11 +427,44 @@ const ChatPage = () => {
   // WebSocket Effects
   useEffect(() => {
     const unsubMsg = subscribe('new_message', (data) => {
-      if (activeChat && data.chat_type === activeChat.type && data.chat_id === activeChat.id) {
+      const isActiveChat = activeChat && data.chat_type === activeChat.type && data.chat_id === activeChat.id;
+
+      if (isActiveChat) {
+        // Add message to current chat
         setMessages(prev => [...prev, data.message]);
         setTimeout(scrollToBottom, 50);
+
+        // Mark message as read since user is viewing this chat
+        if (data.message?.id) {
+          chatService.markMessageAsRead(data.message.id).catch(console.error);
+        }
       }
-      fetchChats();
+
+      // Update chat list with new message and unread count
+      setChats(prev => {
+        const chatKey = `${data.chat_type}-${data.chat_id}`;
+        const updatedChats = prev.map(chat => {
+          const thisChatKey = `${chat.type}-${chat.id}`;
+          if (thisChatKey === chatKey) {
+            return {
+              ...chat,
+              last_message: data.message,
+              // Increment unread only if not viewing this chat
+              unread_count: isActiveChat ? 0 : (chat.unread_count || 0) + 1
+            };
+          }
+          return chat;
+        });
+
+        // Sort chats by last message timestamp (most recent first)
+        return updatedChats.sort((a, b) => {
+          if (a.type === 'ai') return -1; // Keep AI at top
+          if (b.type === 'ai') return 1;
+          const aTime = a.last_message?.timestamp || '';
+          const bTime = b.last_message?.timestamp || '';
+          return bTime.localeCompare(aTime);
+        });
+      });
     });
 
     const unsubTyping = subscribe('user_typing', (data) => {
@@ -349,14 +477,48 @@ const ChatPage = () => {
       }
     });
 
-    return () => { unsubMsg(); unsubTyping(); };
+    // Listen for read receipts (when someone reads your message - shows blue ticks)
+    const unsubRead = subscribe('message_read', (data) => {
+      // Update the specific message's read_by array
+      setMessages(prev => prev.map(msg =>
+        msg.id === data.message_id
+          ? { ...msg, read_by: [...(msg.read_by || []), data.read_by] }
+          : msg
+      ));
+    });
+
+    // Listen for bulk read receipts (when someone opens chat and reads all messages)
+    const unsubBulkRead = subscribe('messages_read', (data) => {
+      // Update all messages in the list that were read
+      setMessages(prev => prev.map(msg =>
+        data.message_ids.includes(msg.id)
+          ? { ...msg, read_by: [...(msg.read_by || []), data.read_by] }
+          : msg
+      ));
+    });
+
+    return () => { unsubMsg(); unsubTyping(); unsubRead(); unsubBulkRead(); };
   }, [subscribe, activeChat]);
 
   useEffect(() => { fetchChats(); }, []);
+
+  // When opening a chat, fetch messages and mark all as read
   useEffect(() => {
     if (activeChat) {
       fetchMessages(activeChat.type, activeChat.id);
       setTypingUsers(new Set());
+
+      // Clear unread count for this chat in the sidebar
+      setChats(prev => prev.map(chat =>
+        chat.type === activeChat.type && chat.id === activeChat.id
+          ? { ...chat, unread_count: 0 }
+          : chat
+      ));
+
+      // Mark all messages in this chat as read (triggers blue ticks for sender)
+      if (activeChat.type !== 'ai') {
+        chatService.markChatAsRead(activeChat.type, activeChat.id).catch(console.error);
+      }
     }
   }, [activeChat]);
 
@@ -411,7 +573,7 @@ const ChatPage = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: idx * 0.05 }}
               onClick={() => setActiveChat(chat)}
-              className={`chat-item ${activeChat?.id === chat.id ? 'active' : ''}`}
+              className={`chat-item ${activeChat?.id === chat.id && activeChat?.type === chat.type ? 'active' : ''} ${chat.unread_count > 0 ? 'has-unread' : ''}`}
             >
               <div className={`chat-avatar ${chat.type === 'ai' ? 'ai' : ''}`}>
                 {chat.type === 'ai' ? <Bot size={24} /> : getInitials(chat.name)}
@@ -419,9 +581,16 @@ const ChatPage = () => {
               <div className="chat-info">
                 <div className="chat-name-row">
                   <span className="chat-name">{chat.name}</span>
-                  <span className="chat-time">
-                    {chat.last_message ? formatDate(chat.last_message.timestamp) : ''}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="chat-time">
+                      {chat.last_message ? formatDate(chat.last_message.timestamp) : ''}
+                    </span>
+                    {chat.unread_count > 0 && (
+                      <span className="unread-badge">
+                        {chat.unread_count > 99 ? '99+' : chat.unread_count}
+                      </span>
+                    )}
+                  </div>
                 </div>
                 <div className="chat-preview">
                   {chat.type === 'ai' ? chat.description : (chat.last_message?.content || 'No messages yet')}
@@ -464,9 +633,17 @@ const ChatPage = () => {
             <div className="messages-scroller">
               <AnimatePresence mode="popLayout">
                 {messages.map((msg, index) => {
-                  const isOwn = msg.sender_id === user?.uid || msg.sender_id === user?._id;
+                  // Check if message is from current user (check all possible user ID fields)
+                  const isOwn = msg.sender_id === user?.id || msg.sender_id === user?.uid || msg.sender_id === user?._id;
                   const showTime = index === messages.length - 1 ||
                     new Date(messages[index + 1]?.timestamp) - new Date(msg.timestamp) > 300000;
+
+                  // WhatsApp-style tick indicators for sent messages
+                  // Single tick (✓) = sent/pending
+                  // Double tick (✓✓) = delivered
+                  // Blue double tick (✓✓) = read
+                  const isRead = msg.read_by && msg.read_by.length > 1; // More than just sender read it
+                  const isDelivered = msg.id && !msg.id.toString().startsWith('temp-'); // Has real ID from server
 
                   return (
                     <motion.div
@@ -476,10 +653,18 @@ const ChatPage = () => {
                       className={`message-row ${isOwn ? 'sent' : 'received'}`}
                     >
                       <div className="message-bubble">
-                        {msg.content}
+                        {renderMessageContent(msg.content)}
                         <div className="message-meta">
                           {formatTime(msg.timestamp)}
-                          {isOwn && <CheckCheck size={14} className="text-indigo-200" />}
+                          {isOwn && (
+                            isRead ? (
+                              <CheckCheck size={14} className="text-blue-400" title="Read" />
+                            ) : isDelivered ? (
+                              <CheckCheck size={14} className="text-indigo-200" title="Delivered" />
+                            ) : (
+                              <Check size={14} className="text-indigo-200" title="Sent" />
+                            )
+                          )}
                         </div>
                       </div>
                     </motion.div>

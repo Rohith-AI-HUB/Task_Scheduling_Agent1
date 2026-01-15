@@ -169,7 +169,7 @@ async def send_message(
         # Create message document
         msg_doc = {
             "sender_id": user_id,
-            "sender_name": current_user.get("name", "Unknown"),
+            "sender_name": current_user.get("full_name", "Unknown"),
             "chat_type": message.chat_type,
             "chat_id": message.chat_id,
             "content": message.content.strip(),
@@ -247,10 +247,22 @@ async def get_chat_messages(
         limit = min(limit, 100)
 
         # Build query
-        query = {
-            "chat_type": chat_type,
-            "chat_id": chat_id
-        }
+        if chat_type == "direct":
+            # For direct messages, fetch messages in both directions
+            # (user sends to chat_id OR chat_id sends to user)
+            query = {
+                "chat_type": "direct",
+                "$or": [
+                    {"sender_id": user_id, "chat_id": chat_id},
+                    {"sender_id": chat_id, "chat_id": user_id}
+                ]
+            }
+        else:
+            # For group chats, just match the chat_id
+            query = {
+                "chat_type": chat_type,
+                "chat_id": chat_id
+            }
 
         # Pagination: get messages before a specific ID
         if before_id:
@@ -454,7 +466,7 @@ async def add_reaction(
             # Add new reaction
             reactions.append({
                 "user_id": user_id,
-                "user_name": current_user.get("name", "Unknown"),
+                "user_name": current_user.get("full_name", "Unknown"),
                 "emoji": reaction.emoji
             })
             action = "added"
@@ -501,7 +513,7 @@ async def mark_message_as_read(
     user_id: str = Depends(get_current_user_id)
 ):
     """
-    Mark a message as read.
+    Mark a message as read and notify the sender.
 
     Returns:
         Success confirmation
@@ -510,14 +522,33 @@ async def mark_message_as_read(
         if not ObjectId.is_valid(message_id):
             raise HTTPException(status_code=400, detail="Invalid message ID")
 
+        # Get the message first to check sender
+        message = chat_history_collection.find_one({"_id": ObjectId(message_id)})
+        if not message:
+            raise HTTPException(status_code=404, detail="Message not found")
+
+        # Don't mark own messages as read (already read by sender)
+        if message["sender_id"] == user_id:
+            return {"message": "Own message", "success": True}
+
         # Add user to read_by array if not already there
         result = chat_history_collection.update_one(
             {"_id": ObjectId(message_id)},
             {"$addToSet": {"read_by": user_id}}
         )
 
-        if result.matched_count == 0:
-            raise HTTPException(status_code=404, detail="Message not found")
+        # Notify the sender that their message was read (for blue ticks)
+        if result.modified_count > 0:
+            await broadcaster.to_user(
+                user_id=message["sender_id"],
+                event="message_read",
+                data={
+                    "message_id": message_id,
+                    "read_by": user_id,
+                    "chat_type": message.get("chat_type"),
+                    "chat_id": message.get("chat_id")
+                }
+            )
 
         return {
             "message": "Message marked as read",
@@ -528,6 +559,82 @@ async def mark_message_as_read(
         raise
     except Exception as e:
         logger.error(f"Error marking message as read: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Failed to mark as read: {str(e)}")
+
+
+@router.post("/messages/mark-read-bulk")
+async def mark_messages_as_read_bulk(
+    chat_type: str,
+    chat_id: str,
+    user_id: str = Depends(get_current_user_id)
+):
+    """
+    Mark all messages in a chat as read. Called when opening a conversation.
+
+    Returns:
+        Number of messages marked as read
+    """
+    try:
+        # Validate chat type
+        if chat_type not in ["group", "direct"]:
+            raise HTTPException(status_code=400, detail="Invalid chat_type")
+
+        # Build query to find unread messages from others
+        if chat_type == "direct":
+            # For direct messages, mark messages FROM the other user TO current user
+            query = {
+                "chat_type": "direct",
+                "sender_id": chat_id,
+                "chat_id": user_id,
+                "read_by": {"$ne": user_id}
+            }
+        else:
+            # For group chats, mark all messages not read by current user
+            query = {
+                "chat_type": "group",
+                "chat_id": chat_id,
+                "sender_id": {"$ne": user_id},
+                "read_by": {"$ne": user_id}
+            }
+
+        # Get messages to mark as read (to notify senders)
+        messages_to_mark = list(chat_history_collection.find(query))
+
+        if not messages_to_mark:
+            return {"marked_count": 0, "success": True}
+
+        # Mark all as read
+        result = chat_history_collection.update_many(
+            query,
+            {"$addToSet": {"read_by": user_id}}
+        )
+
+        # Notify each unique sender about read receipts
+        sender_ids = set(msg["sender_id"] for msg in messages_to_mark)
+        for sender_id in sender_ids:
+            sender_message_ids = [str(msg["_id"]) for msg in messages_to_mark if msg["sender_id"] == sender_id]
+            await broadcaster.to_user(
+                user_id=sender_id,
+                event="messages_read",
+                data={
+                    "message_ids": sender_message_ids,
+                    "read_by": user_id,
+                    "chat_type": chat_type,
+                    "chat_id": chat_id if chat_type == "group" else user_id
+                }
+            )
+
+        logger.info(f"User {user_id} marked {result.modified_count} messages as read in {chat_type} chat {chat_id}")
+
+        return {
+            "marked_count": result.modified_count,
+            "success": True
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error marking messages as read: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"Failed to mark as read: {str(e)}")
 
 
@@ -613,7 +720,7 @@ async def get_user_chats(user_id: str = Depends(get_current_user_id)):
             chats.append({
                 "id": other_user_id,
                 "type": "direct",
-                "name": other_user.get("name", "Unknown User"),
+                "name": other_user.get("full_name", "Unknown User"),
                 "email": other_user.get("email", ""),
                 "last_message": format_message(last_message) if last_message else None,
                 "unread_count": unread_count

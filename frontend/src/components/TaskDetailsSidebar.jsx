@@ -1,10 +1,15 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Clock, User, AlertCircle, Calendar, Trash2, Edit, GraduationCap, BookOpen, FileText, ExternalLink } from 'lucide-react';
+import {
+  X, Clock, User, AlertCircle, Calendar, Trash2, Edit, GraduationCap,
+  BookOpen, FileText, ExternalLink, Paperclip, Upload, StickyNote,
+  Plus, Download, MessageSquare
+} from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import clsx from 'clsx';
 import useTaskStore from '../store/useTaskStore';
 import { taskService } from '../services/task.service';
+import { attachmentService } from '../services/attachment.service';
 import { useToast } from '../store/useStore';
 import EditTaskModal from './EditTaskModal';
 
@@ -16,6 +21,8 @@ import EditTaskModal from './EditTaskModal';
  * - Full task metadata display
  * - Complexity indicator
  * - Subtasks with status
+ * - Attachments upload (for teacher-assigned tasks)
+ * - Notes section (for teacher-assigned tasks)
  * - Edit and Delete actions
  * - Click outside to close
  */
@@ -24,6 +31,8 @@ export default function TaskDetailsSidebar() {
   const { selectedTask, setSelectedTask, deleteTask: removeTask, updateTask } = useTaskStore();
   const toast = useToast();
   const navigate = useNavigate();
+  const fileInputRef = useRef(null);
+
   const [showEditModal, setShowEditModal] = useState(false);
   const [editLoading, setEditLoading] = useState(false);
   const [editError, setEditError] = useState('');
@@ -31,6 +40,16 @@ export default function TaskDetailsSidebar() {
   const [subtasksDraft, setSubtasksDraft] = useState([]);
   const [subtasksSaving, setSubtasksSaving] = useState(false);
   const [newSubtaskTitle, setNewSubtaskTitle] = useState('');
+
+  // Attachments state
+  const [attachments, setAttachments] = useState([]);
+  const [uploadingFile, setUploadingFile] = useState(false);
+
+  // Notes state
+  const [notes, setNotes] = useState([]);
+  const [newNoteContent, setNewNoteContent] = useState('');
+  const [addingNote, setAddingNote] = useState(false);
+  const [showNoteInput, setShowNoteInput] = useState(false);
 
   const normalizeSubtasks = (subtasks) => {
     const list = Array.isArray(subtasks) ? subtasks : [];
@@ -57,12 +76,20 @@ export default function TaskDetailsSidebar() {
     if (!selectedTask) {
       setSubtasksBase([]);
       setSubtasksDraft([]);
+      setAttachments([]);
+      setNotes([]);
       return;
     }
 
     const normalized = normalizeSubtasks(selectedTask.subtasks);
     setSubtasksBase(normalized);
     setSubtasksDraft(normalized);
+
+    // Load attachments from task
+    setAttachments(selectedTask.attachments || []);
+
+    // Load notes from task
+    setNotes(selectedTask.student_notes || []);
   }, [selectedTask?.id]);
 
   if (!selectedTask) return null;
@@ -152,12 +179,10 @@ export default function TaskDetailsSidebar() {
         ...formData,
         deadline: new Date(formData.deadline).toISOString()
       });
-      // Update the task in the store
       updateTask(taskId, {
         ...formData,
         deadline: new Date(formData.deadline).toISOString()
       });
-      // Update selectedTask to reflect changes
       setSelectedTask({
         ...selectedTask,
         ...formData,
@@ -174,7 +199,6 @@ export default function TaskDetailsSidebar() {
   };
 
   const handleRequestExtension = () => {
-    // Navigate to extensions page with the task pre-selected
     navigate('/extensions', { state: { preSelectedTaskId: selectedTask.id } });
     handleClose();
   };
@@ -195,7 +219,78 @@ export default function TaskDetailsSidebar() {
     }
   };
 
-  // Format deadline
+  // File upload handler
+  const handleFileSelect = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadingFile(true);
+    try {
+      const result = await attachmentService.uploadAttachment(selectedTask.id, file);
+      setAttachments([...attachments, result.attachment]);
+      toast.success('File uploaded successfully');
+    } catch (error) {
+      console.error('Error uploading file:', error);
+      toast.error(error.response?.data?.detail || 'Failed to upload file');
+    } finally {
+      setUploadingFile(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
+  // Delete attachment handler
+  const handleDeleteAttachment = async (attachmentId) => {
+    if (!window.confirm('Are you sure you want to delete this attachment?')) {
+      return;
+    }
+
+    try {
+      await attachmentService.deleteAttachment(selectedTask.id, attachmentId);
+      setAttachments(attachments.filter(a => a.id !== attachmentId));
+      toast.success('Attachment deleted');
+    } catch (error) {
+      console.error('Error deleting attachment:', error);
+      toast.error(error.response?.data?.detail || 'Failed to delete attachment');
+    }
+  };
+
+  // Add note handler
+  const handleAddNote = async () => {
+    if (!newNoteContent.trim()) return;
+
+    setAddingNote(true);
+    try {
+      const result = await attachmentService.addNote(selectedTask.id, newNoteContent);
+      setNotes([...notes, result.note]);
+      setNewNoteContent('');
+      setShowNoteInput(false);
+      toast.success('Note added');
+    } catch (error) {
+      console.error('Error adding note:', error);
+      toast.error(error.response?.data?.detail || 'Failed to add note');
+    } finally {
+      setAddingNote(false);
+    }
+  };
+
+  // Delete note handler
+  const handleDeleteNote = async (noteId) => {
+    if (!window.confirm('Are you sure you want to delete this note?')) {
+      return;
+    }
+
+    try {
+      await attachmentService.deleteNote(selectedTask.id, noteId);
+      setNotes(notes.filter(n => n.id !== noteId));
+      toast.success('Note deleted');
+    } catch (error) {
+      console.error('Error deleting note:', error);
+      toast.error(error.response?.data?.detail || 'Failed to delete note');
+    }
+  };
+
   const formatDeadline = (deadline) => {
     if (!deadline) return 'No deadline';
     const date = new Date(deadline);
@@ -208,7 +303,13 @@ export default function TaskDetailsSidebar() {
     });
   };
 
-  // Render complexity dots
+  const formatFileSize = (bytes) => {
+    if (!bytes) return '';
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+  };
+
   const renderComplexityDots = () => {
     const score = Math.min(selectedTask.complexity_score || 0, 10);
     const dots = [];
@@ -269,7 +370,7 @@ export default function TaskDetailsSidebar() {
             animate={{ x: 0 }}
             exit={{ x: '100%' }}
             transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-            className="fixed right-0 top-0 h-full w-full md:w-[450px] z-50 overflow-y-auto"
+            className="fixed right-0 top-0 h-screen w-full md:w-[450px] z-50 overflow-y-auto"
           >
             <div className="glass-light dark:glass-dark h-full p-6">
               {/* Close Button */}
@@ -397,7 +498,7 @@ export default function TaskDetailsSidebar() {
                       onKeyDown={(e) => {
                         if (e.key === 'Enter') handleAddSubtask();
                       }}
-                      placeholder="Add a subtask…"
+                      placeholder="Add a subtask..."
                       className="flex-1 bg-white/70 dark:bg-gray-800/70 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-800 dark:text-gray-200 outline-none focus:ring-2 focus:ring-purple-500/40 disabled:cursor-not-allowed"
                     />
                     <button
@@ -444,6 +545,170 @@ export default function TaskDetailsSidebar() {
                   </div>
                 </div>
               )}
+
+              {/* Teacher Feedback Display - Show if feedback exists */}
+              {selectedTask.teacher_feedback && (
+                <div className="mb-6 p-4 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/30 dark:to-emerald-900/30 rounded-xl border border-green-200 dark:border-green-700">
+                  <h3 className="text-sm font-semibold text-green-800 dark:text-green-300 mb-3 flex items-center gap-2">
+                    <MessageSquare size={18} />
+                    Teacher Feedback
+                    {selectedTask.grade !== null && selectedTask.grade !== undefined && (
+                      <span className="ml-auto bg-green-600 text-white px-2 py-0.5 rounded text-xs font-bold">
+                        {selectedTask.grade}/100
+                      </span>
+                    )}
+                  </h3>
+                  <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
+                    {selectedTask.teacher_feedback}
+                  </p>
+                </div>
+              )}
+
+              {/* Attachments Section - Available for all tasks */}
+              <div className="mb-6 p-4 bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-900/30 dark:to-cyan-900/30 rounded-xl border border-blue-200 dark:border-blue-700">
+                <h3 className="text-sm font-semibold text-blue-800 dark:text-blue-300 mb-3 flex items-center gap-2">
+                  <Paperclip size={18} />
+                  Attachments ({attachments.length})
+                </h3>
+
+                  {/* Attachment List */}
+                  {attachments.length > 0 && (
+                    <ul className="space-y-2 mb-3">
+                      {attachments.map((att, idx) => (
+                        <li key={att.id || idx} className="flex items-center justify-between bg-white/70 dark:bg-gray-800/50 rounded-lg p-2">
+                          <div className="flex items-center gap-2 flex-1 min-w-0">
+                            <FileText size={16} className="text-blue-600 flex-shrink-0" />
+                            <div className="min-w-0">
+                              <p className="text-sm font-medium text-gray-800 dark:text-gray-200 truncate">
+                                {att.filename}
+                              </p>
+                              <p className="text-xs text-gray-500">{formatFileSize(att.size)}</p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <a
+                              href={`http://localhost:8000${att.url}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="p-1.5 hover:bg-blue-100 dark:hover:bg-blue-800 rounded transition-colors"
+                              title="Download"
+                            >
+                              <Download size={14} className="text-blue-600" />
+                            </a>
+                            <button
+                              onClick={() => handleDeleteAttachment(att.id)}
+                              className="p-1.5 hover:bg-red-100 dark:hover:bg-red-800 rounded transition-colors"
+                              title="Delete"
+                            >
+                              <Trash2 size={14} className="text-red-500" />
+                            </button>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+
+                  {/* Upload Button */}
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={handleFileSelect}
+                    className="hidden"
+                    accept=".pdf,.doc,.docx,.txt,.png,.jpg,.jpeg,.gif,.zip,.py,.js,.html,.css"
+                  />
+                  <button
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={uploadingFile}
+                    className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded-lg text-sm font-medium transition-colors"
+                  >
+                    {uploadingFile ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                        Uploading...
+                      </>
+                    ) : (
+                      <>
+                        <Upload size={16} />
+                        Upload File
+                      </>
+                    )}
+                  </button>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 text-center">
+                    Max 10MB. PDF, DOC, TXT, images, code files
+                  </p>
+              </div>
+
+              {/* Notes Section - Available for all tasks */}
+              <div className="mb-6 p-4 bg-gradient-to-r from-amber-50 to-yellow-50 dark:from-amber-900/30 dark:to-yellow-900/30 rounded-xl border border-amber-200 dark:border-amber-700">
+                <h3 className="text-sm font-semibold text-amber-800 dark:text-amber-300 mb-3 flex items-center gap-2">
+                  <StickyNote size={18} />
+                  My Notes ({notes.length})
+                </h3>
+
+                  {/* Notes List */}
+                  {notes.length > 0 && (
+                    <ul className="space-y-2 mb-3 max-h-[200px] overflow-y-auto">
+                      {notes.map((note, idx) => (
+                        <li key={note.id || idx} className="bg-white/70 dark:bg-gray-800/50 rounded-lg p-3">
+                          <p className="text-sm text-gray-800 dark:text-gray-200 whitespace-pre-wrap">
+                            {note.content}
+                          </p>
+                          <div className="flex items-center justify-between mt-2">
+                            <span className="text-xs text-gray-500">
+                              {note.created_at ? new Date(note.created_at).toLocaleDateString() : ''}
+                            </span>
+                            <button
+                              onClick={() => handleDeleteNote(note.id)}
+                              className="p-1 hover:bg-red-100 dark:hover:bg-red-800 rounded transition-colors"
+                              title="Delete note"
+                            >
+                              <Trash2 size={12} className="text-red-500" />
+                            </button>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+
+                  {/* Add Note */}
+                  {showNoteInput ? (
+                    <div className="space-y-2">
+                      <textarea
+                        value={newNoteContent}
+                        onChange={(e) => setNewNoteContent(e.target.value)}
+                        placeholder="Add a note about your progress..."
+                        rows={3}
+                        className="w-full bg-white/70 dark:bg-gray-800/70 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-800 dark:text-gray-200 outline-none focus:ring-2 focus:ring-amber-500/40 resize-none"
+                      />
+                      <div className="flex gap-2">
+                        <button
+                          onClick={handleAddNote}
+                          disabled={addingNote || !newNoteContent.trim()}
+                          className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-amber-600 hover:bg-amber-700 disabled:bg-amber-400 text-white rounded-lg text-sm font-medium transition-colors"
+                        >
+                          {addingNote ? 'Adding...' : 'Add Note'}
+                        </button>
+                        <button
+                          onClick={() => {
+                            setShowNoteInput(false);
+                            setNewNoteContent('');
+                          }}
+                          className="px-3 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg text-sm font-medium hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => setShowNoteInput(true)}
+                      className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-sm font-medium transition-colors"
+                    >
+                      <Plus size={16} />
+                      Add Note
+                    </button>
+                  )}
+              </div>
 
               {/* Action Buttons */}
               <div className="space-y-3 mt-8">

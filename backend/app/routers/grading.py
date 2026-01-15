@@ -1,28 +1,26 @@
 """
-Grading Router - Week 2 Teacher Feature
-Intelligent AI-powered grading assistant
+Task Review Router - Teacher Feature
+View and review student task submissions with attachments and notes
 """
 
-from fastapi import APIRouter, HTTPException, Depends, Header
+from fastapi import APIRouter, HTTPException, Depends, Header, Query
+from pydantic import BaseModel
+from typing import Optional, List
 from app.db_config import (
-    grade_suggestions_collection,
     tasks_collection,
     users_collection,
-    extension_requests_collection,
     notifications_collection
-)
-from app.services.ai_grading_service import (
-    generate_grading_explanation,
-    calculate_grade_from_performance,
-    analyze_student_performance_trend,
-    identify_performance_strengths_weaknesses
 )
 from app.services.firebase_service import verify_firebase_token
 from bson import ObjectId
 from datetime import datetime
-from typing import Optional
 
-router = APIRouter(prefix="/grading", tags=["Grading"])
+router = APIRouter(prefix="/grading", tags=["Task Review"])
+
+
+class TeacherFeedback(BaseModel):
+    feedback: str
+    grade: Optional[float] = None
 
 
 def get_current_user(authorization: str = Header(...)):
@@ -41,329 +39,375 @@ def get_current_user(authorization: str = Header(...)):
     return user
 
 
-@router.post("/analyze-submission")
-async def analyze_student_submission(
-    task_id: str,
-    student_id: str,
+def calculate_progress(subtasks: list) -> int:
+    """Calculate task progress based on completed subtasks"""
+    if not subtasks or len(subtasks) == 0:
+        return 0
+
+    completed = sum(
+        1 for st in subtasks
+        if st.get('completed', False) or st.get('status') == 'completed'
+    )
+    return int((completed / len(subtasks)) * 100)
+
+
+@router.get("/assigned-tasks")
+async def get_assigned_tasks(
+    status: Optional[str] = Query(None, description="Filter by status: todo, in_progress, completed"),
+    subject: Optional[str] = Query(None, description="Filter by subject"),
+    search: Optional[str] = Query(None, description="Search by student name or USN"),
     current_user: dict = Depends(get_current_user)
 ):
     """
-    AI analyzes a student's task completion and suggests a grade
+    Get all tasks assigned by this teacher with student details
 
-    Analyzes:
-    1. Time to completion vs estimated time
-    2. Extension requests (penalize if excessive)
-    3. Subtask completion rate
-    4. Historical performance trend
-    5. Task complexity adjustment
-
-    Returns AI-suggested grade with detailed reasoning
+    Returns list of tasks with:
+    - Student name, USN
+    - Subject
+    - Task status and progress
+    - Deadline
     """
 
-    # Only teachers can grade
     if current_user.get('role') != 'teacher':
-        raise HTTPException(status_code=403, detail="Only teachers can access grading")
+        raise HTTPException(status_code=403, detail="Only teachers can access this")
 
-    # Get task details
+    # Build query for tasks created by this teacher
+    # Match tasks that are either:
+    # 1. Created by this teacher with is_teacher_assigned=True, OR
+    # 2. Created by this teacher (for backward compatibility with older tasks)
+    query = {
+        "created_by": current_user['id']
+    }
+
+    # Filter by status if provided
+    if status and status in ['todo', 'in_progress', 'completed']:
+        query["status"] = status
+
+    # Filter by subject if provided
+    if subject:
+        query["subject"] = {"$regex": subject, "$options": "i"}
+
+    # Get all matching tasks
+    tasks = list(tasks_collection.find(query).sort("created_at", -1))
+
+    # Enrich with student info
+    task_list = []
+    for task in tasks:
+        student = users_collection.find_one({"_id": ObjectId(task.get('assigned_to'))})
+
+        if not student:
+            continue
+
+        student_name = student.get('full_name', 'Unknown')
+        student_usn = student.get('usn', '')
+
+        # Apply search filter if provided
+        if search:
+            search_lower = search.lower()
+            if (search_lower not in student_name.lower() and
+                search_lower not in student_usn.lower()):
+                continue
+
+        # Calculate progress
+        subtasks = task.get('subtasks', [])
+        progress = calculate_progress(subtasks)
+
+        # Format deadline
+        deadline = task.get('deadline')
+        if isinstance(deadline, datetime):
+            deadline = deadline.isoformat()
+
+        created_at = task.get('created_at')
+        if isinstance(created_at, datetime):
+            created_at = created_at.isoformat()
+
+        task_list.append({
+            "id": str(task['_id']),
+            "title": task.get('title', ''),
+            "description": task.get('description', ''),
+            "student_id": str(student['_id']),
+            "student_name": student_name,
+            "student_usn": student_usn,
+            "student_email": student.get('email', ''),
+            "subject": task.get('subject', ''),
+            "status": task.get('status', 'todo'),
+            "progress": progress,
+            "priority": task.get('priority', 'medium'),
+            "deadline": deadline,
+            "created_at": created_at,
+            "has_attachments": len(task.get('attachments', [])) > 0,
+            "has_notes": len(task.get('student_notes', [])) > 0,
+            "attachment_count": len(task.get('attachments', [])),
+            "note_count": len(task.get('student_notes', [])),
+            "teacher_feedback": task.get('teacher_feedback'),
+            "grade": task.get('grade')
+        })
+
+    # Get unique subjects for filter dropdown
+    all_subjects = list(tasks_collection.distinct("subject", {
+        "created_by": current_user['id']
+    }))
+    # Filter out empty subjects
+    all_subjects = [s for s in all_subjects if s]
+
+    return {
+        "tasks": task_list,
+        "total": len(task_list),
+        "subjects": all_subjects
+    }
+
+
+@router.get("/task/{task_id}/details")
+async def get_task_details(
+    task_id: str,
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Get full task details including attachments and notes
+
+    Returns:
+    - Complete task information
+    - Student details
+    - All subtasks with status
+    - Attachments (files uploaded by student)
+    - Notes (text notes from student)
+    """
+
+    if current_user.get('role') != 'teacher':
+        raise HTTPException(status_code=403, detail="Only teachers can access this")
+
+    # Validate task ID
+    if not ObjectId.is_valid(task_id):
+        raise HTTPException(status_code=400, detail="Invalid task ID")
+
+    # Get task
     task = tasks_collection.find_one({"_id": ObjectId(task_id)})
     if not task:
         raise HTTPException(status_code=404, detail="Task not found")
 
-    # Get student details
-    student = users_collection.find_one({"_id": ObjectId(student_id)})
+    # Verify this task was created by the teacher
+    if task.get('created_by') != current_user['id']:
+        raise HTTPException(status_code=403, detail="You can only view tasks you created")
+
+    # Get student info
+    student = users_collection.find_one({"_id": ObjectId(task.get('assigned_to'))})
     if not student:
         raise HTTPException(status_code=404, detail="Student not found")
 
-    # Check if task is completed
-    if task.get('status') != 'completed':
-        raise HTTPException(status_code=400, detail="Task is not completed yet")
-
-    # Gather performance data
-    estimated_hours = task.get('estimated_hours', 4)
-    actual_hours = task.get('time_spent_minutes', 0) / 60.0
-
-    # Calculate days late (if any)
-    completion_date = task.get('completion_date', task.get('updated_at', datetime.utcnow()))
-    deadline = task.get('deadline', datetime.utcnow())
-
-    if isinstance(completion_date, str):
-        completion_date = datetime.fromisoformat(completion_date.replace('Z', '+00:00'))
-    if isinstance(deadline, str):
-        deadline = datetime.fromisoformat(deadline.replace('Z', '+00:00'))
-
-    days_late = max(0, (completion_date - deadline).days)
-    completed_on_time = days_late == 0
-
-    # Count subtasks (Check both 'completed' boolean and 'status' string)
+    # Calculate progress
     subtasks = task.get('subtasks', [])
-    total_subtasks = len(subtasks)
-    subtasks_completed = sum(1 for st in subtasks if st.get('completed', False) or st.get('status') == 'completed')
+    progress = calculate_progress(subtasks)
 
-    # Count extension requests for this task
-    extension_count = extension_requests_collection.count_documents({
-        "task_id": task_id,
-        "user_id": student_id
-    })
+    # Format dates
+    deadline = task.get('deadline')
+    if isinstance(deadline, datetime):
+        deadline = deadline.isoformat()
 
-    performance_data = {
-        "estimated_hours": estimated_hours,
-        "actual_hours": actual_hours,
-        "completed_on_time": completed_on_time,
-        "days_late": days_late,
-        "subtasks_completed": subtasks_completed,
-        "total_subtasks": total_subtasks,
-        "extension_requests": extension_count,
-        "complexity": task.get('complexity_score', 5)
-    }
+    created_at = task.get('created_at')
+    if isinstance(created_at, datetime):
+        created_at = created_at.isoformat()
 
-    # Calculate AI-suggested grade
-    suggested_grade = calculate_grade_from_performance(performance_data, task)
+    updated_at = task.get('updated_at')
+    if isinstance(updated_at, datetime):
+        updated_at = updated_at.isoformat()
 
-    # Get student's historical performance
-    historical_data = await analyze_student_performance_trend(student_id, tasks_collection)
-    historical_average = historical_data.get('avg_grade', 75)
+    # Format subtasks
+    formatted_subtasks = []
+    for st in subtasks:
+        formatted_subtasks.append({
+            "title": st.get('title') or st.get('text', ''),
+            "completed": st.get('completed', False) or st.get('status') == 'completed',
+            "ai_generated": st.get('ai_generated', False)
+        })
 
-    # Identify strengths and weaknesses
-    performance_analysis = identify_performance_strengths_weaknesses(performance_data)
+    # Format attachments
+    attachments = task.get('attachments', [])
+    formatted_attachments = []
+    for att in attachments:
+        if isinstance(att, dict):
+            formatted_attachments.append(att)
+        else:
+            # Legacy string format
+            formatted_attachments.append({
+                "id": att,
+                "filename": att,
+                "url": att,
+                "type": "unknown"
+            })
 
-    # AI generates detailed explanation
-    ai_analysis = await generate_grading_explanation(
-        task=task,
-        student=student,
-        performance_data=performance_data,
-        suggested_grade=suggested_grade,
-        historical_average=historical_average
-    )
-
-    # Save grade suggestion
-    suggestion = {
-        "task_id": task_id,
-        "student_id": student_id,
-        "teacher_id": current_user['id'],
-        "ai_suggested_grade": suggested_grade,
-        "ai_reasoning": ai_analysis.get('reasoning', ''),
-        "performance_factors": performance_data,
-        "strengths": performance_analysis.get('strength_areas', []),
-        "weaknesses": performance_analysis.get('weakness_areas', []),
-        "ai_strengths": ai_analysis.get('strengths', []),
-        "ai_weaknesses": ai_analysis.get('weaknesses', []),
-        "improvement_suggestions": ai_analysis.get('improvements', []),
-        "encouragement": ai_analysis.get('encouragement', ''),
-        "historical_context": {
-            "average_grade": historical_average,
-            "trend": historical_data.get('trend', 'no_data'),
-            "recent_grades": historical_data.get('recent_performance', [])
-        },
-        "status": "pending",
-        "created_at": datetime.utcnow()
-    }
-
-    result = grade_suggestions_collection.insert_one(suggestion)
+    # Format notes
+    notes = task.get('student_notes', [])
+    formatted_notes = []
+    for note in notes:
+        if isinstance(note, dict):
+            note_created = note.get('created_at')
+            if isinstance(note_created, datetime):
+                note_created = note_created.isoformat()
+            formatted_notes.append({
+                "id": note.get('id', ''),
+                "content": note.get('content', ''),
+                "created_at": note_created
+            })
+        else:
+            formatted_notes.append({
+                "id": "",
+                "content": str(note),
+                "created_at": None
+            })
 
     return {
-        "suggestion_id": str(result.inserted_id),
-        "suggested_grade": suggested_grade,
-        "reasoning": ai_analysis.get('reasoning'),
-        "strengths": ai_analysis.get('strengths', []),
-        "weaknesses": ai_analysis.get('weaknesses', []),
-        "improvements": ai_analysis.get('improvements', []),
-        "encouragement": ai_analysis.get('encouragement', ''),
-        "performance_summary": {
-            "time_efficiency": f"{(actual_hours / max(estimated_hours, 0.5)):.1f}x estimated",
-            "on_time": completed_on_time,
-            "completion_rate": f"{(subtasks_completed / max(total_subtasks, 1)) * 100:.0f}%" if total_subtasks > 0 else "N/A",
-            "extensions": extension_count
+        "task": {
+            "id": str(task['_id']),
+            "title": task.get('title', ''),
+            "description": task.get('description', ''),
+            "status": task.get('status', 'todo'),
+            "priority": task.get('priority', 'medium'),
+            "progress": progress,
+            "deadline": deadline,
+            "created_at": created_at,
+            "updated_at": updated_at,
+            "subject": task.get('subject', ''),
+            "estimated_hours": task.get('estimated_hours', 0),
+            "complexity_score": task.get('complexity_score', 5),
+            "teacher_feedback": task.get('teacher_feedback'),
+            "grade": task.get('grade')
         },
-        "historical_context": {
-            "student_average": historical_average,
-            "trend": historical_data.get('trend'),
-            "performance_comparison": "above" if suggested_grade > historical_average else "below" if suggested_grade < historical_average else "consistent"
-        }
+        "student": {
+            "id": str(student['_id']),
+            "name": student.get('full_name', 'Unknown'),
+            "usn": student.get('usn', ''),
+            "email": student.get('email', '')
+        },
+        "subtasks": formatted_subtasks,
+        "attachments": formatted_attachments,
+        "notes": formatted_notes
     }
 
 
-@router.put("/{suggestion_id}/finalize")
-async def finalize_grade(
-    suggestion_id: str,
-    final_grade: float,
-    teacher_comments: str,
-    override_reason: Optional[str] = None,
+@router.post("/task/{task_id}/feedback")
+async def add_teacher_feedback(
+    task_id: str,
+    feedback_data: TeacherFeedback,
     current_user: dict = Depends(get_current_user)
 ):
     """
-    Teacher finalizes the grade (can override AI suggestion)
+    Add teacher feedback and optional grade to a task
 
     Args:
-        suggestion_id: Grade suggestion ID
-        final_grade: Final grade (0-100)
-        teacher_comments: Teacher's feedback for student
-        override_reason: Reason if significantly different from AI suggestion
+        task_id: Task ID
+        feedback_data: Feedback text and optional grade
     """
 
     if current_user.get('role') != 'teacher':
-        raise HTTPException(status_code=403, detail="Only teachers can finalize grades")
+        raise HTTPException(status_code=403, detail="Only teachers can add feedback")
 
-    # Validate grade range
-    if not (0 <= final_grade <= 100):
-        raise HTTPException(status_code=400, detail="Grade must be between 0 and 100")
+    # Validate task ID
+    if not ObjectId.is_valid(task_id):
+        raise HTTPException(status_code=400, detail="Invalid task ID")
 
-    # Get suggestion
-    suggestion = grade_suggestions_collection.find_one({"_id": ObjectId(suggestion_id)})
-    if not suggestion:
-        raise HTTPException(status_code=404, detail="Grade suggestion not found")
+    # Get task
+    task = tasks_collection.find_one({"_id": ObjectId(task_id)})
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found")
 
-    ai_suggested_grade = suggestion.get('ai_suggested_grade', 0)
-    grade_difference = abs(final_grade - ai_suggested_grade)
+    # Verify this task was created by the teacher
+    if task.get('created_by') != current_user['id']:
+        raise HTTPException(status_code=403, detail="You can only add feedback to tasks you created")
 
-    # Require override reason if significantly different from AI
-    if grade_difference > 10 and not override_reason:
-        raise HTTPException(
-            status_code=400,
-            detail="Override reason required when grade differs significantly from AI suggestion"
-        )
+    # Validate grade if provided
+    if feedback_data.grade is not None:
+        if not (0 <= feedback_data.grade <= 100):
+            raise HTTPException(status_code=400, detail="Grade must be between 0 and 100")
 
-    # Update suggestion with final decision
-    grade_suggestions_collection.update_one(
-        {"_id": ObjectId(suggestion_id)},
-        {
-            "$set": {
-                "final_grade": final_grade,
-                "teacher_comments": teacher_comments,
-                "teacher_override_reason": override_reason if grade_difference > 5 else None,
-                "grade_difference": grade_difference,
-                "status": "finalized",
-                "finalized_at": datetime.utcnow(),
-                "finalized_by": current_user['id']
-            }
-        }
-    )
+    # Update task with feedback
+    update_data = {
+        "teacher_feedback": feedback_data.feedback,
+        "feedback_at": datetime.utcnow(),
+        "feedback_by": current_user['id']
+    }
 
-    # Update task with grade
+    if feedback_data.grade is not None:
+        update_data["grade"] = feedback_data.grade
+        update_data["graded_at"] = datetime.utcnow()
+
     tasks_collection.update_one(
-        {"_id": ObjectId(suggestion['task_id'])},
-        {
-            "$set": {
-                "grade": final_grade,
-                "teacher_feedback": teacher_comments,
-                "graded_at": datetime.utcnow(),
-                "graded_by": current_user['id']
-            }
-        }
+        {"_id": ObjectId(task_id)},
+        {"$set": update_data}
     )
 
     # Notify student
-    task = tasks_collection.find_one({"_id": ObjectId(suggestion['task_id'])})
-    task_title = task.get('title', 'Your task') if task else 'Your task'
+    student_id = task.get('assigned_to')
+    task_title = task.get('title', 'Your task')
+
+    notification_message = f"Your teacher has provided feedback on '{task_title}'"
+    if feedback_data.grade is not None:
+        notification_message = f"Your task '{task_title}' has been graded: {feedback_data.grade}/100"
 
     notifications_collection.insert_one({
-        "user_id": suggestion['student_id'],
-        "type": "grade_received",
-        "title": "Task Graded",
-        "message": f"Your task '{task_title}' has been graded: {final_grade:.1f}/100",
-        "reference_id": suggestion['task_id'],
+        "user_id": student_id,
+        "type": "feedback_received",
+        "title": "Teacher Feedback",
+        "message": notification_message,
+        "reference_id": task_id,
         "read": False,
         "created_at": datetime.utcnow()
     })
 
     return {
-        "message": "Grade finalized and student notified",
-        "final_grade": final_grade,
-        "ai_suggested_grade": ai_suggested_grade,
-        "grade_difference": grade_difference,
-        "ai_agreement": grade_difference <= 5,
-        "override_applied": grade_difference > 5
+        "message": "Feedback added successfully",
+        "task_id": task_id,
+        "feedback": feedback_data.feedback,
+        "grade": feedback_data.grade
     }
 
 
-@router.get("/pending")
-async def get_pending_grades(
+@router.get("/stats")
+async def get_review_stats(
     current_user: dict = Depends(get_current_user)
 ):
     """
-    Get all completed tasks pending grading for this teacher
-
-    Returns list of student submissions awaiting grades
+    Get statistics for the task review dashboard
     """
 
     if current_user.get('role') != 'teacher':
         raise HTTPException(status_code=403, detail="Only teachers can access this")
 
-    # Find completed tasks created by this teacher that don't have grades
-    pending_tasks = list(tasks_collection.find({
-        "created_by": current_user['id'],
-        "status": "completed",
-        "grade": {"$exists": False}
-    }).sort("completion_date", -1).limit(50))
-
-    # Enrich with student info
-    submissions = []
-    for task in pending_tasks:
-        student = users_collection.find_one({"_id": ObjectId(task.get('assigned_to'))})
-
-        if student:
-            submissions.append({
-                "id": str(task['_id']),
-                "task_id": str(task['_id']),
-                "task_title": task.get('title'),
-                "student_id": str(student['_id']),
-                "student_name": student.get('full_name', 'Unknown'),
-                "completed_date": task.get('completion_date', task.get('updated_at')),
-                "deadline": task.get('deadline'),
-                "complexity": task.get('complexity_score', 5),
-                "estimated_hours": task.get('estimated_hours', 0)
-            })
-
-    return {
-        "submissions": submissions,
-        "count": len(submissions)
+    # Count tasks by status
+    base_query = {
+        "created_by": current_user['id']
     }
 
+    total_tasks = tasks_collection.count_documents(base_query)
 
-@router.get("/history")
-async def get_grading_history(
-    limit: int = 20,
-    current_user: dict = Depends(get_current_user)
-):
-    """
-    Get teacher's grading history with AI agreement metrics
-    """
+    todo_count = tasks_collection.count_documents({**base_query, "status": "todo"})
+    in_progress_count = tasks_collection.count_documents({**base_query, "status": "in_progress"})
+    completed_count = tasks_collection.count_documents({**base_query, "status": "completed"})
 
-    if current_user.get('role') != 'teacher':
-        raise HTTPException(status_code=403, detail="Only teachers can access this")
+    # Count tasks with feedback
+    with_feedback = tasks_collection.count_documents({
+        **base_query,
+        "teacher_feedback": {"$exists": True, "$ne": None}
+    })
 
-    # Get finalized grades
-    history = list(grade_suggestions_collection.find({
-        "teacher_id": current_user['id'],
-        "status": "finalized"
-    }).sort("finalized_at", -1).limit(limit))
+    # Count tasks with attachments
+    with_attachments = tasks_collection.count_documents({
+        **base_query,
+        "attachments": {"$exists": True, "$ne": []}
+    })
 
-    # Calculate AI agreement stats
-    total_graded = len(history)
-    ai_agreements = sum(1 for h in history if h.get('grade_difference', 0) <= 5)
-    agreement_rate = (ai_agreements / total_graded * 100) if total_graded > 0 else 0
-
-    # Enrich history with task and student info
-    enriched_history = []
-    for grade in history:
-        task = tasks_collection.find_one({"_id": ObjectId(grade['task_id'])})
-        student = users_collection.find_one({"_id": ObjectId(grade['student_id'])})
-
-        enriched_history.append({
-            "id": str(grade['_id']),
-            "task_title": task.get('title', 'Unknown') if task else 'Unknown',
-            "student_name": student.get('full_name', 'Unknown') if student else 'Unknown',
-            "ai_suggested_grade": grade.get('ai_suggested_grade'),
-            "final_grade": grade.get('final_grade'),
-            "grade_difference": grade.get('grade_difference', 0),
-            "ai_agreement": grade.get('grade_difference', 0) <= 5,
-            "graded_at": grade.get('finalized_at')
-        })
+    # Get unique students count
+    student_ids = tasks_collection.distinct("assigned_to", base_query)
+    unique_students = len(student_ids)
 
     return {
-        "history": enriched_history,
-        "stats": {
-            "total_graded": total_graded,
-            "ai_agreements": ai_agreements,
-            "agreement_rate": round(agreement_rate, 1)
-        }
+        "total_tasks": total_tasks,
+        "by_status": {
+            "todo": todo_count,
+            "in_progress": in_progress_count,
+            "completed": completed_count
+        },
+        "with_feedback": with_feedback,
+        "with_attachments": with_attachments,
+        "unique_students": unique_students,
+        "pending_review": completed_count - with_feedback
     }
