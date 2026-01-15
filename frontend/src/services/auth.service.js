@@ -2,7 +2,8 @@ import { auth } from '../firebase/config';
 import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
-  signOut
+  signOut,
+  onAuthStateChanged
 } from 'firebase/auth';
 import axios from 'axios';
 
@@ -67,5 +68,31 @@ export const authService = {
       headers: { Authorization: `Bearer ${token}` }
     });
     return response.data;
+  },
+
+  async getToken(forceRefresh = false) {
+    try {
+      if (!auth.currentUser) {
+        await Promise.race([
+          new Promise((resolve) => {
+            const unsubscribe = onAuthStateChanged(auth, (user) => {
+              unsubscribe();
+              resolve(user);
+            });
+          }),
+          new Promise((resolve) => setTimeout(() => resolve(null), 1500))
+        ]);
+      }
+      if (auth.currentUser) {
+        const token = await auth.currentUser.getIdToken(forceRefresh);
+        if (token) {
+          localStorage.setItem('token', token);
+          return token;
+        }
+      }
+    } catch (e) {
+      console.error('Failed to refresh auth token:', e);
+    }
+    return localStorage.getItem('token');
   }
 };

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
   Upload, FileText, Link as LinkIcon, Search, Star, Trash2,
   Eye, Sparkles, GraduationCap, X, Folder, Plus, Bookmark,
-  ChevronRight, Brain, Filter, Download
+  ChevronRight, Brain, Filter, Download, Edit2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { resourceService } from '../services/resource.service';
@@ -35,6 +35,14 @@ function ResourceLibraryPage() {
   const [linkUrl, setLinkUrl] = useState('');
   const [linkDescription, setLinkDescription] = useState('');
   const [linkTags, setLinkTags] = useState('');
+
+  // Edit state
+  const [editingResource, setEditingResource] = useState(null);
+  const [editTitle, setEditTitle] = useState('');
+  const [editContent, setEditContent] = useState('');
+  const [editTags, setEditTags] = useState('');
+  const [editUrl, setEditUrl] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     fetchResources();
@@ -134,6 +142,7 @@ function ResourceLibraryPage() {
       fetchResources();
     } catch (error) {
       console.error('Error generating flashcards:', error);
+      alert(error.response?.data?.detail || 'Error generating flashcards');
     }
   };
 
@@ -141,6 +150,50 @@ function ResourceLibraryPage() {
     if (resource.flashcards && resource.flashcards.length > 0) {
       setActiveFlashcards(resource.flashcards);
       setViewingTitle(resource.title);
+    }
+  };
+
+  const handleEdit = (resource) => {
+    setEditingResource(resource);
+    setEditTitle(resource.title || '');
+    setEditContent(resource.content || '');
+    setEditTags(resource.tags ? resource.tags.join(', ') : '');
+    setEditUrl(resource.file_url || '');
+  };
+
+  const closeEditModal = () => {
+    setEditingResource(null);
+    setEditTitle('');
+    setEditContent('');
+    setEditTags('');
+    setEditUrl('');
+    setIsSaving(false);
+  };
+
+  const saveEdit = async () => {
+    if (!editingResource) return;
+
+    setIsSaving(true);
+    try {
+      const tags = editTags.split(',').map(t => t.trim()).filter(t => t);
+      const updateData = {
+        title: editTitle,
+        tags: tags
+      };
+
+      // Include content for notes
+      if (editingResource.type === 'note') {
+        updateData.content = editContent;
+      }
+
+      await resourceService.updateResource(editingResource._id, updateData);
+      closeEditModal();
+      fetchResources();
+    } catch (error) {
+      console.error('Error updating resource:', error);
+      alert(error.response?.data?.detail || 'Error updating resource');
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -257,6 +310,7 @@ function ResourceLibraryPage() {
                   onDelete={deleteResource}
                   onGenerateFlashcards={generateFlashcards}
                   onStudy={handleStudy}
+                  onEdit={handleEdit}
                 />
               ))}
             </AnimatePresence>
@@ -439,6 +493,112 @@ function ResourceLibraryPage() {
               </motion.div>
             </div>
           )}
+
+          {/* Edit Modal */}
+          {editingResource && (
+            <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={closeEditModal}
+                className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
+              />
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                className="resource-modal relative w-full max-w-2xl rounded-3xl p-8 max-h-[90vh] overflow-y-auto"
+              >
+                <div className="flex items-center justify-between mb-8">
+                  <h3 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
+                    <Edit2 className="text-amber-500" size={28} />
+                    Edit {editingResource.type === 'note' ? 'Note' : editingResource.type === 'link' ? 'Link' : 'Resource'}
+                  </h3>
+                  <button onClick={closeEditModal} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors">
+                    <X size={24} className="text-gray-400" />
+                  </button>
+                </div>
+
+                <div className="space-y-6">
+                  <div>
+                    <label className="text-xs font-black text-gray-400 uppercase tracking-widest mb-2 block">TITLE</label>
+                    <input
+                      type="text"
+                      value={editTitle}
+                      onChange={(e) => setEditTitle(e.target.value)}
+                      placeholder="Enter title..."
+                      className="modal-input font-bold"
+                    />
+                  </div>
+
+                  {editingResource.type === 'note' && (
+                    <div>
+                      <label className="text-xs font-black text-gray-400 uppercase tracking-widest mb-2 block">CONTENT (MARKDOWN)</label>
+                      <textarea
+                        value={editContent}
+                        onChange={(e) => setEditContent(e.target.value)}
+                        rows="10"
+                        placeholder="Write your content here..."
+                        className="modal-input font-medium font-mono"
+                      />
+                    </div>
+                  )}
+
+                  {editingResource.type === 'link' && (
+                    <div>
+                      <label className="text-xs font-black text-gray-400 uppercase tracking-widest mb-2 block">URL (READ-ONLY)</label>
+                      <input
+                        type="text"
+                        value={editUrl}
+                        disabled
+                        className="modal-input bg-gray-100 dark:bg-gray-800 text-gray-500 cursor-not-allowed"
+                      />
+                      <p className="text-xs text-gray-400 mt-1">URL cannot be changed. Delete and create a new link if needed.</p>
+                    </div>
+                  )}
+
+                  <div>
+                    <label className="text-xs font-black text-gray-400 uppercase tracking-widest mb-2 block">TAGS (COMMA SEPARATED)</label>
+                    <input
+                      type="text"
+                      value={editTags}
+                      onChange={(e) => setEditTags(e.target.value)}
+                      placeholder="e.g. biology, midterms, critical"
+                      className="modal-input"
+                    />
+                  </div>
+
+                  <div className="flex gap-4 pt-4">
+                    <button
+                      onClick={closeEditModal}
+                      className="flex-1 py-4 rounded-2xl font-bold border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                    >
+                      Cancel
+                    </button>
+                    <GradientButton
+                      variant="purple"
+                      onClick={saveEdit}
+                      disabled={!editTitle || isSaving}
+                      className="flex-1 py-4 rounded-2xl font-bold shadow-lg flex items-center justify-center gap-2"
+                    >
+                      {isSaving ? (
+                        <>
+                          <span className="animate-spin">⏳</span>
+                          Saving...
+                        </>
+                      ) : (
+                        <>
+                          <Edit2 size={20} />
+                          Save Changes
+                        </>
+                      )}
+                    </GradientButton>
+                  </div>
+                </div>
+              </motion.div>
+            </div>
+          )}
         </AnimatePresence>
 
         {/* Flashcard Viewer */}
@@ -454,7 +614,10 @@ function ResourceLibraryPage() {
   );
 }
 
-function ResourceCard({ resource, onToggleFavorite, onDelete, onGenerateFlashcards, onStudy }) {
+const ResourceCard = React.forwardRef(function ResourceCard(
+  { resource, onToggleFavorite, onDelete, onGenerateFlashcards, onStudy, onEdit },
+  ref
+) {
   const [showDetails, setShowDetails] = useState(false);
 
   const getIcon = () => {
@@ -471,6 +634,7 @@ function ResourceCard({ resource, onToggleFavorite, onDelete, onGenerateFlashcar
 
   return (
     <motion.div
+      ref={ref}
       layout
       initial={{ opacity: 0, scale: 0.9 }}
       animate={{ opacity: 1, scale: 1 }}
@@ -513,6 +677,17 @@ function ResourceCard({ resource, onToggleFavorite, onDelete, onGenerateFlashcar
           <Eye size={14} />
           {showDetails ? 'LESS' : 'INFO'}
         </button>
+
+        {/* Edit button - only for notes and links */}
+        {(resource.type === 'note' || resource.type === 'link') && (
+          <button
+            onClick={() => onEdit(resource)}
+            className="card-action-btn btn-view bg-amber-100/50 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400 border border-amber-200 dark:border-amber-800"
+          >
+            <Edit2 size={14} />
+            EDIT
+          </button>
+        )}
 
         {resource.flashcards && resource.flashcards.length > 0 ? (
           <button
@@ -587,6 +762,8 @@ function ResourceCard({ resource, onToggleFavorite, onDelete, onGenerateFlashcar
       </AnimatePresence>
     </motion.div>
   );
-}
+});
+
+ResourceCard.displayName = 'ResourceCard';
 
 export default ResourceLibraryPage;

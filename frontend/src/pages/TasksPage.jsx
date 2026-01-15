@@ -4,7 +4,7 @@ import { authService } from '../services/auth.service';
 import { useWebSocket } from '../hooks/useWebSocket';
 import NotificationBell from '../components/NotificationBell';
 import HomeButton from '../components/HomeButton';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../store/useStore';
 import useTaskStore from '../store/useTaskStore';
 import KanbanBoard from '../components/KanbanBoard';
@@ -17,15 +17,15 @@ import './TasksPage.css';
 
 export default function TasksPage() {
   const [showModal, setShowModal] = useState(false);
-  // ... existing state ...
   const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const { subscribe } = useWebSocket();
   const { isTeacher } = useAuth();
+  const location = useLocation();
 
   // Use Zustand task store
-  const { setTasks, addTask, updateTask, deleteTask: removeTask } = useTaskStore();
+  const { tasks, setTasks, addTask, updateTask, deleteTask: removeTask, setSelectedTask } = useTaskStore();
 
   useEffect(() => {
     loadCurrentUser();
@@ -52,6 +52,19 @@ export default function TasksPage() {
 
     return () => unsubscribe();
   }, [subscribe, addTask, updateTask, removeTask]);
+
+  // Handle navigation from analytics page - highlight and open the specific task
+  useEffect(() => {
+    const highlightTaskId = location.state?.highlightTaskId;
+    if (highlightTaskId && tasks.length > 0) {
+      const taskToHighlight = tasks.find(t => t.id === highlightTaskId);
+      if (taskToHighlight) {
+        setSelectedTask(taskToHighlight);
+        // Clear the state so it doesn't reopen on subsequent renders
+        window.history.replaceState({}, document.title);
+      }
+    }
+  }, [location.state, tasks, setSelectedTask]);
 
   const loadCurrentUser = async () => {
     try {

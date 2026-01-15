@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import io from 'socket.io-client';
+import { authService } from '../services/auth.service';
 
 const SOCKET_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
 
@@ -9,40 +10,43 @@ export const useWebSocket = () => {
   const [lastMessage, setLastMessage] = useState(null);
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      console.warn("WebSocket: No auth token found");
-      return;
-    }
-    
-    console.log("WebSocket: Connecting with token", token.substring(0, 10) + "...");
+    let socket;
 
-    // Initialize socket connection
-    socketRef.current = io(SOCKET_URL, {
-      auth: { token },
-      transports: ['websocket'],
-      autoConnect: true,
-      reconnection: true,
-      reconnectionAttempts: 5,
-      reconnectionDelay: 1000,
-    });
+    (async () => {
+      const token = await authService.getToken();
+      if (!token) {
+        console.warn("WebSocket: No auth token found");
+        return;
+      }
 
-    const socket = socketRef.current;
+      console.log("WebSocket: Connecting with token", token.substring(0, 10) + "...");
 
-    socket.on('connect', () => {
-      console.log('WebSocket Connected');
-      setIsConnected(true);
-    });
+      socketRef.current = io(SOCKET_URL, {
+        auth: { token },
+        transports: ['websocket', 'polling'],
+        autoConnect: true,
+        reconnection: true,
+        reconnectionAttempts: 5,
+        reconnectionDelay: 1000,
+      });
 
-    socket.on('disconnect', () => {
-      console.log('WebSocket Disconnected');
-      setIsConnected(false);
-    });
+      socket = socketRef.current;
 
-    socket.on('connect_error', (err) => {
-      console.error('WebSocket Connection Error:', err);
-      setIsConnected(false);
-    });
+      socket.on('connect', () => {
+        console.log('WebSocket Connected');
+        setIsConnected(true);
+      });
+
+      socket.on('disconnect', () => {
+        console.log('WebSocket Disconnected');
+        setIsConnected(false);
+      });
+
+      socket.on('connect_error', (err) => {
+        console.error('WebSocket Connection Error:', err);
+        setIsConnected(false);
+      });
+    })();
 
     return () => {
       if (socket) socket.disconnect();

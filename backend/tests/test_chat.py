@@ -10,17 +10,20 @@ Tests cover:
 - Access control
 """
 
+import asyncio
 import pytest
 from fastapi.testclient import TestClient
 from bson import ObjectId
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from app.main import fastapi_app as app
 from app.db_config import (
     chat_history_collection,
     groups_collection,
+    tasks_collection,
     users_collection
 )
+from app.services.command_parser import execute_command
 
 client = TestClient(app)
 
@@ -252,6 +255,51 @@ def test_delete_message(test_user_token, test_group):
     )
     messages = messages_response.json()["messages"]
     assert not any(msg["id"] == message_id for msg in messages)
+
+
+# ==================== SLASH COMMAND TESTS ====================
+
+def test_command_delete_task_by_title(test_user_token, test_user_id):
+    task_doc = {
+        "title": "Test Command Delete Title",
+        "created_by": test_user_id,
+        "assigned_to": test_user_id,
+        "status": "pending",
+        "deadline": datetime.utcnow() + timedelta(days=1)
+    }
+    inserted = tasks_collection.insert_one(task_doc)
+
+    result = asyncio.run(execute_command(test_user_id, "/task delete Test Command Delete Title"))
+    assert result["success"] is True
+    assert result["action"] == "delete"
+    assert "Task deleted" in result["message"]
+
+    deleted_task = tasks_collection.find_one({"_id": inserted.inserted_id})
+    assert deleted_task is None
+
+
+def test_command_delete_task_title_ambiguous(test_user_token, test_user_id):
+    inserted_1 = tasks_collection.insert_one({
+        "title": "Ambiguous Title Alpha",
+        "created_by": test_user_id,
+        "assigned_to": test_user_id,
+        "status": "pending",
+        "deadline": datetime.utcnow() + timedelta(days=1)
+    })
+    inserted_2 = tasks_collection.insert_one({
+        "title": "Ambiguous Title Beta",
+        "created_by": test_user_id,
+        "assigned_to": test_user_id,
+        "status": "pending",
+        "deadline": datetime.utcnow() + timedelta(days=1)
+    })
+
+    result = asyncio.run(execute_command(test_user_id, "/task delete Ambiguous Title"))
+    assert result["success"] is False
+    assert result["action"] == "delete"
+    assert "Multiple tasks match" in result["message"]
+
+    tasks_collection.delete_many({"_id": {"$in": [inserted_1.inserted_id, inserted_2.inserted_id]}})
 
 
 # ==================== REACTION TESTS ====================

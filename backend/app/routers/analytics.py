@@ -22,7 +22,12 @@ async def get_dashboard_stats(user_id: str = Depends(get_current_user_id)):
     # Priority distribution
     priority_dist = Counter(t['priority'] for t in user_tasks)
 
-    # Upcoming deadlines (next 5 tasks sorted by deadline)
+    # Upcoming deadlines (next 5 non-completed tasks with future deadlines, sorted by deadline)
+    now = datetime.utcnow()
+    upcoming_tasks = [
+        t for t in user_tasks
+        if t['status'] != 'completed' and t.get('deadline') and t['deadline'] >= now
+    ]
     upcoming = [
         {
             "id": str(t['_id']),
@@ -30,7 +35,7 @@ async def get_dashboard_stats(user_id: str = Depends(get_current_user_id)):
             "deadline": t['deadline'].isoformat() if hasattr(t['deadline'], 'isoformat') else str(t['deadline']),
             "priority": t['priority']
         }
-        for t in sorted(user_tasks, key=lambda x: x['deadline'] if x.get('deadline') else datetime.max)[:5]
+        for t in sorted(upcoming_tasks, key=lambda x: x['deadline'])[:5]
     ]
 
     # Completion rate
@@ -38,6 +43,53 @@ async def get_dashboard_stats(user_id: str = Depends(get_current_user_id)):
 
     # Average complexity
     avg_complexity = sum(t.get('complexity_score', 5) for t in user_tasks) / total_tasks if total_tasks > 0 else 0
+
+    # Generate strategic insights based on actual data
+    insights = []
+
+    # Insight 1: Task completion pattern
+    if completion_rate >= 80:
+        insights.append({
+            "type": "productivity",
+            "title": "High Performer",
+            "description": f"Excellent work! You've completed {completion_rate:.0f}% of your tasks. Keep up the momentum!"
+        })
+    elif completion_rate >= 50:
+        insights.append({
+            "type": "productivity",
+            "title": "Steady Progress",
+            "description": f"You're at {completion_rate:.0f}% completion. Focus on clearing your backlog to boost productivity."
+        })
+    else:
+        insights.append({
+            "type": "productivity",
+            "title": "Room for Growth",
+            "description": f"Your completion rate is {completion_rate:.0f}%. Try tackling smaller tasks first to build momentum."
+        })
+
+    # Insight 2: Complexity analysis
+    high_complexity_tasks = [t for t in user_tasks if t.get('complexity_score', 5) >= 7 and t['status'] != 'completed']
+    if len(high_complexity_tasks) > 0:
+        insights.append({
+            "type": "complexity",
+            "title": "Complexity Alert",
+            "description": f"You have {len(high_complexity_tasks)} high-complexity task{'s' if len(high_complexity_tasks) > 1 else ''} pending. Consider breaking them into smaller subtasks."
+        })
+    else:
+        insights.append({
+            "type": "complexity",
+            "title": "Balanced Workload",
+            "description": "Your task complexity is well-distributed. Great job managing your workload!"
+        })
+
+    # Insight 3: Urgent tasks warning
+    urgent_tasks = [t for t in user_tasks if t.get('priority') == 'urgent' and t['status'] != 'completed']
+    if len(urgent_tasks) > 0:
+        insights.append({
+            "type": "urgent",
+            "title": "Urgent Attention Needed",
+            "description": f"You have {len(urgent_tasks)} urgent task{'s' if len(urgent_tasks) > 1 else ''} that need{'s' if len(urgent_tasks) == 1 else ''} immediate attention."
+        })
 
     return {
         "total_tasks": total_tasks,
@@ -48,7 +100,8 @@ async def get_dashboard_stats(user_id: str = Depends(get_current_user_id)):
         "priority_distribution": dict(priority_dist),
         "upcoming_deadlines": upcoming,
         "completion_rate": round(completion_rate, 2),
-        "average_complexity": round(avg_complexity, 2)
+        "average_complexity": round(avg_complexity, 2),
+        "insights": insights
     }
 
 @router.get("/workload")

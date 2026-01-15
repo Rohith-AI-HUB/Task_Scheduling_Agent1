@@ -1,7 +1,7 @@
 from fastapi import APIRouter, UploadFile, File, Depends, HTTPException, Form
 from app.db_config import db, tasks_collection
 from app.routers.auth import get_current_user
-from app.services.ollama_service import generate_ai_response
+from app.services.ollama_service import generate_ai_response, generate_json_response
 from app.utils.logger import get_logger
 from datetime import datetime
 from bson import ObjectId
@@ -9,13 +9,14 @@ from typing import List, Optional
 from pydantic import BaseModel, Field, validator
 import os
 import json
+import ast
 import shutil
 import re
 from pypdf import PdfReader
 
 logger = get_logger(__name__)
 
-router = APIRouter(prefix="/api/resources", tags=["Resources"])
+router = APIRouter(prefix="/resources", tags=["Resources"])
 
 resources_collection = db["resources"]
 
@@ -788,67 +789,160 @@ def generate_flashcards_ai(content: str, title: str) -> dict:
 
         content_preview = content[:2000] if len(content) > 2000 else content
 
-        prompt = f"""Generate study flashcards from this content. Create 8-12 cards.
+        prompt = f"""Generate 8-12 study flashcards from the content below.
 
 Title: {title}
 
 Content:
 {content_preview}
 
-Format as JSON array:
-[
-  {{"question": "What is X?", "answer": "X is..."}},
-  {{"question": "Why is Y important?", "answer": "Y is important because..."}}
-]
+Return a JSON object with a "flashcards" array. Each flashcard must have "question" and "answer" keys.
 
-Make questions clear and answers concise but complete."""
+Example format:
+{{"flashcards": [{{"question": "What is X?", "answer": "X is..."}}, {{"question": "Why is Y important?", "answer": "Y is important because..."}}]}}"""
 
-        response = generate_ai_response(prompt)
+        # Use JSON mode for better structured output
+        response = generate_json_response(prompt)
 
-        # Parse JSON
-        try:
-            start = response.find('[')
-            end = response.rfind(']') + 1
-
-            if start == -1 or end <= start:
-                logger.warning(f"No JSON array found in AI response for flashcard generation")
-                return {
-                    "success": False,
-                    "flashcards": [],
-                    "error": "AI did not return valid flashcard format"
-                }
-
-            flashcards = json.loads(response[start:end])
-
-            # Validate flashcard structure
-            valid_flashcards = []
-            for card in flashcards[:12]:  # Max 12 cards
-                if isinstance(card, dict) and 'question' in card and 'answer' in card:
-                    valid_flashcards.append(card)
-                else:
-                    logger.warning(f"Invalid flashcard structure: {card}")
-
-            if not valid_flashcards:
-                return {
-                    "success": False,
-                    "flashcards": [],
-                    "error": "No valid flashcards could be generated from AI response"
-                }
-
-            logger.info(f"Generated {len(valid_flashcards)} flashcards for '{title}'")
-            return {
-                "success": True,
-                "flashcards": valid_flashcards,
-                "error": None
-            }
-
-        except json.JSONDecodeError as e:
-            logger.error(f"Failed to parse flashcard JSON: {e}")
+        if isinstance(response, str) and response.strip().startswith("AI Error:"):
             return {
                 "success": False,
                 "flashcards": [],
-                "error": "Failed to parse AI response as JSON"
+                "error": response.strip()
             }
+
+        def parse_flashcards_from_response(text: str) -> Optional[list]:
+            """
+            Parse flashcards from AI response.
+            Handles both:
+            - JSON object with "flashcards" key: {"flashcards": [...]}
+            - Direct JSON array: [...]
+            """
+            if not text:
+                return None
+
+            text = text.strip()
+
+            # Strip markdown code fences if present
+            fence_start = text.find("```")
+            if fence_start != -1:
+                fence_end = text.find("```", fence_start + 3)
+                if fence_end != -1:
+                    inner = text[fence_start + 3:fence_end].strip()
+                    if "\n" in inner:
+                        first_line, rest = inner.split("\n", 1)
+                        if first_line.strip().lower() in {"json", "javascript", "js"}:
+                            inner = rest.strip()
+                    text = inner
+
+            # Try parsing as JSON object first (format: {"flashcards": [...]})
+            try:
+                parsed = json.loads(text)
+                if isinstance(parsed, dict):
+                    # Look for flashcards in common key names
+                    for key in ["flashcards", "cards", "data", "items"]:
+                        if key in parsed and isinstance(parsed[key], list):
+                            return parsed[key]
+                    # If it's a dict but no flashcards key, check if values are lists
+                    for value in parsed.values():
+                        if isinstance(value, list) and len(value) > 0:
+                            return value
+                elif isinstance(parsed, list):
+                    return parsed
+            except json.JSONDecodeError:
+                pass
+
+            # Fallback: try to extract JSON array from text
+            start = text.find("[")
+            if start != -1:
+                depth = 0
+                in_str = False
+                esc = False
+
+                for i in range(start, len(text)):
+                    ch = text[i]
+
+                    if in_str:
+                        if esc:
+                            esc = False
+                        elif ch == "\\":
+                            esc = True
+                        elif ch == '"':
+                            in_str = False
+                        continue
+
+                    if ch == '"':
+                        in_str = True
+                    elif ch == "[":
+                        depth += 1
+                    elif ch == "]":
+                        depth -= 1
+                        if depth == 0:
+                            candidate = text[start:i + 1]
+                            try:
+                                return json.loads(candidate)
+                            except json.JSONDecodeError:
+                                try:
+                                    return ast.literal_eval(candidate)
+                                except Exception:
+                                    pass
+                            break
+
+            return None
+
+        flashcards = parse_flashcards_from_response(response)
+        if flashcards is None:
+            logger.warning(f"Initial flashcard parse failed. Response preview: {(response or '')[:200]}")
+            repair_prompt = f"""Convert the following text into a JSON object with a "flashcards" array.
+Each flashcard must have "question" and "answer" keys.
+
+Example format: {{"flashcards": [{{"question": "Q1", "answer": "A1"}}]}}
+
+TEXT:
+{(response or '')[:2500]}"""
+            repaired = generate_json_response(repair_prompt)
+            flashcards = parse_flashcards_from_response(repaired)
+
+        if not isinstance(flashcards, list):
+            logger.warning("No valid JSON array found in AI response for flashcard generation")
+            return {
+                "success": False,
+                "flashcards": [],
+                "error": "AI did not return valid flashcard format"
+            }
+
+        valid_flashcards = []
+        for card in flashcards:
+            if not isinstance(card, dict):
+                continue
+
+            if "question" not in card or "answer" not in card:
+                continue
+
+            question = str(card.get("question", "")).strip()
+            answer = str(card.get("answer", "")).strip()
+
+            if not question or not answer:
+                continue
+
+            valid_flashcards.append({"question": question, "answer": answer})
+
+            if len(valid_flashcards) >= 12:
+                break
+
+        if not valid_flashcards:
+            return {
+                "success": False,
+                "flashcards": [],
+                "error": "No valid flashcards could be generated from AI response"
+            }
+
+        logger.info(f"Generated {len(valid_flashcards)} flashcards for '{title}'")
+        return {
+            "success": True,
+            "flashcards": valid_flashcards,
+            "error": None
+        }
 
     except Exception as e:
         logger.error(f"Flashcard generation error: {e}", exc_info=True)

@@ -31,6 +31,10 @@ function FocusModePage() {
   const fetchActiveSession = async () => {
     try {
       const token = localStorage.getItem('token');
+      if (!token) {
+        setActiveSession(null);
+        return;
+      }
       const response = await axios.get('http://localhost:8000/api/focus/active', {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -43,10 +47,15 @@ function FocusModePage() {
   const fetchTasks = async () => {
     try {
       const token = localStorage.getItem('token');
+      if (!token) {
+        setTasks([]);
+        return;
+      }
       const response = await axios.get('http://localhost:8000/api/tasks', {
         headers: { Authorization: `Bearer ${token}` }
       });
-      const activeTasks = response.data.tasks.filter(t =>
+      const taskList = Array.isArray(response.data) ? response.data : (response.data?.tasks || []);
+      const activeTasks = taskList.filter(t =>
         t.status === 'todo' || t.status === 'in_progress'
       );
       setTasks(activeTasks);
@@ -58,6 +67,10 @@ function FocusModePage() {
   const fetchStats = async () => {
     try {
       const token = localStorage.getItem('token');
+      if (!token) {
+        setStats(null);
+        return;
+      }
       const response = await axios.get('http://localhost:8000/api/focus/stats', {
         headers: { Authorization: `Bearer ${token}` }
       });

@@ -7,7 +7,7 @@ import {
 import {
   TrendingUp, Clock, CheckCircle, AlertCircle,
   BarChart3, PieChart as PieIcon, Activity,
-  Zap, Brain, Calendar, ChevronRight, Award
+  Zap, Brain, Calendar, ChevronRight, Award, AlertTriangle
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import NotificationBell from '../components/NotificationBell';
@@ -371,7 +371,11 @@ export default function AnalyticsPage() {
             <div className="space-y-3">
               {stats.upcoming_deadlines.length > 0 ? (
                 stats.upcoming_deadlines.map(task => (
-                  <div key={task.id} className="deadline-item group">
+                  <div
+                    key={task.id}
+                    className="deadline-item group cursor-pointer"
+                    onClick={() => navigate('/tasks', { state: { highlightTaskId: task.id } })}
+                  >
                     <div className="flex items-center gap-4">
                       <span className={`priority-tag ${task.priority === 'urgent' ? 'bg-rose-100 text-rose-600 border border-rose-200' :
                           task.priority === 'high' ? 'bg-orange-100 text-orange-600 border border-orange-200' :
@@ -400,25 +404,36 @@ export default function AnalyticsPage() {
           <motion.div variants={cardVariants} className="analytics-glass-card p-8 bg-gradient-to-br from-indigo-600/5 to-purple-600/5">
             <h3 className="text-xl font-extrabold text-gray-900 dark:text-white mb-4">Strategic Insights</h3>
             <div className="space-y-6">
-              <div className="flex gap-4">
-                <div className="w-10 h-10 rounded-xl bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center flex-shrink-0">
-                  <Zap size={20} className="text-amber-600" />
-                </div>
-                <div>
-                  <h4 className="text-sm font-black text-gray-700 dark:text-gray-200 uppercase tracking-widest mb-1">Peak Productivity</h4>
-                  <p className="text-xs text-gray-500 font-medium leading-relaxed">Your most effective hours are consistently observed between 9 AM and 11 AM.</p>
-                </div>
-              </div>
-
-              <div className="flex gap-4">
-                <div className="w-10 h-10 rounded-xl bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center flex-shrink-0">
-                  <Brain size={20} className="text-purple-600" />
-                </div>
-                <div>
-                  <h4 className="text-sm font-black text-gray-700 dark:text-gray-200 uppercase tracking-widest mb-1">Complexity Alert</h4>
-                  <p className="text-xs text-gray-500 font-medium leading-relaxed">High complexity tasks are taking 15% longer than average. Consider breaking them down.</p>
-                </div>
-              </div>
+              {stats.insights && stats.insights.length > 0 ? (
+                stats.insights.map((insight, index) => {
+                  const getInsightIcon = (type) => {
+                    switch (type) {
+                      case 'productivity':
+                        return { icon: Zap, bgColor: 'bg-amber-100 dark:bg-amber-900/30', iconColor: 'text-amber-600' };
+                      case 'complexity':
+                        return { icon: Brain, bgColor: 'bg-purple-100 dark:bg-purple-900/30', iconColor: 'text-purple-600' };
+                      case 'urgent':
+                        return { icon: AlertTriangle, bgColor: 'bg-rose-100 dark:bg-rose-900/30', iconColor: 'text-rose-600' };
+                      default:
+                        return { icon: Zap, bgColor: 'bg-amber-100 dark:bg-amber-900/30', iconColor: 'text-amber-600' };
+                    }
+                  };
+                  const { icon: IconComponent, bgColor, iconColor } = getInsightIcon(insight.type);
+                  return (
+                    <div key={index} className="flex gap-4">
+                      <div className={`w-10 h-10 rounded-xl ${bgColor} flex items-center justify-center flex-shrink-0`}>
+                        <IconComponent size={20} className={iconColor} />
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-black text-gray-700 dark:text-gray-200 uppercase tracking-widest mb-1">{insight.title}</h4>
+                        <p className="text-xs text-gray-500 font-medium leading-relaxed">{insight.description}</p>
+                      </div>
+                    </div>
+                  );
+                })
+              ) : (
+                <div className="text-center py-4 text-gray-400 italic">No insights available yet. Complete more tasks to unlock strategic insights!</div>
+              )}
             </div>
           </motion.div>
         </div>

@@ -29,8 +29,8 @@ fastapi_app.include_router(analytics.router, prefix="/api")
 fastapi_app.include_router(groups.router, prefix="/api")
 
 # Week 1 Feature routers
-fastapi_app.include_router(stress.router, prefix="/api")
-fastapi_app.include_router(focus.router, prefix="/api")
+fastapi_app.include_router(stress.router)
+fastapi_app.include_router(focus.router)
 fastapi_app.include_router(resources.router, prefix="/api")
 
 # Week 2 Teacher Feature routers
@@ -39,10 +39,10 @@ fastapi_app.include_router(class_analytics.router, prefix="/api")
 fastapi_app.include_router(bulk_tasks.router)  # Already has /api/ in its prefix
 
 # Week 3 Smart Study Planner
-fastapi_app.include_router(study_planner.router, prefix="/api")
+fastapi_app.include_router(study_planner.router)
 
-# Week 4 Calendar Integration
-fastapi_app.include_router(calendar.router, prefix="/api")
+# Week 4 Calendar Integration (router already has /api/calendar prefix)
+fastapi_app.include_router(calendar.router)
 
 # Chat & Messaging
 fastapi_app.include_router(chat.router, prefix="/api")

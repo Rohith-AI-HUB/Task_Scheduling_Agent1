@@ -22,7 +22,29 @@ from app.db_config import (
 )
 from app.utils.logger import get_logger
 from app.websocket.broadcaster import broadcaster
-from app.services.ollama_service import generate_ai_response
+from app.services.ollama_service import (
+    generate_ai_response,
+    generate_chat_response,
+    build_ai_system_prompt,
+    analyze_document_with_ai
+)
+from app.services.user_context_service import (
+    get_full_user_context,
+    format_context_for_ai,
+    get_recent_chat_context
+)
+from app.services.command_parser import (
+    is_command,
+    execute_command,
+    get_command_suggestions,
+    AVAILABLE_COMMANDS
+)
+from app.services.document_processor import (
+    process_uploaded_document,
+    is_supported_file,
+    get_document_summary
+)
+from app.config import settings
 
 router = APIRouter(prefix="/chat", tags=["Chat & Messaging"])
 logger = get_logger(__name__)
@@ -806,10 +828,10 @@ async def get_ai_chat_history(
             .sort("timestamp", -1)
             .limit(limit)
         )
-        
+
         formatted = [format_message(msg) for msg in messages]
         formatted.reverse()  # Chronological order
-        
+
         return {
             "messages": formatted,
             "count": len(formatted)
@@ -817,6 +839,451 @@ async def get_ai_chat_history(
     except Exception as e:
         logger.error(f"Error getting AI history: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"Failed to get AI history: {str(e)}")
+
+
+# ==================== ENHANCED AI ASSISTANT ENDPOINTS ====================
+
+class AIMessageWithDocumentRequest(BaseModel):
+    message: str = Field(..., min_length=1, max_length=5000, description="Message to send to AI")
+    context_scope: Optional[List[str]] = Field(
+        default=["tasks", "study_plans", "wellbeing"],
+        description="What context to include: tasks, groups, resources, study_plans, preferences, wellbeing, chat"
+    )
+
+
+class CommandRequest(BaseModel):
+    command: str = Field(..., min_length=2, max_length=500, description="Slash command to execute")
+
+
+@router.post("/ai/enhanced")
+async def chat_with_ai_enhanced(
+    message: str = Form(...),
+    file: Optional[UploadFile] = File(None),
+    context_scope: Optional[str] = Form(default="tasks,study_plans,wellbeing"),
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Enhanced AI chat with full user context and document upload support.
+
+    - Supports document/image upload for analysis
+    - Includes full user context (tasks, resources, plans, etc.)
+    - Handles slash commands automatically
+    - Maintains conversation history
+
+    Args:
+        message: User's message or question
+        file: Optional document/image to analyze
+        context_scope: Comma-separated list of context areas to include
+
+    Returns:
+        AI response with optional command execution results
+    """
+    try:
+        user_id = str(current_user["_id"])
+        user_name = current_user.get("full_name", "User")
+        user_role = current_user.get("role", "student")
+
+        # Parse context scope
+        scope_list = [s.strip() for s in context_scope.split(",") if s.strip()]
+
+        # Check if message is a command
+        if is_command(message):
+            command_result = await execute_command(user_id, message)
+
+            # Store command in chat history
+            user_msg = {
+                "sender_id": user_id,
+                "sender_name": user_name,
+                "chat_type": "ai",
+                "chat_id": "assistant",
+                "content": message,
+                "command_executed": {
+                    "command": command_result.get("command_type"),
+                    "action": command_result.get("action"),
+                    "success": command_result.get("success", False)
+                },
+                "reactions": [],
+                "read_by": [user_id],
+                "timestamp": datetime.utcnow()
+            }
+            chat_history_collection.insert_one(user_msg)
+
+            # Store AI response
+            ai_msg_doc = {
+                "sender_id": "ai_assistant",
+                "sender_name": "AI Assistant",
+                "chat_type": "ai",
+                "chat_id": "assistant",
+                "content": command_result.get("message", "Command executed."),
+                "reactions": [],
+                "read_by": [user_id],
+                "timestamp": datetime.utcnow()
+            }
+            result = chat_history_collection.insert_one(ai_msg_doc)
+            ai_msg_doc["id"] = str(result.inserted_id)
+
+            return {
+                "message": format_message(ai_msg_doc),
+                "success": True,
+                "command_executed": True,
+                "command_result": command_result
+            }
+
+        # Process document if uploaded
+        document_content = None
+        document_metadata = None
+
+        if file:
+            # Validate file
+            if not is_supported_file(file.filename):
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Unsupported file type. Supported: PDF, DOCX, TXT, code files, images"
+                )
+
+            # Check file size
+            file.file.seek(0, 2)
+            size = file.file.tell()
+            file.file.seek(0)
+
+            if size > settings.ai_max_document_size:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"File too large. Maximum size: {settings.ai_max_document_size // (1024*1024)}MB"
+                )
+
+            # Save file temporarily
+            now = datetime.now()
+            upload_dir = os.path.join("uploads", "ai_docs", user_id, str(now.year), str(now.month))
+            os.makedirs(upload_dir, exist_ok=True)
+
+            safe_filename = re.sub(r'[^\w\s\-\.]', '', file.filename).strip().replace(' ', '_')
+            file_path = os.path.join(upload_dir, safe_filename)
+
+            with open(file_path, "wb") as buffer:
+                shutil.copyfileobj(file.file, buffer)
+
+            # Process document
+            doc_result = process_uploaded_document(file_path, file.filename)
+
+            if doc_result.get("success"):
+                document_content = doc_result.get("extracted_text", "")
+                document_metadata = {
+                    "filename": file.filename,
+                    "file_type": doc_result.get("document_type"),
+                    "character_count": doc_result.get("character_count", 0),
+                    "file_path": file_path
+                }
+            else:
+                # Still include error info
+                document_metadata = {
+                    "filename": file.filename,
+                    "error": doc_result.get("error", "Failed to process document")
+                }
+
+        # Get full user context
+        user_context = get_full_user_context(user_id, scope_list)
+        context_text = format_context_for_ai(user_context)
+
+        # Get recent chat history for continuity
+        chat_history = get_recent_chat_context(user_id, limit=10)
+
+        # Build system prompt
+        system_prompt = build_ai_system_prompt(user_name, user_role, context_text)
+
+        # Generate AI response
+        ai_response = generate_chat_response(
+            user_message=message,
+            system_prompt=system_prompt,
+            chat_history=chat_history,
+            document_content=document_content,
+            use_chat_model=True
+        )
+
+        # Store user message
+        user_msg = {
+            "sender_id": user_id,
+            "sender_name": user_name,
+            "chat_type": "ai",
+            "chat_id": "assistant",
+            "content": message,
+            "has_document": document_content is not None,
+            "document_metadata": document_metadata,
+            "reactions": [],
+            "read_by": [user_id],
+            "timestamp": datetime.utcnow()
+        }
+        chat_history_collection.insert_one(user_msg)
+
+        # Store AI response
+        ai_msg_doc = {
+            "sender_id": "ai_assistant",
+            "sender_name": "AI Assistant",
+            "chat_type": "ai",
+            "chat_id": "assistant",
+            "content": ai_response,
+            "reactions": [],
+            "read_by": [user_id],
+            "timestamp": datetime.utcnow()
+        }
+        result = chat_history_collection.insert_one(ai_msg_doc)
+        ai_msg_doc["id"] = str(result.inserted_id)
+
+        logger.info(f"Enhanced AI chat: user {user_id}, doc: {document_content is not None}")
+
+        return {
+            "message": format_message(ai_msg_doc),
+            "success": True,
+            "command_executed": False,
+            "document_processed": document_content is not None,
+            "document_metadata": document_metadata
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error in enhanced AI chat: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"AI chat failed: {str(e)}")
+
+
+@router.post("/ai/command")
+async def execute_chat_command(
+    request: CommandRequest,
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Execute a slash command from the chat interface.
+
+    Supported commands:
+    - /task create <title>, /task list, /task complete <id>, /task delete <id_or_title>
+    - /group create <name>, /group list, /group assign <task> to <group>
+    - /plan generate, /plan show
+    - /flashcard generate <topic>
+    """
+    try:
+        user_id = str(current_user["_id"])
+        user_name = current_user.get("full_name", "User")
+
+        if not is_command(request.command):
+            raise HTTPException(
+                status_code=400,
+                detail="Invalid command. Commands must start with /"
+            )
+
+        result = await execute_command(user_id, request.command)
+
+        # Store in chat history
+        user_msg = {
+            "sender_id": user_id,
+            "sender_name": user_name,
+            "chat_type": "ai",
+            "chat_id": "assistant",
+            "content": request.command,
+            "command_executed": {
+                "command": result.get("command_type"),
+                "action": result.get("action"),
+                "success": result.get("success", False)
+            },
+            "reactions": [],
+            "read_by": [user_id],
+            "timestamp": datetime.utcnow()
+        }
+        chat_history_collection.insert_one(user_msg)
+
+        ai_msg_doc = {
+            "sender_id": "ai_assistant",
+            "sender_name": "AI Assistant",
+            "chat_type": "ai",
+            "chat_id": "assistant",
+            "content": result.get("message", "Command executed."),
+            "reactions": [],
+            "read_by": [user_id],
+            "timestamp": datetime.utcnow()
+        }
+        db_result = chat_history_collection.insert_one(ai_msg_doc)
+        ai_msg_doc["id"] = str(db_result.inserted_id)
+
+        return {
+            "message": format_message(ai_msg_doc),
+            "success": result.get("success", False),
+            "command_type": result.get("command_type"),
+            "action": result.get("action"),
+            "result": result.get("result")
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error executing command: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Command execution failed: {str(e)}")
+
+
+@router.get("/ai/commands")
+async def get_available_commands():
+    """
+    Get list of available slash commands for autocomplete.
+    """
+    return {
+        "commands": AVAILABLE_COMMANDS,
+        "count": len(AVAILABLE_COMMANDS)
+    }
+
+
+@router.get("/ai/commands/suggest")
+async def suggest_commands(
+    partial: str = ""
+):
+    """
+    Get command suggestions based on partial input.
+
+    Args:
+        partial: Partial command string (e.g., "/task" or "/task cr")
+    """
+    if not partial.startswith("/"):
+        partial = "/" + partial
+
+    suggestions = get_command_suggestions(partial)
+
+    return {
+        "suggestions": suggestions,
+        "count": len(suggestions)
+    }
+
+
+@router.get("/ai/history/search")
+async def search_ai_history(
+    query: str,
+    limit: int = 20,
+    user_id: str = Depends(get_current_user_id)
+):
+    """
+    Search through AI chat history.
+
+    Args:
+        query: Search query
+        limit: Maximum results to return
+    """
+    try:
+        if not query or len(query.strip()) < 2:
+            raise HTTPException(status_code=400, detail="Query must be at least 2 characters")
+
+        # Escape regex special characters
+        escaped_query = re.escape(query.strip())
+
+        messages = list(
+            chat_history_collection.find({
+                "chat_type": "ai",
+                "$or": [
+                    {"sender_id": user_id},
+                    {"sender_id": "ai_assistant", "read_by": user_id}
+                ],
+                "content": {"$regex": escaped_query, "$options": "i"}
+            })
+            .sort("timestamp", -1)
+            .limit(limit)
+        )
+
+        formatted = [format_message(msg) for msg in messages]
+
+        return {
+            "messages": formatted,
+            "count": len(formatted),
+            "query": query
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error searching AI history: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Search failed: {str(e)}")
+
+
+@router.delete("/ai/history")
+async def clear_ai_history(
+    user_id: str = Depends(get_current_user_id)
+):
+    """
+    Clear all AI chat history for the current user.
+    """
+    try:
+        result = chat_history_collection.delete_many({
+            "chat_type": "ai",
+            "$or": [
+                {"sender_id": user_id},
+                {"sender_id": "ai_assistant", "read_by": user_id}
+            ]
+        })
+
+        logger.info(f"Cleared {result.deleted_count} AI messages for user {user_id}")
+
+        return {
+            "success": True,
+            "deleted_count": result.deleted_count,
+            "message": f"Cleared {result.deleted_count} messages from AI chat history"
+        }
+
+    except Exception as e:
+        logger.error(f"Error clearing AI history: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Failed to clear history: {str(e)}")
+
+
+@router.get("/ai/context")
+async def get_ai_context_preview(
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Get a preview of what context the AI has access to for the current user.
+    Useful for showing users what data the AI can see.
+    """
+    try:
+        user_id = str(current_user["_id"])
+
+        # Get full context
+        context = get_full_user_context(user_id)
+
+        # Build summary
+        tasks = context.get("tasks", {})
+        groups = context.get("groups", {})
+        resources = context.get("resources", {})
+        study_plans = context.get("study_plans", {})
+        wellbeing = context.get("wellbeing", {})
+
+        summary = {
+            "user": context.get("user", {}),
+            "data_access": {
+                "tasks": {
+                    "total_pending": tasks.get("total_pending", 0),
+                    "overdue": len(tasks.get("overdue", [])),
+                    "due_today": len(tasks.get("due_today", [])),
+                    "in_progress": len(tasks.get("in_progress", []))
+                },
+                "groups": {
+                    "coordinating": len(groups.get("coordinating", [])),
+                    "member_of": len(groups.get("member_of", []))
+                },
+                "resources": {
+                    "total": resources.get("total_resources", 0),
+                    "flashcard_sets": len(resources.get("flashcard_sets", []))
+                },
+                "study_plans": {
+                    "has_today_plan": study_plans.get("has_today_plan", False)
+                },
+                "wellbeing": {
+                    "current_stress": wellbeing.get("current_stress", {}).get("objective_score") if wellbeing.get("current_stress") else None,
+                    "focus_sessions_this_week": wellbeing.get("focus_stats", {}).get("sessions_this_week", 0)
+                }
+            },
+            "generated_at": context.get("generated_at")
+        }
+
+        return {
+            "context_summary": summary,
+            "message": "This shows what data the AI assistant can access to help you."
+        }
+
+    except Exception as e:
+        logger.error(f"Error getting AI context: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Failed to get context: {str(e)}")
 
 
 @router.post("/upload")

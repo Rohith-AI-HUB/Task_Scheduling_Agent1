@@ -11,10 +11,17 @@ class Settings(BaseSettings):
 
     # Optional settings with defaults
     ollama_model: str = "deepseek-coder:1.3b-instruct"
+    ollama_chat_model: str = "llama3.2:3b"  # Model for chat/conversation
     google_oauth_client_id: str = ""
     google_oauth_client_secret: str = ""
     google_oauth_redirect_uri: str = "http://localhost:8000/api/calendar/oauth/callback"
     calendar_encryption_key: str = ""
+
+    # AI Assistant settings
+    tesseract_path: str = ""  # Path to Tesseract OCR executable (auto-detected on Windows)
+    ai_context_cache_ttl: int = 300  # Cache TTL in seconds (5 minutes)
+    ai_max_document_size: int = 10 * 1024 * 1024  # 10MB max document size
+    ai_max_context_length: int = 8000  # Max characters for AI context
 
     @field_validator('mongodb_uri')
     @classmethod

@@ -54,5 +54,15 @@ export const resourceService = {
     async generateFlashcards(resourceId) {
         const response = await axios.post(`${API_URL}/${resourceId}/flashcards`, {}, getAuthHeader());
         return response.data;
+    },
+
+    async updateResource(resourceId, data) {
+        const response = await axios.put(`${API_URL}/${resourceId}`, data, getAuthHeader());
+        return response.data;
+    },
+
+    async getResource(resourceId) {
+        const response = await axios.get(`${API_URL}/${resourceId}`, getAuthHeader());
+        return response.data;
     }
 };

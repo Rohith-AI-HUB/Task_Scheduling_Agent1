@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Bell, X, Check } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { authService } from '../services/auth.service';
 
 export default function NotificationBell() {
   const [notifications, setNotifications] = useState([]);
@@ -16,15 +17,19 @@ export default function NotificationBell() {
     return () => clearInterval(interval);
   }, []);
 
-  const getAuthHeader = () => ({
-    headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-  });
+  const getAuthHeader = async () => {
+    const token = await authService.getToken();
+    return {
+      headers: { Authorization: `Bearer ${token}` }
+    };
+  };
 
   const loadNotifications = async () => {
     try {
+      const authHeader = await getAuthHeader();
       const [notifsRes, countRes] = await Promise.all([
-        axios.get('http://localhost:8000/api/notifications', getAuthHeader()),
-        axios.get('http://localhost:8000/api/notifications/count', getAuthHeader())
+        axios.get('http://localhost:8000/api/notifications', authHeader),
+        axios.get('http://localhost:8000/api/notifications/count', authHeader)
       ]);
 
       setNotifications(notifsRes.data);
@@ -39,7 +44,7 @@ export default function NotificationBell() {
       await axios.put(
         `http://localhost:8000/api/notifications/${notifId}/read`,
         {},
-        getAuthHeader()
+        await getAuthHeader()
       );
       loadNotifications();
     } catch (err) {
@@ -50,7 +55,7 @@ export default function NotificationBell() {
   const markAllAsRead = async () => {
     setLoading(true);
     try {
-      await axios.put('http://localhost:8000/api/notifications/read-all', {}, getAuthHeader());
+      await axios.put('http://localhost:8000/api/notifications/read-all', {}, await getAuthHeader());
       loadNotifications();
     } catch (err) {
       console.error('Failed to mark all as read:', err);
@@ -61,7 +66,7 @@ export default function NotificationBell() {
 
   const deleteNotification = async (notifId) => {
     try {
-      await axios.delete(`http://localhost:8000/api/notifications/${notifId}`, getAuthHeader());
+      await axios.delete(`http://localhost:8000/api/notifications/${notifId}`, await getAuthHeader());
       loadNotifications();
     } catch (err) {
       console.error('Failed to delete notification:', err);

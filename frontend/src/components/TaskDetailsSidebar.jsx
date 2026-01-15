@@ -3,7 +3,7 @@ import { X, Clock, User, AlertCircle, Calendar, Trash2, Edit } from 'lucide-reac
 import clsx from 'clsx';
 import useTaskStore from '../store/useTaskStore';
 import { taskService } from '../services/task.service';
-import { useUIStore } from '../store/useStore';
+import { useToast } from '../store/useStore';
 
 /**
  * TaskDetailsSidebar - Slide-out panel showing full task details
@@ -19,7 +19,7 @@ import { useUIStore } from '../store/useStore';
 
 export default function TaskDetailsSidebar() {
   const { selectedTask, setSelectedTask, deleteTask: removeTask } = useTaskStore();
-  const { showToast } = useUIStore();
+  const toast = useToast();
 
   if (!selectedTask) return null;
 
@@ -35,14 +35,11 @@ export default function TaskDetailsSidebar() {
     try {
       await taskService.deleteTask(selectedTask.id);
       removeTask(selectedTask.id);
-      showToast('Task deleted successfully', { type: 'success' });
+      toast.success('Task deleted successfully');
       handleClose();
     } catch (error) {
       console.error('Error deleting task:', error);
-      showToast(
-        error.response?.data?.detail || 'Failed to delete task',
-        { type: 'error' }
-      );
+      toast.error(error.response?.data?.detail || 'Failed to delete task');
     }
   };
 

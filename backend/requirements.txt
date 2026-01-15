@@ -17,3 +17,6 @@ google-api-python-client>=2.110.0
 cryptography>=41.0.0
 python-socketio>=5.11.0
 pypdf>=6.6.0
+pytesseract>=0.3.10
+python-docx>=0.8.11
+Pillow>=10.0.0

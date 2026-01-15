@@ -71,3 +71,8 @@ calendar_event_mappings_collection.create_index("user_id")
 calendar_event_mappings_collection.create_index([("user_id", 1), ("local_entity_id", 1)])
 calendar_event_mappings_collection.create_index([("user_id", 1), ("google_event_id", 1)])
 calendar_event_mappings_collection.create_index("sync_status")
+
+# AI Chat History Indexes
+chat_history_collection.create_index([("sender_id", 1), ("chat_type", 1)])
+chat_history_collection.create_index([("timestamp", -1), ("sender_id", 1)])
+chat_history_collection.create_index([("chat_type", 1), ("chat_id", 1), ("timestamp", -1)])
