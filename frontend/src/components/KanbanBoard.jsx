@@ -13,7 +13,7 @@ import KanbanColumn from './KanbanColumn';
 import KanbanTaskCard from './KanbanTaskCard';
 import useTaskStore from '../store/useTaskStore';
 import { taskService } from '../services/task.service';
-import { useUIStore } from '../store/useStore';
+import { useToast } from '../store/useStore';
 
 /**
  * KanbanBoard - Main drag-and-drop Kanban board component
@@ -27,9 +27,9 @@ import { useUIStore } from '../store/useStore';
  */
 
 export default function KanbanBoard({ onAddTask }) {
-  const { getTasksByStatus, moveTask, updateTask } = useTaskStore();
+  const { getTasksByStatus, moveTask } = useTaskStore();
   // ... existing code ...
-  const { showToast } = useUIStore();
+  const toast = useToast();
   const [activeTask, setActiveTask] = useState(null);
 
   // Configure sensors for drag-and-drop
@@ -99,7 +99,14 @@ export default function KanbanBoard({ onAddTask }) {
     }
 
     const taskId = active.id;
-    const newStatus = over.id;
+    const allowedStatuses = ['todo', 'in_progress', 'completed'];
+    const overId = String(over.id);
+    const containerId = over?.data?.current?.sortable?.containerId;
+    const newStatus = allowedStatuses.includes(overId)
+      ? overId
+      : allowedStatuses.includes(containerId)
+      ? containerId
+      : null;
 
     // Find the task being moved
     const task = [...todoTasks, ...inProgressTasks, ...completedTasks].find(
@@ -108,6 +115,10 @@ export default function KanbanBoard({ onAddTask }) {
 
     if (!task) {
       console.error('Task not found:', taskId);
+      return;
+    }
+
+    if (!newStatus) {
       return;
     }
 
@@ -126,7 +137,7 @@ export default function KanbanBoard({ onAddTask }) {
       await taskService.updateTask(taskId, { status: newStatus });
 
       // Show success toast
-      showToast('Task moved successfully', { type: 'success' });
+      toast.success('Task moved successfully');
     } catch (error) {
       console.error('Error moving task:', error);
 
@@ -134,10 +145,7 @@ export default function KanbanBoard({ onAddTask }) {
       moveTask(taskId, oldStatus);
 
       // Show error toast
-      showToast(
-        error.response?.data?.detail || 'Failed to move task. Please try again.',
-        { type: 'error' }
-      );
+      toast.error(error.response?.data?.detail || 'Failed to move task. Please try again.');
     }
   };
 

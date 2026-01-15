@@ -79,6 +79,12 @@ async def get_tasks(user_id: str = Depends(get_current_user_id)):
                 task["ai_suggested_deadline"] = task["ai_suggested_deadline"].isoformat()
             if "created_at" in task and task["created_at"]:
                 task["created_at"] = task["created_at"].isoformat()
+            # Ensure teacher_info fields are properly included
+            if task.get("is_teacher_assigned"):
+                task["is_teacher_assigned"] = True
+                # Ensure teacher_info exists
+                if "teacher_info" not in task:
+                    task["teacher_info"] = {}
         return tasks
     except Exception as e:
         print(f"Error fetching tasks: {str(e)}")

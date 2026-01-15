@@ -27,7 +27,7 @@ export default function KanbanToolbar() {
   ];
 
   return (
-    <div className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-xl border border-white/40 dark:border-gray-700/50 rounded-2xl shadow-sm p-4 mb-8">
+    <div className="relative z-50 bg-white/70 dark:bg-gray-800/70 backdrop-blur-xl border border-white/40 dark:border-gray-700/50 rounded-2xl shadow-sm p-4 mb-8">
       <div className="flex flex-wrap items-center gap-4">
         {/* Search Bar */}
         <div className="flex-1 min-w-[200px]">

@@ -38,6 +38,7 @@ class BulkTaskCreate(BaseModel):
     complexity_score: int
     subtasks: List[str]
     student_ids: List[str]
+    subject: Optional[str] = None  # Subject for the task
     save_as_template: bool = False
     template_name: Optional[str] = None
 
@@ -118,7 +119,7 @@ async def create_bulk_tasks(
             # Prepare subtasks
             subtasks_list = [{"text": st, "completed": False} for st in bulk_task.subtasks]
 
-            # Create task
+            # Create task with teacher info for student visibility
             task_doc = {
                 "title": bulk_task.title,
                 "description": bulk_task.description,
@@ -132,7 +133,15 @@ async def create_bulk_tasks(
                 "subtasks": subtasks_list,
                 "template_id": template_id,
                 "created_at": datetime.utcnow(),
-                "attachments": []
+                "attachments": [],
+                # Teacher info for student visibility
+                "is_teacher_assigned": True,
+                "subject": bulk_task.subject or "",
+                "teacher_info": {
+                    "name": current_user.get('full_name', 'Unknown'),
+                    "usn": current_user.get('usn', ''),
+                    "email": current_user.get('email', '')
+                }
             }
 
             task_result = tasks_collection.insert_one(task_doc)

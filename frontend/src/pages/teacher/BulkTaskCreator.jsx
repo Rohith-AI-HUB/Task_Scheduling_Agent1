@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Users, Plus, Trash2, Save, Send, FileText, CheckSquare, LogOut, LayoutDashboard } from 'lucide-react';
+import axios from 'axios';
+import { Users, Plus, Trash2, Save, Send, FileText, CheckSquare, LogOut, LayoutDashboard, BookOpen } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import HomeButton from '../../components/HomeButton';
 import { useAuthStore } from '../../store/useStore';
@@ -25,6 +26,7 @@ function BulkTaskCreator() {
   const [subtasks, setSubtasks] = useState(['']);
   const [saveAsTemplate, setSaveAsTemplate] = useState(false);
   const [templateName, setTemplateName] = useState('');
+  const [subject, setSubject] = useState('');
 
   useEffect(() => {
     fetchStudents();
@@ -128,6 +130,7 @@ function BulkTaskCreator() {
           complexity_score: complexityScore,
           subtasks: filteredSubtasks,
           student_ids: selectedStudents,
+          subject: subject || null,
           save_as_template: saveAsTemplate,
           template_name: saveAsTemplate ? templateName : null
         },
@@ -145,6 +148,7 @@ function BulkTaskCreator() {
       setComplexityScore(5);
       setSubtasks(['']);
       setSelectedStudents([]);
+      setSubject('');
       setSaveAsTemplate(false);
       setTemplateName('');
 
@@ -264,6 +268,22 @@ function BulkTaskCreator() {
                   className="w-full border-2 border-purple-200 rounded-lg px-4 py-2 focus:border-purple-600 focus:ring-2 focus:ring-purple-600 focus:outline-none"
                   placeholder="Describe what students need to do..."
                 />
+              </div>
+
+              {/* Subject */}
+              <div>
+                <label className="text-sm font-medium mb-2 text-purple-700 flex items-center gap-2">
+                  <BookOpen size={16} />
+                  Subject
+                </label>
+                <input
+                  type="text"
+                  value={subject}
+                  onChange={(e) => setSubject(e.target.value)}
+                  className="w-full border-2 border-purple-200 rounded-lg px-4 py-2 focus:border-purple-600 focus:ring-2 focus:ring-purple-600 focus:outline-none"
+                  placeholder="e.g., Data Structures, Machine Learning"
+                />
+                <p className="text-xs text-gray-500 mt-1">Students will see this subject name on their task</p>
               </div>
 
               {/* Deadline and Priority */}

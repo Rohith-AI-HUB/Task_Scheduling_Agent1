@@ -55,6 +55,7 @@ class TaskUpdate(BaseModel):
     deadline: Optional[datetime] = None
     priority: Optional[Literal["low", "medium", "high", "urgent"]] = None
     status: Optional[Literal["todo", "in_progress", "completed"]] = None
+    subtasks: Optional[List[dict]] = None
     attachments: Optional[List[str]] = None
 
     class Config:

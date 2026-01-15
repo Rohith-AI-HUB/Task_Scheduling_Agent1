@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Clock, AlertCircle, CheckCircle, XCircle, Calendar, FileText } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import NotificationBell from '../components/NotificationBell';
 import HomeButton from '../components/HomeButton';
 
 export default function ExtensionsPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [requests, setRequests] = useState([]);
   const [tasks, setTasks] = useState([]);
   const [showForm, setShowForm] = useState(false);
@@ -25,6 +26,20 @@ export default function ExtensionsPage() {
     loadRequests();
     loadTasks();
   }, []);
+
+  // Handle pre-selected task from navigation (e.g., from TaskDetailsSidebar)
+  useEffect(() => {
+    const preSelectedTaskId = location.state?.preSelectedTaskId;
+    if (preSelectedTaskId && tasks.length > 0) {
+      const taskExists = tasks.some(t => t.id === preSelectedTaskId);
+      if (taskExists) {
+        setFormData(prev => ({ ...prev, task_id: preSelectedTaskId }));
+        setShowForm(true);
+        // Clear the navigation state
+        window.history.replaceState({}, document.title);
+      }
+    }
+  }, [location.state, tasks]);
 
   const getAuthHeader = () => ({
     headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }

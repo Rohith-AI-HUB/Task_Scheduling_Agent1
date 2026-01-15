@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Body, Depends, HTTPException
 from app.db_config import db, tasks_collection
 from app.routers.auth import get_current_user
 from app.services.ollama_service import generate_ai_response
@@ -171,16 +171,13 @@ async def get_current_stress_level(current_user: dict = Depends(get_current_user
 
 @router.post("/log-feeling")
 async def log_subjective_stress(
-    subjective_score: float,
-    notes: Optional[str] = None,
+    subjective_score: float = Body(..., ge=0, le=10),
+    notes: Optional[str] = Body(None),
     current_user: dict = Depends(get_current_user)
 ):
     """Allow user to log how they're actually feeling (1-10)"""
 
     user_id = str(current_user["_id"])
-
-    if not 0 <= subjective_score <= 10:
-        raise HTTPException(400, "Score must be between 0 and 10")
 
     # Get latest objective score
     latest_log = stress_logs_collection.find_one(

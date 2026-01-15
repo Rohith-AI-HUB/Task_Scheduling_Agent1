@@ -1,7 +1,7 @@
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { motion } from 'framer-motion';
-import { Clock, Star, User } from 'lucide-react';
+import { Clock, Star, User, GraduationCap } from 'lucide-react';
 import clsx from 'clsx';
 import useTaskStore from '../store/useTaskStore';
 
@@ -41,6 +41,8 @@ export default function KanbanTaskCard({ task }) {
   const priority = task?.priority || 'medium';
   const deadline = task?.deadline;
   const subtasks = task?.subtasks || [];
+  const isTeacherAssigned = task?.is_teacher_assigned === true;
+  const teacherName = task?.teacher_info?.name || '';
 
   // Due date color coding
   const getDueDateColor = () => {
@@ -100,7 +102,7 @@ export default function KanbanTaskCard({ task }) {
 
   // Subtask progress calculation
   const completedSubtasks = subtasks.filter(
-    (st) => st.status === 'completed' || st.status === 'done'
+    (st) => Boolean(st.completed) || st.status === 'completed' || st.status === 'done'
   ).length;
   const subtaskProgress =
     subtasks.length > 0 ? (completedSubtasks / subtasks.length) * 100 : 0;
@@ -140,6 +142,16 @@ export default function KanbanTaskCard({ task }) {
         isDragging && 'shadow-2xl scale-105 rotate-2'
       )}
     >
+      {/* Teacher Assigned Badge */}
+      {isTeacherAssigned && (
+        <div className="flex items-center gap-1.5 mb-2 px-2 py-1 bg-indigo-100 dark:bg-indigo-900/40 rounded-md w-fit">
+          <GraduationCap size={12} className="text-indigo-600 dark:text-indigo-400" />
+          <span className="text-xs font-medium text-indigo-700 dark:text-indigo-300">
+            {teacherName || 'Teacher Assigned'}
+          </span>
+        </div>
+      )}
+
       {/* Title */}
       <h3 className="font-bold text-sm text-gray-900 dark:text-white mb-2">
         {title}
