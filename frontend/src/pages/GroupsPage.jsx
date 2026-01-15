@@ -28,6 +28,8 @@ export default function GroupsPage() {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [groupName, setGroupName] = useState('');
   const [memberIds, setMemberIds] = useState('');
+  const [subject, setSubject] = useState('');
+  const [teacherUsn, setTeacherUsn] = useState('');
   const [selectedGroupForTask, setSelectedGroupForTask] = useState(null);
   const [selectedTaskId, setSelectedTaskId] = useState('');
 
@@ -70,7 +72,7 @@ export default function GroupsPage() {
 
   const handleCreateGroup = async (e) => {
     e.preventDefault();
-    if (!groupName.trim() || !memberIds.trim()) {
+    if (!groupName.trim() || !memberIds.trim() || !subject.trim() || !teacherUsn.trim()) {
       setError('Please fill in all fields');
       setTimeout(() => setError(''), 3000);
       return;
@@ -80,13 +82,17 @@ export default function GroupsPage() {
       const ids = memberIds.split(',').map(id => id.trim()).filter(id => id.length > 0);
       await groupService.createGroup({
         name: groupName.trim(),
-        member_ids: ids
+        member_ids: ids,
+        subject: subject.trim(),
+        teacher_usn: teacherUsn.trim()
       });
 
       setSuccess('Group created successfully!');
       setShowCreateForm(false);
       setGroupName('');
       setMemberIds('');
+      setSubject('');
+      setTeacherUsn('');
       await loadData();
 
       setTimeout(() => setSuccess(''), 3000);
@@ -281,6 +287,32 @@ export default function GroupsPage() {
                   </div>
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Subject
+                    </label>
+                    <input
+                      type="text"
+                      value={subject}
+                      onChange={(e) => setSubject(e.target.value)}
+                      placeholder="e.g., Data Structures, Machine Learning"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Teacher USN
+                    </label>
+                    <input
+                      type="text"
+                      value={teacherUsn}
+                      onChange={(e) => setTeacherUsn(e.target.value)}
+                      placeholder="e.g., T001, TEACH001"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
                       Member USNs (comma-separated)
                     </label>
                     <textarea
@@ -308,6 +340,8 @@ export default function GroupsPage() {
                         setShowCreateForm(false);
                         setGroupName('');
                         setMemberIds('');
+                        setSubject('');
+                        setTeacherUsn('');
                       }}
                       className="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg font-semibold hover:bg-gray-300 transition-all"
                     >

@@ -11,6 +11,8 @@ router = APIRouter(prefix="/groups", tags=["Groups"])
 class GroupCreate(BaseModel):
     name: str
     member_ids: List[str]
+    subject: str
+    teacher_usn: str
 
 class TaskAssignment(BaseModel):
     task_id: str
@@ -49,10 +51,26 @@ async def create_group(group_data: GroupCreate, user_id: str = Depends(get_curre
         except HTTPException as e:
             raise HTTPException(status_code=404, detail=f"Member '{member_identifier}': {e.detail}")
 
+    # Resolve teacher USN to get teacher details
+    teacher_id = None
+    teacher_name = None
+    try:
+        teacher_id = resolve_user_identifier(group_data.teacher_usn)
+        teacher = users_collection.find_one({"_id": ObjectId(teacher_id)})
+        if teacher:
+            teacher_name = teacher.get("full_name", "Unknown")
+    except HTTPException:
+        # Teacher USN not found in system, store as-is
+        pass
+
     group_doc = {
         "name": group_data.name,
         "coordinator_id": user_id,
         "members": resolved_member_ids,
+        "subject": group_data.subject,
+        "teacher_usn": group_data.teacher_usn,
+        "teacher_id": teacher_id,
+        "teacher_name": teacher_name,
         "created_at": datetime.utcnow()
     }
     result = groups_collection.insert_one(group_doc)
@@ -63,6 +81,21 @@ async def create_group(group_data: GroupCreate, user_id: str = Depends(get_curre
             "user_id": member_id,
             "type": "group_added",
             "message": f"You've been added to group '{group_data.name}'",
+            "reference_id": str(result.inserted_id),
+            "read": False,
+            "created_at": datetime.utcnow()
+        })
+
+    # Notify the teacher if they exist in the system
+    if teacher_id:
+        # Get creator's name for the notification
+        creator = users_collection.find_one({"_id": ObjectId(user_id)})
+        creator_name = creator.get("full_name", "A student") if creator else "A student"
+
+        notifications_collection.insert_one({
+            "user_id": teacher_id,
+            "type": "group_created",
+            "message": f"{creator_name} created a group '{group_data.name}' for subject '{group_data.subject}' and assigned you as the teacher",
             "reference_id": str(result.inserted_id),
             "read": False,
             "created_at": datetime.utcnow()

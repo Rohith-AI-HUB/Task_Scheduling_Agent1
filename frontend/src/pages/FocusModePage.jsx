@@ -451,11 +451,14 @@ function FocusModePage() {
                 className="w-full border-2 border-purple-200 rounded-lg px-4 py-2 focus:border-purple-600 focus:ring-2 focus:ring-purple-600 focus:outline-none"
               >
                 <option value="">No specific task</option>
-                {tasks.map(task => (
-                  <option key={task._id} value={task._id}>
-                    {task.title}
-                  </option>
-                ))}
+                {tasks.map((task, index) => {
+                  const taskId = task?._id ?? task?.id ?? task?.task_id ?? index;
+                  return (
+                    <option key={String(taskId)} value={String(taskId)}>
+                      {task?.title || task?.name || 'Untitled task'}
+                    </option>
+                  );
+                })}
               </select>
             </div>
 
