@@ -4,7 +4,9 @@
 
 ![Version](https://img.shields.io/badge/version-2.1-blue.svg)
 ![Status](https://img.shields.io/badge/status-production--ready-success.svg)
-![License](https://img.shields.io/badge/license-Educational-orange.svg)
+![Python](https://img.shields.io/badge/python-3.8+-blue.svg)
+![React](https://img.shields.io/badge/react-18.2-blue.svg)
+![License](https://img.shields.io/badge/license-MIT-green.svg)
 
 ---
 
@@ -12,30 +14,39 @@
 
 - [Overview](#-overview)
 - [Features](#-features)
-- [Recent Updates](#-recent-updates)
 - [Tech Stack](#-tech-stack)
 - [Project Structure](#-project-structure)
 - [Quick Start](#-quick-start)
-- [Design System](#-design-system)
+- [Environment Configuration](#-environment-configuration)
 - [API Documentation](#-api-documentation)
 - [Database Schema](#-database-schema)
 - [Testing](#-testing)
 - [Deployment](#-deployment)
-- [Roadmap](#-roadmap)
 - [Contributing](#-contributing)
+- [License](#-license)
 
 ---
 
 ## 🌟 Overview
 
-The **AI-Powered Task Scheduling Agent** is a comprehensive full-stack application that revolutionizes how students manage their workload and how teachers manage their classes. Built with React, FastAPI, MongoDB, and local AI (Ollama), it delivers 15+ major features across student wellness, productivity tracking, intelligent grading, and real-time collaboration.
+The **AI-Powered Task Scheduling Agent** is a comprehensive full-stack application that revolutionizes how students manage their workload and how teachers manage their classes. Built with React, FastAPI, MongoDB, and local AI (Ollama), it delivers intelligent task management, AI-powered grading, real-time collaboration, and smart scheduling.
 
-### 🎯 Impact Metrics
+### 🎯 Key Highlights
+
+- **15+ Major Features** across student wellness, productivity tracking, and teacher tools
+- **40+ REST API Endpoints** with comprehensive functionality
+- **Real-Time Collaboration** via WebSocket (Socket.IO)
+- **AI Integration** with local LLMs (Ollama - DeepSeek & Llama)
+- **Google Calendar Sync** with bidirectional synchronization
+- **Modern UI/UX** with purple/blue/indigo design system
+- **Production Ready** with 86 unit tests and comprehensive error handling
+
+### 📊 Impact Metrics
 
 **Time Savings:**
-- **Grading:** 70% faster (5-10 min → 1-2 min per task)
-- **Class Monitoring:** 83% faster (30 min → 5 min per day)
-- **Task Creation:** 90% faster (10 min/task → 1 min/batch)
+- **Grading:** 70% faster with AI-powered suggestions
+- **Task Creation:** 90% faster with bulk task creator
+- **Class Monitoring:** 83% faster with analytics dashboard
 
 **Total Teacher Time Saved:** 15-20 hours per week
 
@@ -45,175 +56,180 @@ The **AI-Powered Task Scheduling Agent** is a comprehensive full-stack applicati
 
 ### 🧠 For Students
 
-#### **1. Stress Meter** - AI-powered workload stress analysis
+#### **1. Intelligent Task Management**
+- **Kanban Board** with drag-and-drop functionality
+- **AI Task Analysis** - Automatic complexity scoring and subtask generation
+- **File Attachments** - Upload and manage task-related files
+- **Student Notes** - Add personal notes to tasks
+- **Priority Levels** - Low, Medium, High, Urgent
+- **Status Tracking** - Pending, In Progress, Completed
+- **Real-Time Updates** - WebSocket-powered live updates
+
+#### **2. Stress Meter** - AI-powered workload analysis
 - Multi-factor stress calculation (0-10 scale)
 - Personalized AI recommendations
-- 7-day trend tracking with charts
-- Subjective feeling logger with emoji selections
+- 7-day and 30-day trend tracking
+- Workload visualization with charts
 
-#### **2. Focus Mode & Pomodoro** - Productivity tracking
+#### **3. Focus Mode & Pomodoro**
 - Multiple session types: Pomodoro (25 min), Deep Work (90 min), Short Burst (15 min)
 - Real-time timer with circular progress indicator
 - Interruption logging and categorization
 - Productivity ratings and detailed statistics
 
-#### **3. Resource Library** - AI-enhanced note organization
-- Auto-summarization of notes/documents
-- AI-generated flashcards (8-12 cards per resource)
-- Full-text search across all content
-- Auto-tagging with key concepts
-- Support for 9 file types: PDFs, documents, code, images, videos, links, and more
+#### **4. Resource Library** - AI-enhanced note organization
+- **File Types Supported:** Notes, PDFs, Documents, Text Files, Code, Images, Videos, Links
+- **AI Features:** Auto-summarization, key point extraction, flashcard generation
+- **Full-Text Search** across all content
+- **Auto-Tagging** with key concepts
+- **Document Processing:** OCR for images, text extraction from PDFs
 
-#### **4. Smart Study Planner** - AI-powered scheduling
+#### **5. Smart Study Planner** - AI-powered scheduling
 - Deadline-first, complexity-balanced planning
 - Stress-aware schedule generation
-- Multiple session types (Pomodoro, deep work, short burst)
-- Customizable preferences (study hours, session length, break duration)
+- Customizable preferences (study hours, session types, break duration)
 - Real-time schedule adjustments
 
-#### **5. Analytics Dashboard** - Performance tracking
-- Task completion rates
+#### **6. Analytics Dashboard** - Performance tracking
+- Task completion rates and trends
 - Focus time analysis
-- Stress level trends
-- Resource usage statistics
-- Interactive charts and visualizations
+- Stress level visualization
+- Productivity metrics
+- Interactive charts with Recharts
 
-#### **6. Google Calendar Integration** - Seamless sync
+#### **7. Google Calendar Integration**
 - Bidirectional sync with Google Calendar
 - OAuth 2.0 authentication
 - Task and study schedule sync
 - Conflict detection and resolution
-- Auto-sync with configurable intervals
+- Automatic sync with configurable intervals
+
+#### **8. Extension Requests** - Deadline management
+- Request deadline extensions with reasons
+- AI-powered approval recommendations for teachers
+- Track extension status
+- Automatic task updates on approval
 
 ### 🎓 For Teachers
 
-#### **7. AI Grading Assistant** - Intelligent grading
-- Multi-factor AI grade calculation
-- Personalized strengths/weaknesses analysis
-- Historical performance comparison
-- Detailed feedback generation
+#### **9. AI Grading Assistant**
+- Review student task submissions
+- AI-powered grade suggestions
+- Personalized feedback generation
+- Batch grading with filters
+- Historical performance tracking
 - 70% time savings on grading
 
-#### **8. Class Performance Dashboard** - Real-time analytics
-- At-risk student detection (6 risk factors)
+#### **10. Class Performance Dashboard**
+- Comprehensive class analytics
+- **At-Risk Detection:** Identifies struggling students based on:
+  - Low completion rates
+  - High stress levels
+  - Missed deadlines
+  - Extension requests
+  - Low average grades
+  - Declining performance trends
 - Grade distribution visualization
 - Top performer tracking
-- Common struggle area identification
-- Class-wide metrics and insights
+- Performance trends over time
 
-#### **9. Bulk Task Creator** - Efficient task distribution
-- Multi-select student assignment
-- Reusable task templates with usage tracking
+#### **11. Bulk Task Creator**
+- Create tasks for multiple students simultaneously
+- **Task Templates:** Save and reuse task configurations
+- Template usage tracking
 - Subtask management
-- Complexity and priority settings
-- 90% time savings on task creation
+- Complexity and priority presets
+- 90% time savings on task distribution
 
-### 🤝 For Everyone
+### 🤝 Collaborative Features
 
-#### **10. Group Coordination** - Collaborative learning
-- Create study groups with USN or ID
+#### **12. Group Coordination**
+- Create study groups with easy member management
+- **USN Support:** Add members using University Serial Number (e.g., `1ms25scs032`)
 - Group task assignment
-- Member management
-- Group analytics
+- Teacher and subject association
+- Member role management (coordinator/member)
 
-#### **11. Real-Time Chat** - WebSocket-powered messaging
-- Group chat and direct messages
-- Message reactions
-- Real-time typing indicators
-- Message search and history
+#### **13. Real-Time Chat & Messaging**
+- **WebSocket-Powered:** Instant messaging with Socket.IO
+- **Group Chat:** Collaborate with study groups
+- **Direct Messages:** One-on-one conversations
+- **Message Reactions:** React with emojis
+- **Read Receipts:** Track message read status
+- **Typing Indicators:** See when others are typing
+- **Message Search:** Find messages quickly
 
-#### **12. Extension Requests** - Deadline management
-- AI-powered approval recommendations
-- Reason validation
-- Automatic task updates
-- Request tracking
+#### **14. Live Notifications**
+- Real-time notification system
+- **Notification Types:**
+  - Task assignments
+  - Deadline reminders
+  - Extension request updates
+  - Grade notifications
+  - Group activity alerts
+  - Chat messages
+- Toast notifications with auto-dismiss
+- Notification center with filters
+- Mark as read/unread functionality
 
-#### **13. Notifications** - Stay informed
-- Real-time notifications with WebSocket
-- Task reminders
-- Extension updates
-- Grade notifications
-- Group activity alerts
-
-#### **14. User Management** - Role-based access
-- Firebase authentication
-- Student/Teacher roles
-- USN (University Serial Number) support
-- Profile management
-
----
-
-## 🆕 Recent Updates
-
-### Latest Features (v2.1 - January 2026)
-
-#### **Purple/Blue/Indigo UI Redesign** ✨
-Complete visual overhaul with consistent brand identity:
-- **Brand Colors:** Purple (#7C3AED), Blue (#3B82F6), Indigo (#6366F1)
-- **Design Components:** GradientButton, MetricCard, GlassCard, GradientCard
-- **Design Tokens:** Comprehensive color, gradient, and typography system
-- **11 Redesigned Pages:** All student and teacher pages updated
-- **Glassmorphism Effects:** Modern frosted glass aesthetics
-- **Consistent Focus States:** Purple ring on all form inputs
-
-#### **WebSocket Real-Time Features** 🔴
-- Real-time chat messaging
-- Live activity feed on dashboard
-- Instant notifications
-- Typing indicators
-- Online presence detection
-
-#### **USN (University Serial Number) Support** 🎓
-Students can now use USN instead of MongoDB ObjectIDs:
-- **Format:** `1ms25scs032` or `1ms25scs032-t` (with suffix)
-- **Automatic Normalization:** Removes `-t` or `-s` suffixes
-- **Group Coordination:** Use USN for easy group creation
-- **Backward Compatible:** Works with both USN and ObjectID
-- **Display:** USN shown in blue monospace font in member lists
-
-#### **Enhanced Resource Library** 📚
-Improved file type filtering:
-- 📁 All, 📝 Notes, 📕 PDFs, 📄 Documents
-- 📃 Text Files, 💻 Code, 🖼️ Images, 🎥 Videos
-- 🔗 Links, 📦 Other Files
-
-### Previous Major Updates
-
-**Week 4:** Google Calendar Integration ✅
-**Week 3:** Smart Study Planner ✅
-**Week 2:** Teacher Efficiency Tools ✅
-**Week 1:** Student AI Features ✅
+#### **15. Activity Feed**
+- Live activity stream on dashboard
+- Recent task updates
+- Group activities
+- Notification history
+- Real-time WebSocket updates
 
 ---
 
 ## 🛠️ Tech Stack
 
 ### Backend
-- **Framework:** FastAPI (Python 3.8+)
-- **Database:** MongoDB
-- **Authentication:** Firebase Auth + JWT
-- **AI:** Ollama (Local LLM - Llama 2)
-- **Real-Time:** Socket.IO for WebSocket
-- **Calendar:** Google Calendar API v3
-- **CORS:** Enabled for development
+- **Framework:** FastAPI 0.104.0+ (Python 3.8+)
+- **Database:** MongoDB 4.6.0+ with PyMongo
+- **Authentication:** Firebase Admin 6.5.0 with JWT
+- **AI Models:**
+  - Ollama 0.6.1
+  - DeepSeek Coder 1.3B (task analysis, grading)
+  - Llama 3.2 3B (chat, conversations)
+- **Real-Time:** Python-SocketIO 5.11.0+
+- **Calendar:** Google Calendar API v3 with OAuth 2.0
+- **Document Processing:**
+  - PyPDF 6.6.0+ (PDF extraction)
+  - Pytesseract 0.3.10+ (OCR)
+  - Python-docx 0.8.11+ (Word documents)
+  - Pillow 10.0.0+ (Image processing)
+- **Security:** BCrypt 4.1.0+, Cryptography 41.0.0+
+- **HTTP Client:** HTTPX 0.26.0+
 
 ### Frontend
-- **Framework:** React 18 with Vite
-- **Routing:** React Router v6
-- **Styling:** Tailwind CSS
-- **State Management:** Zustand
-- **Animations:** Framer Motion
-- **Icons:** Lucide React
-- **HTTP Client:** Axios
-- **Charts:** Recharts
-- **Real-Time:** Socket.IO Client
+- **Framework:** React 18.2.0 with Vite 5.0.0
+- **Routing:** React Router DOM 6.20.0
+- **Styling:** Tailwind CSS 3.3.5 with PostCSS & Autoprefixer
+- **State Management:** Zustand 5.0.9
+- **Animations:** Framer Motion 12.24.7
+- **Icons:** Lucide React 0.292.0
+- **HTTP Client:** Axios 1.6.0
+- **Charts:** Recharts 3.6.0
+- **Real-Time:** Socket.IO Client 4.8.3
+- **Drag & Drop:** DnD Kit 6.3.1+
+- **Utilities:**
+  - Canvas-confetti 1.9.4 (celebrations)
+  - HTML2Canvas 1.4.1 (screenshots)
+  - JsPDF 4.0.0 (PDF export)
+  - clsx 2.1.1 (className utilities)
 
 ### Design System
-- **Colors:** Purple (#7C3AED), Blue (#3B82F6), Indigo (#6366F1)
+- **Primary Colors:** Purple (#7C3AED), Blue (#3B82F6), Indigo (#6366F1)
 - **Components:** GradientButton, MetricCard, GlassCard, GradientCard
-- **Tokens:** Comprehensive design token system
 - **Typography:** Inter font family with clear hierarchy
 - **Effects:** Glassmorphism, gradients, smooth transitions
+- **Theme:** Light/Dark mode support with ThemeContext
+
+### Development Tools
+- **Build Tool:** Vite (fast HMR, optimized builds)
+- **Testing:** Pytest with 86 unit tests
+- **Linting:** ESLint (frontend), Black (backend)
+- **Version Control:** Git
 
 ---
 
@@ -223,101 +239,148 @@ Improved file type filtering:
 Task_Scheduling_Agent/
 ├── backend/
 │   ├── app/
-│   │   ├── routers/                # API endpoints
-│   │   │   ├── auth.py            # Authentication
-│   │   │   ├── tasks.py           # Task management
-│   │   │   ├── stress.py          # Stress meter
-│   │   │   ├── focus.py           # Focus mode
-│   │   │   ├── resources.py       # Resource library
-│   │   │   ├── grading.py         # AI grading
-│   │   │   ├── class_analytics.py # Class dashboard
-│   │   │   ├── bulk_tasks.py      # Bulk task creator
-│   │   │   ├── study_planner.py   # Study planner
-│   │   │   ├── calendar.py        # Calendar sync
+│   │   ├── routers/                # 14 API route modules
+│   │   │   ├── auth.py            # Authentication endpoints
+│   │   │   ├── tasks.py           # Task management (CRUD, attachments, notes)
+│   │   │   ├── extensions.py      # Extension requests
+│   │   │   ├── notifications.py   # Notification system
+│   │   │   ├── analytics.py       # Dashboard & analytics
 │   │   │   ├── groups.py          # Group coordination
-│   │   │   ├── chat.py            # Real-time chat
-│   │   │   ├── notifications.py   # Notifications
-│   │   │   └── extensions.py      # Extension requests
-│   │   ├── services/
-│   │   │   ├── ollama_service.py  # AI integration
-│   │   │   ├── firebase_service.py # Auth service
-│   │   │   └── ai_grading_service.py
-│   │   ├── websocket/
-│   │   │   ├── events.py          # WebSocket handlers
-│   │   │   └── manager.py         # Connection manager
-│   │   ├── db_config.py           # MongoDB setup
-│   │   ├── config.py              # Configuration
-│   │   └── main.py                # FastAPI app
+│   │   │   ├── grading.py         # AI grading for teachers
+│   │   │   ├── calendar.py        # Google Calendar integration
+│   │   │   ├── stress.py          # Stress meter calculations
+│   │   │   ├── focus.py           # Focus mode sessions
+│   │   │   ├── resources.py       # Resource library
+│   │   │   ├── study_planner.py   # Smart study planner
+│   │   │   ├── bulk_tasks.py      # Bulk task creator
+│   │   │   └── class_analytics.py # Class performance analytics
+│   │   ├── services/              # 10 service modules
+│   │   │   ├── ai_task_service.py          # AI task analysis
+│   │   │   ├── ai_grading_service.py       # AI grading
+│   │   │   ├── ai_scheduling_service.py    # AI scheduling
+│   │   │   ├── ai_extension_service.py     # Extension analysis
+│   │   │   ├── firebase_service.py         # Firebase auth
+│   │   │   ├── google_calendar_service.py  # Calendar sync
+│   │   │   ├── ollama_service.py           # Ollama LLM
+│   │   │   ├── user_context_service.py     # User context
+│   │   │   ├── command_parser.py           # Command parsing
+│   │   │   └── document_processor.py       # Doc processing
+│   │   ├── websocket/             # WebSocket implementation
+│   │   │   ├── server.py          # Socket.IO server
+│   │   │   ├── manager.py         # Connection management
+│   │   │   ├── broadcaster.py     # Event broadcasting
+│   │   │   └── events.py          # Event definitions
+│   │   ├── models/                # Pydantic schemas
+│   │   ├── utils/                 # Logging utilities
+│   │   ├── main.py                # FastAPI application
+│   │   ├── db_config.py           # MongoDB configuration
+│   │   └── config.py              # Environment settings
 │   ├── tests/                     # Test suite (86 tests)
-│   └── requirements.txt
+│   │   ├── test_tasks.py          # Task tests (25)
+│   │   ├── test_resources.py      # Resource tests (25)
+│   │   ├── test_chat.py           # Chat tests (15)
+│   │   ├── test_calendar.py       # Calendar tests (20)
+│   │   ├── test_integration.py    # Integration tests (10)
+│   │   └── conftest.py            # Pytest configuration
+│   ├── uploads/                   # File storage
+│   ├── logs/                      # Application logs
+│   ├── requirements.txt           # Python dependencies
+│   ├── .env                       # Environment variables
+│   └── firebase-credentials.json  # Firebase config
 │
 ├── frontend/
 │   ├── src/
-│   │   ├── pages/
-│   │   │   ├── DashboardPage.jsx
+│   │   ├── pages/                 # 16 page components
 │   │   │   ├── LoginPage.jsx
 │   │   │   ├── RegisterPage.jsx
+│   │   │   ├── DashboardPage.jsx
 │   │   │   ├── TasksPage.jsx
+│   │   │   ├── ExtensionsPage.jsx
 │   │   │   ├── AnalyticsPage.jsx
 │   │   │   ├── StressMeterPage.jsx
 │   │   │   ├── FocusModePage.jsx
 │   │   │   ├── ResourceLibraryPage.jsx
 │   │   │   ├── StudyPlannerPage.jsx
-│   │   │   ├── CalendarSettingsPage.jsx
 │   │   │   ├── GroupsPage.jsx
 │   │   │   ├── ChatPage.jsx
-│   │   │   ├── ExtensionsPage.jsx
-│   │   │   └── teacher/
-│   │   │       ├── GradingDashboard.jsx
-│   │   │       ├── ClassDashboard.jsx
-│   │   │       └── BulkTaskCreator.jsx
-│   │   ├── components/
-│   │   │   ├── ui/                # Design system components
+│   │   │   ├── CalendarSettingsPage.jsx
+│   │   │   ├── TeacherDashboardPage.jsx
+│   │   │   ├── GradingDashboard.jsx
+│   │   │   └── BulkTaskCreator.jsx
+│   │   ├── components/            # 31+ reusable components
+│   │   │   ├── ui/                # Design system
 │   │   │   │   ├── GradientButton.jsx
 │   │   │   │   ├── MetricCard.jsx
 │   │   │   │   ├── GlassCard.jsx
-│   │   │   │   └── GradientCard.jsx
-│   │   │   ├── ActivityFeed.jsx   # Real-time activity
+│   │   │   │   ├── GradientCard.jsx
+│   │   │   │   ├── FilterDropdown.jsx
+│   │   │   │   ├── SearchInput.jsx
+│   │   │   │   └── FloatingLabelInput.jsx
+│   │   │   ├── kanban/            # Kanban board
+│   │   │   │   ├── KanbanBoard.jsx
+│   │   │   │   ├── KanbanColumn.jsx
+│   │   │   │   ├── KanbanTaskCard.jsx
+│   │   │   │   └── KanbanToolbar.jsx
+│   │   │   ├── tasks/
+│   │   │   │   ├── TaskCard.jsx
+│   │   │   │   ├── TaskDetailsSidebar.jsx
+│   │   │   │   ├── CreateTaskModal.jsx
+│   │   │   │   └── EditTaskModal.jsx
+│   │   │   ├── auth/
+│   │   │   │   ├── AuthFormCard.jsx
+│   │   │   │   ├── AuthLayout.jsx
+│   │   │   │   └── GeometricPattern.jsx
+│   │   │   ├── ActivityFeed.jsx
 │   │   │   ├── FlashcardViewer.jsx
 │   │   │   ├── LiveNotification.jsx
+│   │   │   ├── NotificationBell.jsx
 │   │   │   ├── HomeButton.jsx
-│   │   │   └── NotificationBell.jsx
-│   │   ├── store/
-│   │   │   └── useStore.js        # Zustand state
-│   │   ├── services/
+│   │   │   ├── StatisticsCards.jsx
+│   │   │   ├── ProtectedRoute.jsx
+│   │   │   ├── RoleProtectedRoute.jsx
+│   │   │   └── ThemeToggle/ThemeToggle.jsx
+│   │   ├── services/              # API & WebSocket clients
 │   │   │   ├── auth.service.js
 │   │   │   ├── calendar.service.js
 │   │   │   ├── studyPlanner.service.js
-│   │   │   └── socket.js          # WebSocket client
-│   │   ├── hooks/
-│   │   │   └── useWebSocket.js    # WebSocket hook
-│   │   ├── styles/
-│   │   │   ├── designTokens.js    # Design tokens
-│   │   │   └── tokens.js          # Advanced tokens
-│   │   └── App.jsx
-│   ├── tailwind.config.js
-│   ├── vite.config.js
-│   └── package.json
+│   │   │   └── socket.js
+│   │   ├── hooks/                 # Custom React hooks
+│   │   │   └── useWebSocket.js
+│   │   ├── contexts/              # React contexts
+│   │   │   └── ThemeContext.jsx
+│   │   ├── store/                 # Zustand state management
+│   │   │   └── useStore.js
+│   │   ├── styles/                # Design tokens
+│   │   │   ├── designTokens.js
+│   │   │   └── tokens.js
+│   │   ├── firebase/              # Firebase configuration
+│   │   ├── App.jsx                # Main app component
+│   │   └── main.jsx               # React DOM entry
+│   ├── dist/                      # Production build
+│   ├── package.json               # Node dependencies
+│   ├── tailwind.config.js         # Tailwind configuration
+│   └── vite.config.js             # Vite configuration
 │
-└── README.md (this file)
+└── README.md                      # This file
 ```
 
-**Code Metrics:**
-- Backend: 8 routers, 40+ API endpoints, ~6,500 lines of Python
-- Frontend: 16 pages, 25+ components, ~8,000 lines of React/JSX
-- Tests: 86 tests across 5 files, ~2,600 lines
-- **Total: ~17,000+ lines of production code**
+### Code Metrics
+```
+Backend:  14 routers | 40+ endpoints | 10 services | 86 tests | ~6,500 lines Python
+Frontend: 16 pages   | 31+ components | 8 hooks     | 4 themes | ~8,000 lines React/JSX
+Total:    17,000+ lines of production code
+```
 
 ---
 
 ## 🚀 Quick Start
 
 ### Prerequisites
-- **Python 3.8+**
-- **Node.js 16+**
-- **MongoDB 4.4+**
-- **Ollama** (for AI features)
-- **Firebase Project** (for authentication)
+- **Python 3.8+** - [Download](https://www.python.org/downloads/)
+- **Node.js 16+** - [Download](https://nodejs.org/)
+- **MongoDB 4.4+** - [Download](https://www.mongodb.com/try/download/community)
+- **Ollama** - [Download](https://ollama.com/download)
+- **Firebase Project** - [Create](https://console.firebase.google.com/)
 
 ### 1. Clone Repository
 ```bash
@@ -337,171 +400,176 @@ python -m venv venv
 # Activate virtual environment
 # Windows:
 venv\Scripts\activate
-# Mac/Linux:
+# macOS/Linux:
 source venv/bin/activate
 
 # Install dependencies
 pip install -r requirements.txt
+```
 
-# Create .env file
-cat > .env << EOF
+**Create `.env` file in `backend/` directory:**
+```env
+# Required Settings
 MONGODB_URI=mongodb://localhost:27017/task_scheduler
 FIREBASE_CREDENTIALS_PATH=firebase-credentials.json
-OLLAMA_BASE_URL=http://localhost:11434
-GOOGLE_CLIENT_ID=your_google_client_id
-GOOGLE_CLIENT_SECRET=your_google_client_secret
-GOOGLE_REDIRECT_URI=http://localhost:8000/api/calendar/oauth/callback
-EOF
+SECRET_KEY=your-secret-key-minimum-32-characters-long
 
-# Add your Firebase credentials JSON file
-# Place firebase-credentials.json in the backend/ directory
+# Optional Settings (with defaults)
+OLLAMA_MODEL=deepseek-coder:1.3b-instruct
+OLLAMA_CHAT_MODEL=llama3.2:3b
+GOOGLE_OAUTH_CLIENT_ID=your_google_client_id
+GOOGLE_OAUTH_CLIENT_SECRET=your_google_client_secret
+GOOGLE_OAUTH_REDIRECT_URI=http://localhost:8000/api/calendar/oauth/callback
+CALENDAR_ENCRYPTION_KEY=your-encryption-key-32-chars
 
-# Run server
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
-
-# Server runs at http://localhost:8000
-# API docs at http://localhost:8000/docs
+# AI Settings
+TESSERACT_PATH=
+AI_CONTEXT_CACHE_TTL=300
+AI_MAX_DOCUMENT_SIZE=10485760
+AI_MAX_CONTEXT_LENGTH=8000
 ```
+
+**Add Firebase credentials:**
+1. Go to [Firebase Console](https://console.firebase.google.com/)
+2. Create/Select your project
+3. Project Settings → Service Accounts → Generate New Private Key
+4. Save as `firebase-credentials.json` in `backend/` directory
+
+**Start backend server:**
+```bash
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+```
+
+Server will run at:
+- **API:** http://localhost:8000
+- **Docs:** http://localhost:8000/docs
+- **WebSocket:** ws://localhost:8000/socket.io/
 
 ### 3. Frontend Setup
 
+Open a new terminal:
 ```bash
-# Navigate to frontend directory (in new terminal)
+# Navigate to frontend directory
 cd frontend
 
 # Install dependencies
 npm install
 
-# Run development server
+# Start development server
 npm run dev
-
-# App runs at http://localhost:5173
 ```
+
+Frontend will run at: **http://localhost:5173**
 
 ### 4. MongoDB Setup
 
 ```bash
-# Install MongoDB (if not installed)
-# Windows: Download from mongodb.com
-# Mac: brew install mongodb-community
+# Install MongoDB
+# Windows: Download from https://www.mongodb.com/try/download/community
+# macOS: brew install mongodb-community
 # Linux: sudo apt-get install mongodb
 
 # Start MongoDB
-# Windows: Run as service
-# Mac/Linux:
+# Windows: MongoDB should start automatically as a service
+# macOS/Linux:
 mongod --dbpath /path/to/data
-
-# MongoDB runs at mongodb://localhost:27017
 ```
 
-### 5. Ollama Setup (for AI features)
+MongoDB will run at: **mongodb://localhost:27017**
+
+### 5. Ollama Setup (AI Features)
 
 ```bash
 # Install Ollama
-# Visit https://ollama.com/download
+# Visit: https://ollama.com/download
 
-# Pull a model (e.g., llama2)
-ollama pull llama2
+# Pull required models
+ollama pull deepseek-coder:1.3b-instruct
+ollama pull llama3.2:3b
 
 # Verify installation
 ollama list
-
-# Ollama runs at http://localhost:11434
 ```
 
-### 6. Firebase Setup
+Ollama API will run at: **http://localhost:11434**
 
-1. Go to [Firebase Console](https://console.firebase.google.com/)
-2. Create a new project
-3. Enable Authentication > Email/Password
-4. Generate service account key:
-   - Project Settings > Service Accounts
-   - Generate New Private Key
-   - Save as `firebase-credentials.json` in `backend/` directory
-5. Get Web API key from Project Settings > General
-6. Update frontend Firebase config in appropriate files
+### 6. First Time Access
 
-### 7. First Time Access
-
-```bash
-# 1. Open browser to http://localhost:5173
-# 2. Click "Register" to create an account
-# 3. Choose role: Student or Teacher
-# 4. Optional: Enter USN (e.g., 1ms25scs032)
-# 5. Login and start using the app!
-```
+1. Open browser to **http://localhost:5173**
+2. Click **"Register"** to create an account
+3. Choose role: **Student** or **Teacher**
+4. Optional: Enter USN (e.g., `1ms25scs032`)
+5. Login and start using the app!
 
 ---
 
-## 🎨 Design System
+## ⚙️ Environment Configuration
 
-### Color Palette
+### Required Environment Variables
 
-**Primary Brand Colors:**
-- **Purple:** `#7C3AED` - Main CTAs, highlights, active states
-- **Blue:** `#3B82F6` - Secondary actions, links
-- **Indigo:** `#6366F1` - Focus/productivity features
+| Variable | Description | Example |
+|----------|-------------|---------|
+| `MONGODB_URI` | MongoDB connection string | `mongodb://localhost:27017/task_scheduler` |
+| `FIREBASE_CREDENTIALS_PATH` | Path to Firebase service account JSON | `firebase-credentials.json` |
+| `SECRET_KEY` | JWT secret key (min 32 chars) | `your-super-secret-key-at-least-32-characters` |
 
-**Accent Colors:**
-- **Success:** `#10B981` - Success states, completion
-- **Warning:** `#F97316` - Warnings, important info
-- **Danger:** `#EF4444` - Errors, urgent items
-- **Pink:** `#EC4899` - Wellness features, stress indicators
-- **Cyan:** `#06B6D4` - Chat/communication
+### Optional Environment Variables
 
-**Neutral Colors:**
-- **Background:** `#F9FAFB` - Light page background
-- **Card:** `#FFFFFF` - Card backgrounds
-- **Text Primary:** `#111827` - Main text
-- **Text Secondary:** `#6B7280` - Secondary text
-- **Border:** `#E5E7EB` - Borders
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `OLLAMA_MODEL` | `deepseek-coder:1.3b-instruct` | Ollama model for task analysis & grading |
+| `OLLAMA_CHAT_MODEL` | `llama3.2:3b` | Ollama model for chat & conversations |
+| `GOOGLE_OAUTH_CLIENT_ID` | `` | Google OAuth client ID for calendar sync |
+| `GOOGLE_OAUTH_CLIENT_SECRET` | `` | Google OAuth client secret |
+| `GOOGLE_OAUTH_REDIRECT_URI` | `http://localhost:8000/api/calendar/oauth/callback` | OAuth callback URL |
+| `CALENDAR_ENCRYPTION_KEY` | `` | Encryption key for calendar tokens (min 32 chars) |
+| `TESSERACT_PATH` | Auto-detected | Path to Tesseract OCR executable |
+| `AI_CONTEXT_CACHE_TTL` | `300` | AI context cache TTL (seconds) |
+| `AI_MAX_DOCUMENT_SIZE` | `10485760` | Max document size for AI processing (10MB) |
+| `AI_MAX_CONTEXT_LENGTH` | `8000` | Max characters for AI context |
 
-### Typography
+### Firebase Setup
 
-**Font Family:** Inter (sans-serif)
-- **Headings:** Bold/Extra Bold (600-800)
-- **Body:** Regular/Medium (400-500)
+1. **Create Firebase Project:**
+   - Go to [Firebase Console](https://console.firebase.google.com/)
+   - Click "Add project" and follow the wizard
 
-**Font Scale:**
-- Hero: 48-60px (3xl-4xl)
-- H1: 36px (2xl)
-- H2: 24px (xl)
-- H3: 20px (lg)
-- Body: 16px (base)
-- Small: 14px (sm)
-- Tiny: 12px (xs)
+2. **Enable Authentication:**
+   - In Firebase Console → Authentication → Get Started
+   - Enable "Email/Password" provider
 
-### UI Components
+3. **Get Service Account Key:**
+   - Project Settings → Service Accounts
+   - Click "Generate New Private Key"
+   - Save as `firebase-credentials.json` in `backend/` directory
 
-**Reusable Components:**
-1. **GradientButton** - Primary action buttons with 6 variants
-   - Purple, Indigo, Green, Blue, Red, Outline
-   - Hover effects: scale-105, shadow-lg
-   - Disabled state: opacity-50
+4. **Get Web API Key:**
+   - Project Settings → General
+   - Under "Your apps" → Web app
+   - Copy the config and update `frontend/src/firebase/firebaseConfig.js`
 
-2. **MetricCard** - Statistics display with 8 gradient presets
-   - Icon, label, value, trend indicator
-   - Gradient backgrounds or white cards
-   - Hover lift effect
+### Google Calendar Setup (Optional)
 
-3. **GlassCard** - Glassmorphism container
-   - Backdrop blur effect
-   - Semi-transparent background
-   - Soft border and shadow
+1. **Create Google Cloud Project:**
+   - Go to [Google Cloud Console](https://console.cloud.google.com/)
+   - Create new project
 
-4. **GradientCard** - Card with gradient background
-   - 5 gradient presets
-   - Optional blur and border
+2. **Enable Calendar API:**
+   - APIs & Services → Enable APIs and Services
+   - Search for "Google Calendar API" and enable it
 
-### Visual Patterns
+3. **Create OAuth Credentials:**
+   - APIs & Services → Credentials
+   - Create OAuth 2.0 Client ID
+   - Application type: Web application
+   - Authorized redirect URIs: `http://localhost:8000/api/calendar/oauth/callback`
 
-- **Gradient Backgrounds:** Subtle purple-to-blue gradients
-- **Glassmorphism:** White cards with backdrop blur
-- **Purple Accents:** Focus states, active items, highlights
-- **Smooth Transitions:** 200-300ms duration-200/300
-- **Modern Shadows:** Soft depth with shadow-md/lg
-- **Hover Effects:** Scale-105, shadow changes
-- **Icon Consistency:** Lucide React throughout
+4. **Update .env:**
+   ```env
+   GOOGLE_OAUTH_CLIENT_ID=your_client_id
+   GOOGLE_OAUTH_CLIENT_SECRET=your_client_secret
+   CALENDAR_ENCRYPTION_KEY=your-32-character-encryption-key
+   ```
 
 ---
 
@@ -514,280 +582,280 @@ http://localhost:8000/api
 
 ### Authentication
 
-All endpoints (except `/auth/*`) require authentication via Firebase JWT token:
+All endpoints (except `/auth/*`) require Firebase JWT authentication:
 ```
 Authorization: Bearer <firebase_id_token>
 ```
 
-### Core Endpoints
+### Endpoints Overview
 
-#### **Authentication**
-- `POST /api/auth/register` - Register new user (student/teacher)
-- `POST /api/auth/login` - Login user
-- `GET /api/auth/me` - Get current user info
+#### **Authentication** (`/api/auth`)
+- `POST /register` - Register new user (student/teacher)
+- `GET /me` - Get current user information
 
-#### **Tasks**
-- `POST /api/tasks/` - Create task (with AI analysis)
-- `GET /api/tasks/` - Get all tasks
-- `GET /api/tasks/{id}` - Get task by ID
-- `PUT /api/tasks/{id}` - Update task
-- `DELETE /api/tasks/{id}` - Delete task
-- `POST /api/tasks/{id}/complete` - Mark task complete
-- `GET /api/tasks/analytics` - Get task statistics
+#### **Tasks** (`/api/tasks`)
+- `POST /` - Create task with AI analysis
+- `GET /` - Get all user tasks
+- `GET /{task_id}` - Get specific task
+- `PUT /{task_id}` - Update task
+- `DELETE /{task_id}` - Delete task
+- `POST /{task_id}/attachments` - Upload file attachment
+- `DELETE /{task_id}/attachments/{attachment_id}` - Delete attachment
+- `GET /attachments/{filename}` - Download attachment
+- `POST /{task_id}/notes` - Add student note
+- `GET /{task_id}/notes` - Get task notes
+- `DELETE /{task_id}/notes/{note_id}` - Delete note
 
-#### **Student Features**
+#### **Extensions** (`/api/extensions`)
+- `POST /` - Request deadline extension
+- `GET /` - Get user's extension requests
+- `GET /pending` - Get pending requests (teacher)
+- `PUT /{ext_id}/review` - Approve/deny extension (teacher)
+- `DELETE /{ext_id}` - Delete extension request
 
-**Stress Meter:**
-- `GET /api/stress/current` - Calculate current stress level
-- `POST /api/stress/log-feeling` - Log subjective feeling
-- `GET /api/stress/history?days=7` - Get stress history
+#### **Notifications** (`/api/notifications`)
+- `GET /` - Get all notifications
+- `GET /unread` - Get unread notifications
+- `GET /count` - Get unread count
+- `PUT /{notif_id}/read` - Mark notification as read
+- `PUT /read-all` - Mark all as read
+- `DELETE /{notif_id}` - Delete notification
+- `DELETE /` - Delete all notifications
 
-**Focus Mode:**
-- `POST /api/focus/start-session` - Start focus session
-- `PUT /api/focus/sessions/{id}/complete` - Complete session
-- `POST /api/focus/sessions/{id}/interruption` - Log interruption
-- `GET /api/focus/sessions` - Get session history
-- `GET /api/focus/statistics` - Get focus statistics
+#### **Analytics** (`/api/analytics`)
+- `GET /dashboard` - Get dashboard statistics
+- `GET /workload` - Get 7-day workload analysis
+- `GET /extended-workload` - Get 30-day workload analysis
+- `GET /productivity-metrics` - Get productivity metrics
 
-**Resource Library:**
-- `POST /api/resources/notes` - Create note with AI summary
-- `POST /api/resources/upload` - Upload file
-- `POST /api/resources/link` - Save link
-- `GET /api/resources?type_filter={type}` - Get resources (filtered)
-- `GET /api/resources/{id}` - Get resource by ID
-- `PUT /api/resources/{id}` - Update resource
-- `DELETE /api/resources/{id}` - Delete resource
-- `POST /api/resources/{id}/flashcards` - Generate flashcards
-- `GET /api/resources/search?query={q}` - Search resources
+#### **Groups** (`/api/groups`)
+- `POST /` - Create study group
+- `GET /` - Get user's created groups
+- `GET /{group_id}` - Get group details
+- `POST /{group_id}/assign-task` - Assign task to group
+- `DELETE /{group_id}` - Delete group
+- `GET /my-groups/all` - Get groups user is member of
 
-**Study Planner:**
-- `POST /api/study-planner/generate` - Generate schedule
-- `GET /api/study-planner/schedule/{date}` - Get schedule for date
-- `PUT /api/study-planner/preferences` - Update preferences
-- `POST /api/study-planner/blocks/{id}/complete` - Complete study block
+#### **Grading** (`/api/grading`) - Teacher only
+- `GET /assigned-tasks` - Get tasks to review (with filters)
+- `GET /task/{task_id}/details` - Get full task details
+- `POST /task/{task_id}/feedback` - Submit grade & feedback
+- `GET /stats` - Get grading statistics
 
-#### **Teacher Features**
+#### **Calendar** (`/api/calendar`)
+- `POST /oauth/initiate` - Start Google OAuth flow
+- `GET /oauth/callback` - OAuth callback handler
+- `POST /oauth/disconnect` - Disconnect calendar
+- `GET /status` - Get sync status
+- `PUT /preferences` - Update sync preferences
+- `POST /sync/task/{task_id}` - Sync single task
+- `POST /sync/schedule/{date}` - Sync study blocks for date
+- `POST /sync/full` - Trigger full sync
+- `GET /conflicts` - Get pending conflicts
+- `POST /conflicts/{mapping_id}/resolve` - Resolve conflict
+- `GET /events` - List synced events
+- `DELETE /events/{google_event_id}` - Delete synced event
 
-**AI Grading:**
-- `POST /api/grading/analyze-submission` - Get AI grade suggestion
-- `GET /api/grading/submissions/pending` - Get pending submissions
-- `POST /api/grading/submissions/{id}/grade` - Submit grade
-- `GET /api/grading/history` - Get grading history
+#### **Stress** (`/api/stress`)
+- `GET /current` - Calculate current stress level
 
-**Class Analytics:**
-- `GET /api/class/analytics` - Get class overview
-- `GET /api/class/students/at-risk` - Get at-risk students
-- `GET /api/class/performance-distribution` - Grade distribution
-- `GET /api/class/top-performers` - Top performing students
+#### **Focus** (`/api/focus`)
+- `POST /start-session` - Start focus session
 
-**Bulk Tasks:**
-- `GET /api/bulk-tasks/students` - Get list of students
-- `POST /api/bulk-tasks/create` - Create tasks for multiple students
-- `GET /api/bulk-tasks/templates` - Get saved templates
-- `POST /api/bulk-tasks/templates` - Save new template
+#### **Resources** (`/api/resources`)
+- Note/file management with AI summarization
+- Full-text search capabilities
+- Flashcard generation
 
-#### **Collaboration**
+#### **Study Planner** (`/api/study-planner`)
+- `GET /preferences` - Get study preferences
+- `PUT /preferences` - Update study preferences
+- Schedule generation with AI
 
-**Groups:**
-- `POST /api/groups/` - Create group (supports USN)
-- `GET /api/groups/` - Get user's groups
-- `GET /api/groups/{id}` - Get group details
-- `POST /api/groups/{id}/tasks` - Assign task to group
-- `DELETE /api/groups/{id}` - Delete group
+#### **Bulk Tasks** (`/api/bulk-tasks`) - Teacher only
+- `POST /create` - Create tasks for multiple students
+- Template management
 
-**Chat:**
-- `POST /api/chat/messages` - Send message
-- `GET /api/chat/messages/{conversation_id}` - Get messages
-- `POST /api/chat/messages/{id}/reaction` - Add reaction
-- `GET /api/chat/search?query={q}` - Search messages
-
-**Calendar Integration:**
-- `GET /api/calendar/oauth/authorize` - Start OAuth flow
-- `GET /api/calendar/oauth/callback` - OAuth callback
-- `POST /api/calendar/sync` - Trigger full sync
-- `GET /api/calendar/status` - Get sync status
-- `PUT /api/calendar/preferences` - Update sync preferences
-- `DELETE /api/calendar/disconnect` - Disconnect calendar
-
-#### **Other**
-
-**Extensions:**
-- `POST /api/extensions/request` - Request deadline extension
-- `GET /api/extensions/` - Get extension requests
-- `PUT /api/extensions/{id}/approve` - Approve request (teacher)
-- `PUT /api/extensions/{id}/reject` - Reject request (teacher)
-
-**Notifications:**
-- `GET /api/notifications/` - Get notifications
-- `PUT /api/notifications/{id}/read` - Mark as read
-- `PUT /api/notifications/read-all` - Mark all as read
-
-**Total:** 40+ REST API endpoints
+#### **Class Analytics** (`/api/class`) - Teacher only
+- `GET /analytics` - Get comprehensive class analytics
+- At-risk student detection
+- Performance distribution
 
 ### WebSocket Events
 
 **Connection:**
-- Connect: `ws://localhost:8000/socket.io/`
-- Authentication: Send Firebase token on connect
+```javascript
+const socket = io('http://localhost:8000', {
+  auth: { token: firebaseToken }
+});
+```
 
 **Events:**
-- `message` - New chat message
+- `message` - New chat message received
 - `notification` - New notification
-- `task_update` - Task updated
+- `task_update` - Task was updated
 - `typing` - User typing indicator
-- `user_online` - User online status
+- `user_online` - User online status changed
+
+**Interactive API Documentation:**
+Visit http://localhost:8000/docs for full Swagger UI documentation with request/response examples.
 
 ---
 
 ## 💾 Database Schema
 
-### Collections Overview
+### MongoDB Collections (16 total)
 
-The application uses 15 MongoDB collections:
-
-1. **users** - User accounts
-2. **tasks** - Task management
-3. **notifications** - User notifications
-4. **extension_requests** - Deadline extensions
-5. **stress_logs** - Stress tracking
-6. **focus_sessions** - Pomodoro sessions
-7. **resources** - Note library
-8. **grade_suggestions** - AI grading
-9. **class_analytics** - Class metrics
-10. **task_templates** - Bulk task templates
-11. **study_schedules** - Study planner schedules
-12. **study_preferences** - User study preferences
-13. **calendar_tokens** - Google OAuth tokens
-14. **calendar_mappings** - Calendar sync mappings
-15. **groups** - Group coordination
-16. **chat_messages** - Chat messages
-
-### Key Schemas
-
-#### Users Collection
+#### **1. users** - User accounts
 ```javascript
 {
-  "_id": ObjectId,
-  "email": string,              // Unique
-  "full_name": string,
-  "role": "student" | "teacher",
-  "usn": string | null,         // University Serial Number (optional)
-  "firebase_uid": string,       // Unique
-  "created_at": datetime,
-  "updated_at": datetime
+  _id: ObjectId,
+  email: string (unique),
+  full_name: string,
+  role: "student" | "teacher",
+  usn: string (optional, unique),  // University Serial Number
+  firebase_uid: string (unique),
+  created_at: datetime,
+  updated_at: datetime
 }
-
 // Indexes: email, firebase_uid, usn
 ```
 
-#### Tasks Collection
+#### **2. tasks** - Task management
 ```javascript
 {
-  "_id": ObjectId,
-  "user_id": string,
-  "title": string,
-  "description": string,
-  "status": "pending" | "in_progress" | "completed",
-  "priority": "low" | "medium" | "high" | "urgent",
-  "deadline": datetime | null,
-  "estimated_hours": float | null,
-  "complexity_score": int (1-10),
-  "ai_analysis": string | null,
-  "subtasks": [
+  _id: ObjectId,
+  title: string,
+  description: string,
+  deadline: datetime,
+  priority: "low" | "medium" | "high" | "urgent",
+  status: "pending" | "in_progress" | "completed",
+  assigned_to: string,              // Student user_id
+  created_by: string,               // Teacher user_id (if assigned)
+  complexity_score: int (1-10),
+  ai_analysis: string,
+  subtasks: [
     {
-      "title": string,
-      "completed": boolean
+      title: string,
+      completed: boolean
     }
   ],
-  "assigned_by": string | null,  // Teacher ID
-  "group_id": string | null,
-  "created_at": datetime,
-  "updated_at": datetime,
-  "completed_at": datetime | null
+  attachments: [
+    {
+      filename: string,
+      file_path: string,
+      file_type: string,
+      uploaded_at: datetime
+    }
+  ],
+  student_notes: [
+    {
+      content: string,
+      created_at: datetime
+    }
+  ],
+  teacher_feedback: string,
+  grade: float,
+  created_at: datetime,
+  updated_at: datetime
 }
-
-// Indexes: user_id, status, deadline, assigned_by, group_id
+// Indexes: assigned_to, created_by, status, deadline
 ```
 
-#### Resources Collection
+#### **3. notifications** - User notifications
 ```javascript
 {
-  "_id": ObjectId,
-  "user_id": string,
-  "title": string,
-  "type": "note" | "pdf" | "document" | "text" | "code" | "image" | "video" | "link" | "file",
-  "content": string | null,
-  "file_url": string | null,
-  "tags": [string],
-  "ai_summary": string | null,
-  "ai_key_points": [string],
-  "flashcards": [
-    {
-      "question": string,
-      "answer": string
-    }
-  ],
-  "favorite": boolean,
-  "created_at": datetime,
-  "updated_at": datetime
+  _id: ObjectId,
+  user_id: string,
+  type: "task_assigned" | "deadline_reminder" | "extension_update" | "grade_received" | "group_activity" | "chat_message",
+  message: string,
+  reference_id: string,            // Related task/extension/group ID
+  read: boolean,
+  created_at: datetime
 }
-
-// Indexes: user_id, type, tags, favorite
+// Indexes: user_id, created_at, read
 ```
 
-#### Groups Collection
+#### **4. extension_requests** - Deadline extensions
 ```javascript
 {
-  "_id": ObjectId,
-  "name": string,
-  "description": string,
-  "created_by": string,          // User ID
-  "members": [
-    {
-      "user_id": string,
-      "usn": string | null,
-      "name": string,
-      "email": string,
-      "role": "admin" | "member"
-    }
-  ],
-  "created_at": datetime,
-  "updated_at": datetime
+  _id: ObjectId,
+  task_id: string,
+  user_id: string,
+  original_deadline: datetime,
+  requested_deadline: datetime,
+  reason: string,
+  status: "pending" | "approved" | "denied",
+  ai_recommendation: {
+    should_approve: boolean,
+    confidence: float,
+    reasoning: string
+  },
+  reviewed_by: string,            // Teacher user_id
+  reviewed_at: datetime,
+  created_at: datetime
 }
-
-// Indexes: created_by, members.user_id
+// Indexes: task_id, user_id, status
 ```
 
-#### Chat Messages Collection
+#### **5. groups** - Study groups
 ```javascript
 {
-  "_id": ObjectId,
-  "conversation_id": string,     // group_id or "user1_user2"
-  "conversation_type": "group" | "direct",
-  "sender_id": string,
-  "sender_name": string,
-  "content": string,
-  "reactions": [
+  _id: ObjectId,
+  name: string,
+  description: string,
+  coordinator_id: string,          // User who created group
+  members: [
     {
-      "user_id": string,
-      "emoji": string
+      user_id: string,
+      usn: string,
+      name: string,
+      email: string,
+      role: "coordinator" | "member"
     }
   ],
-  "read_by": [string],           // User IDs
-  "created_at": datetime
+  subject: string,
+  teacher_usn: string,
+  teacher_id: string,
+  created_at: datetime,
+  updated_at: datetime
 }
-
-// Indexes: conversation_id, sender_id, created_at
+// Indexes: coordinator_id, members.user_id
 ```
 
-### Database Indexes
+#### **6. chat_history** - Chat messages
+```javascript
+{
+  _id: ObjectId,
+  sender_id: string,
+  sender_name: string,
+  chat_type: "group" | "direct",
+  chat_id: string,                 // group_id or conversation_id
+  content: string,
+  timestamp: datetime,
+  read_by: [string],               // User IDs who read the message
+  reactions: [
+    {
+      user_id: string,
+      emoji: string
+    }
+  ]
+}
+// Indexes: chat_type, chat_id, timestamp
+```
 
-All collections have proper indexes for optimal query performance:
-- **Primary keys:** All `_id` fields automatically indexed
-- **User lookups:** `user_id`, `firebase_uid`, `email`, `usn`
-- **Status filtering:** `status`, `type`, `role`
-- **Date sorting:** `created_at`, `deadline`, `updated_at`
-- **Full-text search:** `content`, `title`, `tags` (text indexes)
+#### **7-16. Additional Collections**
+
+- **stress_logs** - Stress meter data and history
+- **focus_sessions** - Pomodoro session records
+- **resources** - Learning materials and notes
+- **grade_suggestions** - AI grading recommendations
+- **class_analytics** - Cached class performance data
+- **task_templates** - Reusable task templates (teachers)
+- **study_plans** - Generated study schedules
+- **user_preferences** - Study planner preferences
+- **calendar_sync** - Google Calendar OAuth tokens
+- **calendar_event_mappings** - Sync mappings between local and Google events
 
 ---
 
@@ -802,26 +870,31 @@ All collections have proper indexes for optimal query performance:
 1. **test_tasks.py** (25 tests)
    - Task CRUD operations
    - Bulk operations
+   - File attachments
+   - Student notes
    - Dependencies and subtasks
    - Statistics and analytics
 
 2. **test_resources.py** (25 tests)
-   - Note CRUD
+   - Note CRUD operations
    - File upload security
    - AI flashcard generation
-   - Search functionality
+   - Full-text search functionality
+   - Document processing
 
 3. **test_chat.py** (15 tests)
    - Group and direct messaging
    - Message reactions
+   - Read receipts
    - Search functionality
    - Authorization checks
 
 4. **test_calendar.py** (20 tests)
    - OAuth flow
-   - Task/study plan sync
+   - Task synchronization
+   - Study plan sync
    - Conflict detection
-   - Calendar management
+   - Calendar event management
 
 5. **test_integration.py** (10 tests)
    - Cross-feature workflows
@@ -833,7 +906,7 @@ All collections have proper indexes for optimal query performance:
 **Install test dependencies:**
 ```bash
 cd backend
-pip install pytest pytest-asyncio pytest-cov
+pip install pytest pytest-asyncio pytest-cov httpx
 ```
 
 **Run all tests:**
@@ -845,6 +918,9 @@ pytest tests/ -v
 ```bash
 pytest tests/test_tasks.py -v
 pytest tests/test_resources.py -v
+pytest tests/test_chat.py -v
+pytest tests/test_calendar.py -v
+pytest tests/test_integration.py -v
 ```
 
 **Run with coverage:**
@@ -854,37 +930,16 @@ pytest tests/ --cov=app --cov-report=html
 
 **View coverage report:**
 ```bash
-# Open in browser
-open htmlcov/index.html
+# Open htmlcov/index.html in browser
 ```
 
-### Manual Testing Checklist
+### Test Configuration
 
-**Student Features:**
-- [ ] Register new student account with USN
-- [ ] Create task with AI analysis
-- [ ] Check stress meter calculation
-- [ ] Start focus session and complete
-- [ ] Upload resource and generate flashcards
-- [ ] Generate study schedule
-- [ ] Connect Google Calendar
-- [ ] Join group using USN
-- [ ] Send chat messages
-
-**Teacher Features:**
-- [ ] Register new teacher account
-- [ ] View class analytics
-- [ ] Use AI grading assistant
-- [ ] Create bulk tasks for students
-- [ ] Save task template
-- [ ] Approve/reject extension request
-- [ ] View at-risk students
-
-**Real-Time Features:**
-- [ ] Receive live notifications
-- [ ] Chat in real-time
-- [ ] See typing indicators
-- [ ] View activity feed updates
+Tests use `conftest.py` for shared fixtures:
+- Mock Firebase authentication
+- Test MongoDB database
+- Mock Ollama AI service
+- Test client setup
 
 ---
 
@@ -893,50 +948,82 @@ open htmlcov/index.html
 ### Production Checklist
 
 #### 1. Environment Variables
-```bash
-# Backend .env (production)
+
+**Backend `.env` (production):**
+```env
 MONGODB_URI=mongodb+srv://user:pass@cluster.mongodb.net/task_scheduler
-FIREBASE_CREDENTIALS_PATH=/path/to/firebase-credentials.json
-OLLAMA_BASE_URL=http://ollama-server:11434
-GOOGLE_CLIENT_ID=your_production_client_id
-GOOGLE_CLIENT_SECRET=your_production_client_secret
-GOOGLE_REDIRECT_URI=https://your-domain.com/api/calendar/oauth/callback
-ALLOWED_ORIGINS=https://your-domain.com
+FIREBASE_CREDENTIALS_PATH=/app/firebase-credentials.json
+SECRET_KEY=your-production-secret-key-64-characters-or-more
+OLLAMA_MODEL=deepseek-coder:1.3b-instruct
+OLLAMA_CHAT_MODEL=llama3.2:3b
+GOOGLE_OAUTH_CLIENT_ID=production_client_id
+GOOGLE_OAUTH_CLIENT_SECRET=production_client_secret
+GOOGLE_OAUTH_REDIRECT_URI=https://yourdomain.com/api/calendar/oauth/callback
+CALENDAR_ENCRYPTION_KEY=production-encryption-key-64-characters
+```
+
+**Frontend `.env` (production):**
+```env
+VITE_API_URL=https://api.yourdomain.com
+VITE_WS_URL=https://api.yourdomain.com
 ```
 
 #### 2. Database Setup
+
+**MongoDB Atlas (Recommended):**
 ```bash
 # Create MongoDB Atlas cluster
 # Enable authentication
-# Configure network access
+# Configure IP whitelist
 # Create database user
-# Update connection string in .env
+# Get connection string and update MONGODB_URI
 ```
 
 #### 3. Backend Deployment
 
 **Option A: Docker**
+
+Create `Dockerfile`:
 ```dockerfile
 FROM python:3.9-slim
+
 WORKDIR /app
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    tesseract-ocr \
+    && rm -rf /var/lib/apt/lists/*
+
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
+
 COPY . .
+
+EXPOSE 8000
+
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
 ```
 
+Build and run:
 ```bash
 docker build -t task-scheduler-backend .
 docker run -p 8000:8000 --env-file .env task-scheduler-backend
 ```
 
 **Option B: Traditional Server**
+
 ```bash
 # Install dependencies
 pip install -r requirements.txt
 
-# Use production ASGI server
-gunicorn app.main:app --workers 4 --worker-class uvicorn.workers.UvicornWorker --bind 0.0.0.0:8000
+# Install Gunicorn
+pip install gunicorn
+
+# Run with Gunicorn
+gunicorn app.main:app \
+  --workers 4 \
+  --worker-class uvicorn.workers.UvicornWorker \
+  --bind 0.0.0.0:8000
 ```
 
 #### 4. Frontend Deployment
@@ -944,46 +1031,26 @@ gunicorn app.main:app --workers 4 --worker-class uvicorn.workers.UvicornWorker -
 **Build for production:**
 ```bash
 cd frontend
+npm install
 npm run build
 # Output in dist/ directory
 ```
 
-**Deploy to hosting:**
-- **Vercel:** `vercel deploy`
-- **Netlify:** `netlify deploy --prod`
-- **Static hosting:** Upload `dist/` folder
+**Deploy options:**
+- **Vercel:** `npm i -g vercel && vercel deploy`
+- **Netlify:** `npm i -g netlify-cli && netlify deploy --prod`
+- **Static Hosting:** Upload `dist/` folder to any static host
 
-**Update API URL:**
-```javascript
-// frontend/src/config.js or .env
-VITE_API_URL=https://your-backend-domain.com/api
-```
-
-#### 5. Ollama Deployment
-
-**Option A: Same Server**
-```bash
-# Install Ollama on production server
-curl -fsSL https://ollama.com/install.sh | sh
-ollama pull llama2
-```
-
-**Option B: Separate Server**
-```bash
-# Deploy Ollama on GPU server
-# Update OLLAMA_BASE_URL in .env
-```
-
-#### 6. Nginx Configuration
+#### 5. Nginx Configuration
 
 ```nginx
 server {
     listen 80;
-    server_name your-domain.com;
+    server_name yourdomain.com;
 
     # Frontend
     location / {
-        root /path/to/frontend/dist;
+        root /var/www/frontend/dist;
         try_files $uri $uri/ /index.html;
     }
 
@@ -992,6 +1059,7 @@ server {
         proxy_pass http://localhost:8000;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
     }
 
     # WebSocket
@@ -1000,123 +1068,137 @@ server {
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
     }
 }
 ```
 
-#### 7. SSL Certificate
+#### 6. SSL Certificate (HTTPS)
+
 ```bash
 # Install Certbot
 sudo apt-get install certbot python3-certbot-nginx
 
 # Get certificate
-sudo certbot --nginx -d your-domain.com
+sudo certbot --nginx -d yourdomain.com
+
+# Auto-renewal
+sudo certbot renew --dry-run
 ```
 
-#### 8. Monitoring
+#### 7. Ollama Deployment
 
-**Application Logs:**
+**Same Server:**
 ```bash
-# Backend logs
-tail -f /var/log/task-scheduler/backend.log
+# Install Ollama
+curl -fsSL https://ollama.com/install.sh | sh
+
+# Pull models
+ollama pull deepseek-coder:1.3b-instruct
+ollama pull llama3.2:3b
+
+# Ollama runs as systemd service
+```
+
+**Separate Server (Recommended for GPU):**
+```bash
+# Deploy on GPU server
+# Update OLLAMA_BASE_URL in .env to point to GPU server
+```
+
+#### 8. Process Management
+
+**Using systemd:**
+
+Create `/etc/systemd/system/task-scheduler.service`:
+```ini
+[Unit]
+Description=Task Scheduler API
+After=network.target
+
+[Service]
+User=www-data
+WorkingDirectory=/app/backend
+Environment="PATH=/app/backend/venv/bin"
+ExecStart=/app/backend/venv/bin/gunicorn app.main:app --workers 4 --worker-class uvicorn.workers.UvicornWorker --bind 0.0.0.0:8000
+
+[Install]
+WantedBy=multi-user.target
+```
+
+Enable and start:
+```bash
+sudo systemctl enable task-scheduler
+sudo systemctl start task-scheduler
+sudo systemctl status task-scheduler
+```
+
+#### 9. Monitoring
+
+**Health Checks:**
+- `GET /health` - Backend health endpoint
+- Monitor logs: `tail -f /var/log/task-scheduler/app.log`
+- Monitor MongoDB Atlas metrics
+- Monitor server resources (CPU, RAM, disk)
+
+**Logging:**
+```bash
+# Application logs
+tail -f logs/app.log
 
 # Nginx logs
 tail -f /var/log/nginx/access.log
 tail -f /var/log/nginx/error.log
 ```
 
-**Health Checks:**
-- `GET /health` - Backend health
-- `GET /api/docs` - API documentation
-- Monitor MongoDB Atlas metrics
-- Monitor server resources (CPU, RAM, disk)
-
----
-
-## 🗺️ Roadmap
-
-### Completed ✅
-
-**Week 1:** Student wellness & productivity features
-**Week 2:** Teacher efficiency & analytics features
-**Week 3:** Smart Study Planner with AI scheduling
-**Week 4:** Google Calendar Integration
-**Recent:** Real-time chat, USN support, UI redesign
-
-### In Progress 🔄
-
-- [ ] Mobile app (React Native)
-- [ ] Email notifications
-- [ ] Export reports (PDF)
-- [ ] Performance optimizations
-
-### Planned 📋
-
-**Short Term (1-2 months):**
-- [ ] Task dependencies and sequencing
-- [ ] Workload balancing across weeks
-- [ ] Gamification (points, badges, leaderboards)
-- [ ] Study streak tracking
-- [ ] Collaborative flashcard sets
-- [ ] Voice notes support
-
-**Medium Term (3-6 months):**
-- [ ] Peer study matcher using ML
-- [ ] Adaptive curriculum engine
-- [ ] Skill gap identifier
-- [ ] Parent/guardian portal
-- [ ] Integration with LMS (Moodle, Canvas)
-- [ ] Offline mode support
-
-**Long Term (6+ months):**
-- [ ] Mobile apps (iOS/Android)
-- [ ] Smart notifications (push, email, SMS)
-- [ ] Advanced analytics dashboard
-- [ ] Custom AI model fine-tuning
-- [ ] Multi-language support
-- [ ] Enterprise features (SSO, LDAP)
-
-### Feature Requests
-
-Have a feature request? Open an issue on GitHub with:
-- Clear description
-- Use case/scenario
-- Expected benefit
-- Priority (low/medium/high)
-
 ---
 
 ## 🤝 Contributing
 
-This is an educational project. Contributions are welcome!
+This project is for educational purposes. Contributions are welcome!
 
 ### Development Guidelines
 
 1. **Code Style:**
    - Backend: Follow PEP 8 (Python)
-   - Frontend: Follow Airbnb style guide (JavaScript/React)
-   - Use meaningful variable names
+   - Frontend: Use ESLint and Prettier
+   - Write meaningful variable and function names
    - Add docstrings/comments for complex logic
 
 2. **Git Workflow:**
-   - Create feature branch: `git checkout -b feature/your-feature`
-   - Make changes and commit: `git commit -m "feat: add feature"`
-   - Push and create pull request
+   ```bash
+   # Create feature branch
+   git checkout -b feature/your-feature-name
+
+   # Make changes and commit
+   git add .
+   git commit -m "feat: add your feature description"
+
+   # Push and create pull request
+   git push origin feature/your-feature-name
+   ```
 
 3. **Commit Messages:**
-   - Use conventional commits: `feat:`, `fix:`, `docs:`, `style:`, `refactor:`, `test:`, `chore:`
-   - Be descriptive but concise
-   - Reference issues: `fixes #123`
+   Use conventional commits:
+   - `feat:` - New feature
+   - `fix:` - Bug fix
+   - `docs:` - Documentation changes
+   - `style:` - Code style changes (formatting)
+   - `refactor:` - Code refactoring
+   - `test:` - Adding/updating tests
+   - `chore:` - Maintenance tasks
 
 4. **Testing:**
    - Write tests for new features
-   - Ensure existing tests pass
+   - Ensure all existing tests pass
    - Aim for >80% code coverage
+   - Run tests before submitting PR
 
-5. **Documentation:**
-   - Update README for major changes
-   - Add JSDoc/docstrings for new functions
-   - Update API documentation
+5. **Pull Requests:**
+   - Provide clear description
+   - Reference related issues
+   - Include screenshots for UI changes
+   - Ensure CI passes
 
 ### Setting Up Development Environment
 
@@ -1124,9 +1206,9 @@ This is an educational project. Contributions are welcome!
 # Backend
 cd backend
 python -m venv venv
-source venv/bin/activate  # or venv\Scripts\activate on Windows
+source venv/bin/activate  # Windows: venv\Scripts\activate
 pip install -r requirements.txt
-pip install -r requirements-dev.txt  # Dev dependencies
+pip install pytest pytest-cov  # Dev dependencies
 
 # Frontend
 cd frontend
@@ -1141,56 +1223,81 @@ pre-commit install
 
 ## 📄 License
 
-This project is for educational purposes.
+This project is licensed under the MIT License - see below for details.
 
-**MIT License** - See LICENSE file for details.
+**MIT License**
 
-© 2026 Rohith B - University Project
+Copyright (c) 2026 Rohith B
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
 
 ---
 
 ## 🙏 Acknowledgments
 
 ### Technologies
-- **FastAPI** - Modern Python web framework
-- **React** - UI library
-- **Ollama** - Local AI models
-- **MongoDB** - NoSQL database
-- **Firebase** - Authentication
-- **Tailwind CSS** - Utility-first CSS
-- **Framer Motion** - Animation library
-- **Lucide** - Icon library
-- **Socket.IO** - Real-time communication
-- **Recharts** - Charting library
+
+**Backend:**
+- [FastAPI](https://fastapi.tiangolo.com/) - Modern Python web framework
+- [MongoDB](https://www.mongodb.com/) - NoSQL database
+- [Ollama](https://ollama.com/) - Local LLM runtime
+- [Firebase](https://firebase.google.com/) - Authentication
+- [Socket.IO](https://socket.io/) - Real-time communication
+
+**Frontend:**
+- [React](https://react.dev/) - UI library
+- [Vite](https://vitejs.dev/) - Build tool
+- [Tailwind CSS](https://tailwindcss.com/) - Utility-first CSS
+- [Framer Motion](https://www.framer.com/motion/) - Animation library
+- [Lucide](https://lucide.dev/) - Icon library
+- [Recharts](https://recharts.org/) - Charting library
+- [Zustand](https://zustand-demo.pmnd.rs/) - State management
 
 ### Inspiration
-- Task management best practices
+- Modern task management best practices
 - AI-powered education tools
-- Modern web design trends
 - Student wellness research
+- Google Material Design principles
 
 ---
 
-## 📞 Support & Contact
+## 📞 Support
 
 ### Documentation
-- [API Documentation](http://localhost:8000/docs) (when running locally)
-- [Postman Collection](docs/postman_collection.json)
-- [Architecture Diagram](docs/architecture.png)
+- **API Docs:** http://localhost:8000/docs (when running locally)
+- **This README:** Comprehensive setup and usage guide
 
 ### Getting Help
-1. Check this README
-2. Review API documentation
-3. Search existing issues
-4. Create new issue with:
+
+1. Check this README thoroughly
+2. Review API documentation at `/docs`
+3. Search existing GitHub issues
+4. Create a new issue with:
    - Clear description
    - Steps to reproduce
    - Expected vs actual behavior
-   - Screenshots if applicable
+   - Screenshots (if applicable)
+   - Environment details
 
 ### Community
-- GitHub Issues: Bug reports and feature requests
-- GitHub Discussions: Questions and community chat
+- **Issues:** Bug reports and feature requests
+- **Discussions:** Questions and community chat
 
 ---
 
@@ -1199,80 +1306,64 @@ This project is for educational purposes.
 ### Code Metrics
 ```
 Backend:
-- 14 routers
-- 40+ REST API endpoints
-- 15 database collections
-- 86 unit tests
-- ~6,500 lines of Python
+├── 14 routers with 40+ REST API endpoints
+├── 10 service modules for AI and integrations
+├── 16 database collections with indexes
+├── 86 unit tests across 5 test files
+└── ~6,500 lines of Python code
 
 Frontend:
-- 16 pages
-- 25+ components
-- 4 custom UI components
-- ~8,000 lines of React/JSX
+├── 16 page components (student + teacher views)
+├── 31+ reusable UI components
+├── 4 design system components
+├── 8+ custom hooks and services
+└── ~8,000 lines of React/JSX code
 
 Total: 17,000+ lines of production code
 ```
 
-### Development Timeline
+### Features Implemented
 ```
-Week 1: Student AI features (Jan 1-5, 2026)
-Week 2: Teacher tools (Jan 6-7, 2026)
-Week 3: Study planner (Jan 8-9, 2026)
-Week 4: Calendar integration (Jan 10-11, 2026)
-Recent: Real-time features, UI redesign (Jan 12, 2026)
+✅ 15+ Major Features
+✅ AI-Powered Task Analysis
+✅ Real-Time Collaboration (WebSocket)
+✅ Google Calendar Integration
+✅ Teacher Grading Dashboard
+✅ Smart Study Planner
+✅ Stress & Focus Tracking
+✅ Group Coordination with USN Support
+✅ File Upload & Management
+✅ Live Notifications
+✅ Modern Purple/Blue/Indigo UI
+✅ Dark/Light Theme Support
+✅ 86 Unit Tests with High Coverage
+✅ Production-Ready Deployment
+```
 
-Total: 12 working days, ~80 hours
-```
-
-### Impact Metrics
-```
-✅ 15+ Major Features Complete
-✅ 40+ API Endpoints Functional
-✅ 15 Database Collections Indexed
-✅ 16 React Pages Built
-✅ Real-Time WebSocket Integration
-✅ AI Integration Working
-✅ 15-20 Hours/Week Time Savings for Teachers
-✅ 85% AI Grading Agreement Rate
-✅ Production Ready
-```
+### Impact
+- **70% time savings** on AI-assisted grading
+- **90% time savings** on bulk task creation
+- **83% time savings** on class monitoring
+- **15-20 hours/week** total time saved for teachers
 
 ---
 
-## 🎉 Success Criteria
-
-**All major goals achieved:**
-
-✅ Student wellness features (stress meter, focus mode)
-✅ AI-powered features (grading, summarization, scheduling)
-✅ Teacher efficiency tools (bulk tasks, class analytics)
-✅ Real-time collaboration (chat, notifications, activity feed)
-✅ Smart scheduling (AI study planner)
-✅ Calendar integration (Google Calendar sync)
-✅ Modern UI/UX (purple/blue design system)
-✅ Group coordination (with USN support)
-✅ Comprehensive testing (86 tests)
-✅ Production-ready deployment
-
----
+## 🎉 Project Status
 
 **Version:** 2.1
-**Last Updated:** January 12, 2026
-**Status:** Production Ready ✅
-
----
-
-**⭐ Star this project if you find it useful!**
-
-**🚀 Built with passion for education and AI! 🎓**
+**Status:** ✅ Production Ready
+**Last Updated:** January 16, 2026
 
 ---
 
 <div align="center">
 
-Made with ❤️ by [Rohith B](https://github.com/Rohith-AI-HUB)
+**⭐ Star this project if you find it useful! ⭐**
 
-[Report Bug](https://github.com/Rohith-AI-HUB/Task_Scheduling_Agent1/issues) • [Request Feature](https://github.com/Rohith-AI-HUB/Task_Scheduling_Agent1/issues)
+**Built with ❤️ for education and AI**
+
+Made by [Rohith B](https://github.com/Rohith-AI-HUB)
+
+[Report Bug](https://github.com/Rohith-AI-HUB/Task_Scheduling_Agent/issues) • [Request Feature](https://github.com/Rohith-AI-HUB/Task_Scheduling_Agent/issues)
 
 </div>
